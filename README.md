@@ -1,6 +1,6 @@
 # Importmap for Rails
 
-..
+Use ESM with importmap to manage modern JavaScript in Rails without transpiling or bundling.
 
 ## Installation
 
