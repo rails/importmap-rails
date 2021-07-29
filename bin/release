@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+VERSION=$1
+
+printf "module Importmap\n  VERSION = \"$VERSION\"\nend\n" > ./lib/importmap/version.rb
+bundle
+git add Gemfile.lock lib/importmap/version.rb
+git commit -m "Bump version for $VERSION"
+git push
+git tag v$VERSION
+git push --tags
+gem build importmap-rails.gemspec
+gem push "importmap-rails-$VERSION.gem"
