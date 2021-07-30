@@ -1,12 +1,17 @@
 module Importmap::ImportmapTagsHelper
-  def importmap_include_tags(importmap = "importmap.json")
+  def javascript_importmap_tags(entry_point = "application")
     safe_join [
+      javascript_inline_importmap_tag,
       javascript_include_tag("es-module-shims", async: true),
-      tag.script(src: asset_path(importmap), type: "importmap-shim")
+      javascript_import_module_tag(entry_point)
     ], "\n"
   end
 
-  def javascript_module_tag(*sources)
-    javascript_include_tag(*sources, type: "module-shim")
+  def javascript_inline_importmap_tag
+    tag.script(Rails.application.config.importmap.paths.to_json.html_safe, type: "importmap")
+  end
+
+  def javascript_import_module_tag(module_name)
+    tag.script %(import "#{module_name}").html_safe, type: "module"
   end
 end
