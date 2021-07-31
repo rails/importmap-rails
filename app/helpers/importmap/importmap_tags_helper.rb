@@ -12,7 +12,7 @@ module Importmap::ImportmapTagsHelper
   end
 
   def javascript_importmap_shim_tag
-    javascript_include_tag("es-module-shims", async: true)
+    javascript_include_tag "es-module-shims", async: true
   end
 
   def javascript_import_module_tag(module_name)
