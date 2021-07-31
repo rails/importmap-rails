@@ -2,11 +2,11 @@ class Importmap::Paths
   attr_reader :paths
 
   def initialize
-    @paths = []
+    @paths = {}
   end
 
   def asset(name, path: nil)
-    @paths << [ name, path || "#{name}.js" ]
+    @paths[name] = path || "#{name}.js"
   end
 
   def assets_in(path)
@@ -21,15 +21,11 @@ class Importmap::Paths
     end
   end
 
-  def to_json
-    { "imports" => mapped_asset_paths }.to_json
+  def to_h
+    @paths
   end
 
   private
-    def mapped_asset_paths
-      @paths.collect { |(name, path)| [ name, ActionController::Base.helpers.asset_path(path) ] }.to_h
-    end
-
     # Strip off the extension and any versioning data for an absolute module name.
     def module_name_from(filename)
       filename.to_s.remove(filename.extname).split("@").first

@@ -8,7 +8,7 @@ module Importmap::ImportmapTagsHelper
   end
 
   def javascript_inline_importmap_tag
-    tag.script(Rails.application.config.importmap.paths.to_json.html_safe, type: "importmap")
+    tag.script({ "imports" => importmap_with_asset_paths }.to_json.html_safe, type: "importmap")
   end
 
   def javascript_importmap_shim_tag
@@ -18,4 +18,9 @@ module Importmap::ImportmapTagsHelper
   def javascript_import_module_tag(module_name)
     tag.script %(import "#{module_name}").html_safe, type: "module"
   end
+
+  private
+    def importmap_with_asset_paths
+      Rails.application.config.importmap.paths.to_h.transform_values { |path| asset_path(path) }
+    end
 end
