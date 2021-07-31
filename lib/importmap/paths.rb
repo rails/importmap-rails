@@ -21,11 +21,15 @@ class Importmap::Paths
     end
   end
 
-  def to_h
-    @paths
+  def to_json(resolver)
+    { "imports" => map_to_asset_paths(resolver) }.to_json
   end
 
   private
+    def map_to_asset_paths(resolver)
+      @paths.transform_values { |path| resolver.asset_path(path) }
+    end
+
     # Strip off the extension and any versioning data for an absolute module name.
     def module_name_from(filename)
       filename.to_s.remove(filename.extname).split("@").first
