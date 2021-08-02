@@ -10,6 +10,11 @@ gem "rails", "~> #{rails_version}"
 gem "sqlite3"
 
 group :test do
+  gem "turbo-rails"
+  gem "stimulus-rails"
+
+  gem "byebug"
+
   gem "capybara"
   gem "selenium-webdriver"
   gem "webdrivers"
