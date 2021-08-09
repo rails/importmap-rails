@@ -12,6 +12,5 @@ Rails.application.config.assets.version = '1.0'
 # Rails.application.config.assets.precompile += %w( admin.js admin.css )
 
 Rails.application.config.importmap.paths.tap do |paths|
-  paths.assets_in "app/assets/javascripts"
-  paths.assets_in "app/assets/javascripts/controllers", append_base_path: true
+  paths.assets_in "lib/assets/javascripts"
 end

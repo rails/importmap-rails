@@ -1,8 +1,12 @@
 require "test_helper"
 
 class ImportmapTest < ActiveSupport::TestCase
-  test "files in app/javascripts show up in importmap" do
+  test "files in app/assets/javascripts show up in importmap by default" do
     assert_match %r|assets/application-.*\.js|, generate_importmap_json["imports"]["application"]
+  end
+
+  test "files in lib/assets/javascripts show up in importmap by configuration" do
+    assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
   end
 
   private
