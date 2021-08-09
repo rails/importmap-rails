@@ -1,0 +1,21 @@
+# Ignore the default SQLite database.
+/test/dummy/db/*.sqlite3
+/test/dummy/db/*.sqlite3-*
+
+# Ignore all logfiles and tempfiles.
+/test/dummy/log/*
+/test/dummy/tmp/*
+!/test/dummy/log/.keep
+!/test/dummy/tmp/.keep
+
+# Ignore pidfiles, but keep the directory.
+/test/dummy/tmp/pids/*
+!/test/dummy/tmp/pids/
+!/test/dummy/tmp/pids/.keep
+
+# Ignore uploaded files in development.
+/test/dummy/storage/*
+!/test/dummy/storage/.keep
+
+/test/dummy/public/assets
+.byebug_history
