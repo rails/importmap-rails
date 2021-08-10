@@ -19,3 +19,4 @@
 
 /test/dummy/public/assets
 .byebug_history
+*.gem
