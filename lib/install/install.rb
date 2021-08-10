@@ -12,6 +12,7 @@ say "Create application.js module as entrypoint"
 create_file Rails.root.join("app/assets/javascripts/application.js") do <<-JS
 // import "@rails/actioncable"
 // import "@rails/actiontext"
+// import "@rails/activestorage"
 JS
 end
 
