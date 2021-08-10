@@ -5,8 +5,8 @@ Gem::Specification.new do |spec|
   spec.version     = Importmap::VERSION
   spec.authors     = [ "David Heinemeier Hansson" ]
   spec.email       = "david@loudthinking.com"
-  spec.summary     = "Import maps ."
   spec.homepage    = "https://github.com/rails/importmap-rails"
+  spec.summary     = "Use ESM with importmap to manage modern JavaScript in Rails without transpiling or bundling."
   spec.license     = "MIT"
 
   spec.metadata["homepage_uri"] = spec.homepage
