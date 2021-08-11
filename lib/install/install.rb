@@ -23,7 +23,7 @@ say "Configure importmap paths in config/initializers/assets.rb"
 append_to_file Rails.root.join("config/initializers/assets.rb") do <<-RUBY
 
 # Configure importmap paths in addition to having all files in app/assets/javascripts mapped.
-Rails.application.config.importmap.paths do |paths|
+Rails.application.config.importmap.paths.tap do |paths|
   # Match libraries with their NPM package names for possibility of easy later porting.
   # Ensure that libraries listed in the path have been linked in the asset pipeline manifest or precompiled.
   paths.asset "@rails/actioncable", path: "actioncable.esm.js"
