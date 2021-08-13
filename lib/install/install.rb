@@ -10,8 +10,9 @@ end
 
 say "Create application.js module as entrypoint"
 create_file Rails.root.join("app/assets/javascripts/application.js") do <<-JS
+// Configure your import map in config/initializers/assets.rb
+
 // import "@rails/actioncable"
-// import "@rails/actiontext"
 // import "@rails/activestorage"
 JS
 end
@@ -22,9 +23,9 @@ append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree
 say "Configure importmap paths in config/initializers/assets.rb"
 append_to_file Rails.root.join("config/initializers/assets.rb") do <<-RUBY
 
-# Configure importmap paths in addition to having all files in app/assets/javascripts mapped.
+# Configure import map beyond the default of having all files in app/assets/javascripts mapped.
 Rails.application.config.importmap.paths.tap do |paths|
-  # Match libraries with their NPM package names for possibility of easy later porting.
+  # Match libraries with their NPM package names for possibility of later porting.
   # Ensure that libraries listed in the path have been linked in the asset pipeline manifest or precompiled.
   paths.asset "@rails/actioncable", path: "actioncable.esm.js"
   paths.asset "@rails/activestorage", path: "activestorage.esm.js"
@@ -33,6 +34,10 @@ Rails.application.config.importmap.paths.tap do |paths|
 
   # Make all files in directory available as my_channel => channels/my_channel-$digest.js
   # paths.assets_in "lib/assets/javascripts/channels", append_base_path: true
+
+  # Map vendored modules by first adding the following to app/assets/config/manifest.js:
+  # //= link_tree ../../../vendor/assets/javascripts .js
+  # paths.assets_in "vendor/assets/javascripts"
 end
 RUBY
 end
