@@ -37,6 +37,26 @@ import "@hotwired/stimulus-autoloader"
 ```
 
 
+## Use with Skypack (and other CDNs)
+
+Instead of mapping JavaScript modules to files in your application's path, you can also reference them directly from JavaScript CDNs like Skypack. Simply add them to the `config/initializers/assets.rb` with the URL instead of the local path:
+
+```ruby
+Rails.application.config.importmap.paths.tap do |paths|
+  paths.asset "trix", path: "https://cdn.skypack.dev/trix"
+  paths.asset "md5", path: "https://cdn.skypack.dev/md5"
+end
+```
+
+Now you can use these in your application.js entrypoint like you would any other module:
+
+```js
+import "trix"
+import md5 from "md5"
+console.log(md5("Hash it out"))
+``` 
+
+
 ## Expected errors from using the es-module-shim
 
 While import maps are native in Chrome and Edge, they need a shim in other browsers that'll produce a JavaScript console error like `TypeError: Module specifier, 'application' does not start with "/", "./", or "../".`. This error is normal and does not have any user-facing consequences.
