@@ -15,6 +15,8 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 
 By default, all the files in `app/assets/javascripts` and the three major Rails JavaScript libraries are already mapped. You can add more mappings in `config/initializers/assets.rb`.
 
+Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
+
 
 ## Usage
 
