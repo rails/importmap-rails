@@ -27,8 +27,9 @@ Rails.application.config.importmap.paths.tap do |paths|
   # Match libraries with their NPM package names for possibility of easy later porting.
   # Ensure that libraries listed in the path have been linked in the asset pipeline manifest or precompiled.
   paths.asset "@rails/actioncable", path: "actioncable.esm.js"
-  paths.asset "@rails/actiontext", path: "actiontext.js"
   paths.asset "@rails/activestorage", path: "activestorage.esm.js"
+  paths.asset "@rails/actiontext", path: "actiontext.js"
+  paths.asset "trix"
 
   # Make all files in directory available as my_channel => channels/my_channel-$digest.js
   # paths.assets_in "lib/assets/javascripts/channels", append_base_path: true
