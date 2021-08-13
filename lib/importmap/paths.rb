@@ -8,6 +8,7 @@ class Importmap::Paths
 
   def asset(name, path: nil)
     @files[name] = path || "#{name}.js"
+    @files[name] += '.js' unless @files[name].ends_with?('.js')
   end
 
   def assets_in(path, append_base_path: false)
