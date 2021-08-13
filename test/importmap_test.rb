@@ -13,6 +13,10 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
   end
 
+  test "missing paths are removed from generated importmap" do
+    assert_nil generate_importmap_json["imports"]["not_there"]
+  end
+
   private
     def generate_importmap_json
       JSON.parse Rails.application.config.importmap.paths.to_json(ApplicationController.helpers)

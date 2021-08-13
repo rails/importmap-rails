@@ -20,7 +20,14 @@ class Importmap::Paths
 
   private
     def map_to_asset_paths(resolver)
-      expanded_files_and_directories.transform_values { |path| resolver.asset_path(path) }
+      expanded_files_and_directories.transform_values do |path|
+        begin
+          resolver.asset_path(path)
+        rescue Sprockets::Rails::Helper::AssetNotFound
+          Rails.logger.warn "Importmap skipped missing asset: #{path}"
+          nil
+        end
+      end.compact
     end
 
     def expanded_files_and_directories

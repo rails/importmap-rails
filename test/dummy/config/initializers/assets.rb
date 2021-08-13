@@ -14,4 +14,5 @@ Rails.application.config.assets.version = '1.0'
 Rails.application.config.importmap.paths.tap do |paths|
   paths.assets_in "lib/assets/javascripts"
   paths.asset "md5", path: "https://cdn.skypack.dev/md5"
+  paths.asset "not_there"
 end
