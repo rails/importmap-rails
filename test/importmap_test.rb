@@ -9,6 +9,10 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
   end
 
+  test "url references are left unaltered by the configuration" do
+    assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
+  end
+
   private
     def generate_importmap_json
       JSON.parse Rails.application.config.importmap.paths.to_json(ApplicationController.helpers)
