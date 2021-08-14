@@ -32,8 +32,9 @@ Rails.application.config.importmap.paths.tap do |paths|
   paths.asset "@rails/actiontext", path: "actiontext.js"
   paths.asset "trix"
 
-  # Make all files in directory available as my_channel => channels/my_channel-$digest.js
-  # paths.assets_in "lib/assets/javascripts/channels", append_base_path: true
+  # Use libraries directly from JavaScript CDNs
+  # paths.asset "vue", path: "https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.esm.browser.js"
+  # paths.asset "d3", path: "https://cdn.skypack.dev/pin/d3@v7.0.0-03vFl9bie0TSesDkWTJV/mode=imports/optimized/d3.js"
 
   # Map vendored modules by first adding the following to app/assets/config/manifest.js:
   # //= link_tree ../../../vendor/assets/javascripts .js
