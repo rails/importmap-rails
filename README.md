@@ -13,14 +13,14 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 2. Run `./bin/bundle install`
 3. Run `./bin/rails importmap:install`
 
-By default, all the files in `app/assets/javascripts` and the three major Rails JavaScript libraries are already mapped. You can add more mappings in `config/initializers/assets.rb`.
+By default, all the files in `app/assets/javascripts` and the three major Rails JavaScript libraries are already mapped. You can add more mappings in `config/initializers/importmap.rb`.
 
 Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
 
 
 ## Usage
 
-The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/initializers/assets.rb` after running the installer. (Note that since this is a config initializer, you must restart your development server after making any changes.)
+The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/initializers/importmap.rb` after running the installer. (Note that since this is a config initializer, you must restart your development server after making any changes.)
 
 This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/assets/javascripts/application.js`, which is copied and digested by the asset pipeline.
 
@@ -31,7 +31,7 @@ It makes sense to use logical names that match the package names used by NPM, su
 
 ## Use with Hotwire
 
-This gem was designed for use with [Hotwire](https://hotwired.dev) in mind. The Hotwire gems, like [turbo-rails](https://github.com/hotwired/turbo-rails) and [stimulus-rails](https://github.com/hotwired/stimulus-rails) (both bundled as [hotwire-rails](https://github.com/hotwired/hotwire-rails)), are automatically configured for use with `importmap-rails`. This means you won't have to manually setup the path mapping in `config/initializers/assets.rb`, and instead can simply refer to the logical names directly in your `app/assets/javascripts/application.js`, like so:
+This gem was designed for use with [Hotwire](https://hotwired.dev) in mind. The Hotwire gems, like [turbo-rails](https://github.com/hotwired/turbo-rails) and [stimulus-rails](https://github.com/hotwired/stimulus-rails) (both bundled as [hotwire-rails](https://github.com/hotwired/hotwire-rails)), are automatically configured for use with `importmap-rails`. This means you won't have to manually setup the path mapping in `config/initializers/importmap.rb`, and instead can simply refer to the logical names directly in your `app/assets/javascripts/application.js`, like so:
 
 ```js
 import "@hotwired/turbo-rails"
@@ -41,7 +41,7 @@ import "@hotwired/stimulus-autoloader"
 
 ## Use with Skypack (and other CDNs)
 
-Instead of mapping JavaScript modules to files in your application's path, you can also reference them directly from JavaScript CDNs like Skypack. Simply add them to the `config/initializers/assets.rb` with the URL instead of the local path:
+Instead of mapping JavaScript modules to files in your application's path, you can also reference them directly from JavaScript CDNs like Skypack. Simply add them to the `config/initializers/importmap.rb` with the URL instead of the local path:
 
 ```ruby
 Rails.application.config.importmap.draw do
