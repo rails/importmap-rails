@@ -20,7 +20,7 @@ Note: In order to use JavaScript from Rails frameworks like Action Cable, Action
 
 ## Usage
 
-The import map is configured programmatically through the `Rails.application.config.importmap.paths` assignment, which by default is setup in `config/initializers/assets.rb` after running the installer. (Note that since this is a config initializer, you must restart your development server after making any changes.)
+The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/initializers/assets.rb` after running the installer. (Note that since this is a config initializer, you must restart your development server after making any changes.)
 
 This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/assets/javascripts/application.js`, which is copied and digested by the asset pipeline.
 
@@ -44,9 +44,9 @@ import "@hotwired/stimulus-autoloader"
 Instead of mapping JavaScript modules to files in your application's path, you can also reference them directly from JavaScript CDNs like Skypack. Simply add them to the `config/initializers/assets.rb` with the URL instead of the local path:
 
 ```ruby
-Rails.application.config.importmap.paths.tap do |paths|
-  paths.asset "trix", path: "https://cdn.skypack.dev/trix"
-  paths.asset "md5", path: "https://cdn.skypack.dev/md5"
+Rails.application.config.importmap.draw do
+  pin "trix", to: "https://cdn.skypack.dev/trix"
+  pin "md5", to: "https://cdn.skypack.dev/md5"
 end
 ```
 
