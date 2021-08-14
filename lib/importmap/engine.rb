@@ -1,9 +1,8 @@
-require "importmap/paths"
+require "importmap/map"
 
 module Importmap
   class Engine < ::Rails::Engine
-    config.importmap = ActiveSupport::OrderedOptions.new
-    config.importmap.paths = Importmap::Paths.new.tap { |paths| paths.assets_in "app/assets/javascripts" }
+    config.importmap = Importmap::Map.new
 
     config.autoload_once_paths = %W( #{root}/app/helpers )
 

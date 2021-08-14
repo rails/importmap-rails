@@ -1,30 +1,33 @@
-class Importmap::Paths
+class Importmap::Map
   attr_reader :files, :directories
 
   def initialize
-    @files = {}
-    @directories = {}
+    @files, @directories = {}, {}
   end
 
-  def asset(name, path: nil)
-    @files[name] = path || "#{name}.js"
+  def draw(&block)
+    instance_eval(&block)
   end
 
-  def assets_in(path, append_base_path: false)
+  def pin(name, to:)
+    @files[name] = to
+  end
+
+  def pin_all_from(path, append_base_path: false)
     @directories[path] = append_base_path
   end
 
   def to_json(resolver)
-    { "imports" => map_to_asset_paths(resolver) }.to_json
+    { "imports" => resolve_asset_paths(resolver) }.to_json
   end
 
   private
-    def map_to_asset_paths(resolver)
+    def resolve_asset_paths(resolver)
       expanded_files_and_directories.transform_values do |path|
         begin
           resolver.asset_path(path)
         rescue Sprockets::Rails::Helper::AssetNotFound
-          Rails.logger.warn "Importmap skipped missing asset: #{path}"
+          Rails.logger.warn "Importmap skipped missing path: #{path}"
           nil
         end
       end.compact

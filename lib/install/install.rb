@@ -23,22 +23,25 @@ append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree
 say "Configure importmap paths in config/initializers/assets.rb"
 append_to_file Rails.root.join("config/initializers/assets.rb") do <<-RUBY
 
-# Configure import map beyond the default of having all files in app/assets/javascripts mapped.
-Rails.application.config.importmap.paths.tap do |paths|
+# Configure import map to be used for ESM
+Rails.application.config.importmap.draw do
+  # All JavaScript files in the tree are mapped to their name
+  pin_all_from "app/assets/javascripts"
+
   # Match libraries with their NPM package names for possibility of later porting.
   # Ensure that libraries listed in the path have been linked in the asset pipeline manifest or precompiled.
-  paths.asset "@rails/actioncable", path: "actioncable.esm.js"
-  paths.asset "@rails/activestorage", path: "activestorage.esm.js"
-  paths.asset "@rails/actiontext", path: "actiontext.js"
-  paths.asset "trix"
+  pin "@rails/actioncable", to: "actioncable.esm.js"
+  pin "@rails/activestorage", to: "activestorage.esm.js"
+  pin "@rails/actiontext", to: "actiontext.js"
+  pin "trix", to: "trix.js"
 
   # Use libraries directly from JavaScript CDNs
-  # paths.asset "vue", path: "https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.esm.browser.js"
-  # paths.asset "d3", path: "https://cdn.skypack.dev/pin/d3@v7.0.0-03vFl9bie0TSesDkWTJV/mode=imports/optimized/d3.js"
+  # pin "vue", to: "https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.esm.browser.js"
+  # pin "d3", to: "https://cdn.skypack.dev/pin/d3@v7.0.0-03vFl9bie0TSesDkWTJV/mode=imports/optimized/d3.js"
 
-  # Map vendored modules by first adding the following to app/assets/config/manifest.js:
+  # Pin vendored modules by first adding the following to app/assets/config/manifest.js:
   # //= link_tree ../../../vendor/assets/javascripts .js
-  # paths.assets_in "vendor/assets/javascripts"
+  # pin_all_from "vendor/assets/javascripts"
 end
 RUBY
 end
