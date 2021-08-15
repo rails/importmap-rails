@@ -37,6 +37,8 @@ Rails.application.config.importmap.draw do
 
   # Use libraries directly from JavaScript CDNs (see https://www.skypack.dev, https://cdnjs.com, https://www.jsdelivr.com/esm)
   # pin "vue", to: "https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.esm.browser.js", preload: true
+  # pin "react", to: "https://cdn.skypack.dev/pin/react@v17.0.1-yH0aYV1FOvoIPeKBbHxg/mode=imports/optimized/react.js", preload: true
+  # pin "react-dom", to: "https://cdn.skypack.dev/pin/react-dom@v17.0.1-oZ1BXZ5opQ1DbTh7nu9r/mode=imports/optimized/react-dom.js", preload: true
   # pin "d3", to: "https://cdn.skypack.dev/pin/d3@v7.0.0-03vFl9bie0TSesDkWTJV/mode=imports/optimized/d3.js", preload: true
 
   # Pin vendored modules by first adding the following to app/assets/config/manifest.js:
