@@ -1,6 +1,10 @@
 require "test_helper"
 
 class ImportmapTest < ActiveSupport::TestCase
+  def setup
+    @importmap = Rails.application.config.importmap
+  end
+
   test "files in app/assets/javascripts" do
     assert_match %r|assets/application-.*\.js|, generate_importmap_json["imports"]["application"]
   end
@@ -15,6 +19,6 @@ class ImportmapTest < ActiveSupport::TestCase
 
   private
     def generate_importmap_json
-      JSON.parse Rails.application.config.importmap.to_json(ApplicationController.helpers)
+      JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
     end
 end

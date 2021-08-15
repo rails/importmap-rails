@@ -18,6 +18,7 @@ class Importmap::Map
   end
 
   def to_json(resolver)
+  def to_json(resolver:)
     { "imports" => resolve_asset_paths(resolver) }.to_json
   end
 
