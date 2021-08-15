@@ -18,19 +18,19 @@ class Importmap::Map
   end
 
   def preloaded_module_paths(resolver:)
-    resolve_asset_paths(resolver).values
+    resolve_asset_paths(expanded_preloading_files_and_directories, resolver: resolver).values
   end
 
   def to_json(resolver:)
-    { "imports" => resolve_asset_paths(resolver) }.to_json
+    { "imports" => resolve_asset_paths(expanded_files_and_directories, resolver: resolver) }.to_json
   end
 
   private
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
     MappedDir  = Struct.new(:path, :append_base_path, :preload, keyword_init: true)
 
-    def resolve_asset_paths(resolver)
-      expanded_files_and_directories.transform_values do |mapping|
+    def resolve_asset_paths(paths, resolver:)
+      paths.transform_values do |mapping|
         begin
           resolver.asset_path(mapping.path)
         rescue Sprockets::Rails::Helper::AssetNotFound
@@ -38,6 +38,10 @@ class Importmap::Map
           nil
         end
       end.compact
+    end
+
+    def expanded_preloading_files_and_directories
+      expanded_files_and_directories.select { |name, mapping| mapping.preload }
     end
 
     def expanded_files_and_directories
