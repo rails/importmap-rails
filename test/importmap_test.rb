@@ -14,21 +14,26 @@ class ImportmapTest < ActiveSupport::TestCase
     end
   end
 
-  test "files in app/assets/javascripts" do
+  test "local pin with inferred to" do
     assert_match %r|assets/application-.*\.js|, generate_importmap_json["imports"]["application"]
   end
 
-  test "url references are left unaltered by the configuration" do
-    assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
+  test "local pin with explicit to" do
+    assert_match %r|assets/rich_text-.*\.js|, generate_importmap_json["imports"]["editor"]
   end
 
-  test "missing paths are removed from generated importmap" do
+  test "local pin missing is removed from generated importmap" do
     assert_nil generate_importmap_json["imports"]["not_there"]
+  end
+
+  test "remote pin is not digest stamped" do
+    assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
   end
 
   test "preloaded modules are included in preload tags" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
     assert_match /md5/, preloading_module_paths
+    assert_match /goodbye_controller/, preloading_module_paths
     assert_no_match /application/, preloading_module_paths
   end
 
