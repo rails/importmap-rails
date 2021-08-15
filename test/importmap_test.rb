@@ -2,7 +2,16 @@ require "test_helper"
 
 class ImportmapTest < ActiveSupport::TestCase
   def setup
-    @importmap = Rails.application.config.importmap
+    @importmap = Importmap::Map.new.tap do |map|
+      map.draw do
+        pin "application"
+        pin "editor", to: "rich_text.js"
+        pin "not_there", to: "nowhere.js"
+        pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
+
+        pin_all_from "app/assets/javascripts/controllers", under: "controllers", preload: true
+      end
+    end
   end
 
   test "files in app/assets/javascripts" do
@@ -32,9 +41,6 @@ class ImportmapTest < ActiveSupport::TestCase
 
     @importmap.cached = false
     assert_equal "https://cdn.jsdelivr.net/npm/d3/+esm", generate_importmap_json["imports"]["d3"]
-  ensure
-    @importmap.instance_variable_get("@files").delete("d3")
-    @importmap.cached = false
   end
 
   private
