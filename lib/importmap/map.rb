@@ -1,5 +1,6 @@
 class Importmap::Map
   attr_reader :files, :directories
+  attr_accessor :cached
 
   def initialize
     @files, @directories = {}, {}
@@ -18,16 +19,28 @@ class Importmap::Map
   end
 
   def preloaded_module_paths(resolver:)
-    resolve_asset_paths(expanded_preloading_files_and_directories, resolver: resolver).values
+    cache_as(:preloaded_module_paths) do
+      resolve_asset_paths(expanded_preloading_files_and_directories, resolver: resolver).values
+    end
   end
 
   def to_json(resolver:)
-    { "imports" => resolve_asset_paths(expanded_files_and_directories, resolver: resolver) }.to_json
+    cache_as(:json) do
+      { "imports" => resolve_asset_paths(expanded_files_and_directories, resolver: resolver) }.to_json
+    end
   end
 
   private
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
     MappedDir  = Struct.new(:path, :append_base_path, :preload, keyword_init: true)
+
+    def cache_as(name)
+      if (cached && result = instance_variable_get("@cached_#{name}"))
+        result
+      else
+        instance_variable_set("@cached_#{name}", yield)
+      end
+    end
 
     def resolve_asset_paths(paths, resolver:)
       paths.transform_values do |mapping|

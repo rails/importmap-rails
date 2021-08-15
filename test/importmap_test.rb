@@ -23,6 +23,20 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_no_match /application/, preloading_module_paths
   end
 
+  test "cached json" do
+    @importmap.cached = true
+    assert_nil generate_importmap_json["imports"]["d3"]
+
+    @importmap.pin "d3", to: "https://cdn.jsdelivr.net/npm/d3/+esm"
+    assert_nil generate_importmap_json["imports"]["d3"]
+
+    @importmap.cached = false
+    assert_equal "https://cdn.jsdelivr.net/npm/d3/+esm", generate_importmap_json["imports"]["d3"]
+  ensure
+    @importmap.instance_variable_get("@files").delete("d3")
+    @importmap.cached = false
+  end
+
   private
     def generate_importmap_json
       JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
