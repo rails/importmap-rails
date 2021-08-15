@@ -30,6 +30,14 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
   end
 
+  test "directory pin mounted under matching subdir maps all files" do
+    assert_match %r|assets/controllers/goodbye_controller-.*\.js|, generate_importmap_json["imports"]["controllers/goodbye_controller"]
+  end
+
+  test "directory pin mounted under matching subdir maps index as root" do
+    assert_match %r|assets/controllers/index.*\.js|, generate_importmap_json["imports"]["controllers"]
+  end
+
   test "preloaded modules are included in preload tags" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
     assert_match /md5/, preloading_module_paths
