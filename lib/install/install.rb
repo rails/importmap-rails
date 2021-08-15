@@ -22,7 +22,6 @@ append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree
 
 say "Configure importmap paths in config/initializers/importmap.rb"
 create_file Rails.root.join("config/initializers/importmap.rb") do <<-RUBY
-# Configure import map to be used for ESM
 Rails.application.config.importmap.draw do
   pin "application"
 
