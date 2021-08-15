@@ -61,23 +61,22 @@ console.log(md5("Hash it out"))
 
 ## Preloading pinned modules
 
-To mitigate the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, we use [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload) in [browsers that support it](https://caniuse.com/?search=modulepreload). You can mark pins for preloading with `preload: true`, but know that this will trigger a HTTP request for each, so only do it if you're sure you'll actually need the pin on most pages.
+To mitigate the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, we use [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload) in [browsers that support it](https://caniuse.com/?search=modulepreload). Pinned modules are preloaded by default, but you can turn this off with `preload: false`.
 
 Example:
 
 ```ruby
 # config/initializers/importmap.rb
 Rails.application.config.importmap.draw do
-  pin "trix", to: "https://cdn.skypack.dev/trix", preload: true
-  pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
+  pin "trix", to: "https://cdn.skypack.dev/trix"
+  pin "md5", to: "https://cdn.skypack.dev/md5", preload: false
 end
 
 # app/views/layouts/application.html.erb
 <%= javascript_importmap_tags %> 
 
-# will include the following links before the importmap is setup:
+# will include the following link before the importmap is setup:
 <link rel="modulepreload" href="https://cdn.skypack.dev/trix">
-<link rel="modulepreload" href="https://cdn.skypack.dev/md5">
 ...
 ```
 
