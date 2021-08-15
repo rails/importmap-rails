@@ -18,7 +18,9 @@ class ImportmapTest < ActiveSupport::TestCase
   end
 
   test "preloaded modules are included in preload tags" do
-    assert_match /md5/, @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
+    preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
+    assert_match /md5/, preloading_module_paths
+    assert_no_match /application/, preloading_module_paths
   end
 
   private
