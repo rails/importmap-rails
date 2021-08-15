@@ -24,8 +24,7 @@ say "Configure importmap paths in config/initializers/importmap.rb"
 create_file Rails.root.join("config/initializers/importmap.rb") do <<-RUBY
 # Configure import map to be used for ESM
 Rails.application.config.importmap.draw do
-  # All JavaScript files in the tree are mapped to their name
-  pin_all_from "app/assets/javascripts"
+  pin "application"
 
   # Match libraries with their NPM package names for possibility of later porting.
   # Ensure that libraries listed in the path have been linked in the asset pipeline manifest or precompiled.
