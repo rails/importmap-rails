@@ -17,6 +17,10 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_nil generate_importmap_json["imports"]["not_there"]
   end
 
+  test "preloaded modules are included in preload tags" do
+    assert_match /md5/, @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
+  end
+
   private
     def generate_importmap_json
       JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
