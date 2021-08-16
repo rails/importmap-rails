@@ -9,6 +9,7 @@ module Importmap
     initializer "importmap.assets" do
       if Rails.application.config.respond_to?(:assets)
         Rails.application.config.assets.precompile += %w( es-module-shims.js )
+        Rails.application.config.assets.paths << Rails.root.join("app/javascript")
       end
     end
 
