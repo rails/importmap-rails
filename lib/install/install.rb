@@ -18,7 +18,7 @@ JS
 end
 
 say "Ensure JavaScript files are in the asset pipeline manifest"
-append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree ../../../javascript .js\n)
+append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree ../../javascript .js\n)
 
 say "Configure importmap paths in config/initializers/importmap.rb"
 create_file Rails.root.join("config/initializers/importmap.rb") do <<-RUBY
