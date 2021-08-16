@@ -1,5 +1,8 @@
 /* ES Module Shims 0.12.2 */
 (function () {
+  // Temporary hack around https://github.com/guybedford/es-module-shims/issues/148
+  if (navigator.userAgent.match("Chrome")) return
+
   const resolvedPromise = Promise.resolve();
 
   let baseUrl;
