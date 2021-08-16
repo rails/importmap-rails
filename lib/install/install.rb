@@ -9,7 +9,7 @@ else
 end
 
 say "Create application.js module as entrypoint"
-create_file Rails.root.join("app/javascript/application.js") do <<-JS
+create_file Rails.root.join("app/javascripts/application.js") do <<-JS
 // Configure your import map in config/initializers/importmap.rb
 
 // import "@rails/actioncable"
@@ -34,7 +34,7 @@ Rails.application.config.importmap.draw do
   # pin "d3", to: "https://esm.sh/d3?bundle"
 
   # Pin vendored modules by first adding the following to app/assets/config/manifest.js:
-  # //= link_tree ../../../vendor/assets/javascripts .js
+  # //= link_tree ../../vendor/assets/javascripts .js
   # pin_all_from "vendor/assets/javascripts"
 end
 RUBY
