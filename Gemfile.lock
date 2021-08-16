@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    importmap-rails (0.2.2)
+    importmap-rails (0.2.3)
       rails (>= 6.0.0)
 
 GEM
