@@ -10,6 +10,7 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
 
         pin_all_from "app/assets/javascripts/controllers", under: "controllers", preload: true
+        pin_all_from "app/assets/javascripts/plugin/controllers", under: "controllers", load_path: "app/assets/javascripts"
       end
     end
   end
@@ -32,6 +33,10 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "directory pin mounted under matching subdir maps all files" do
     assert_match %r|assets/controllers/goodbye_controller-.*\.js|, generate_importmap_json["imports"]["controllers/goodbye_controller"]
+  end
+  
+  test "directory pin mounted under different subdir maps all files" do
+    assert_match %r|assets/plugin/controllers/plugin_controller-.*\.js|, generate_importmap_json["imports"]["controllers/plugin_controller"]
   end
 
   test "directory pin mounted under matching subdir maps index as root" do

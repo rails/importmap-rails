@@ -14,8 +14,8 @@ class Importmap::Map
     @files[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
-  def pin_all_from(path, under: nil, preload: false)
-    @directories[path] = MappedDir.new(path: path, under: under, preload: preload)
+  def pin_all_from(path, under: nil, load_path: nil, preload: false)
+    @directories[path] = MappedDir.new(path: path, load_path: load_path, under: under, preload: preload)
   end
 
   def preloaded_module_paths(resolver:)
@@ -32,7 +32,7 @@ class Importmap::Map
 
   private
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
-    MappedDir  = Struct.new(:path, :under, :preload, keyword_init: true)
+    MappedDir  = Struct.new(:path, :load_path, :under, :preload, keyword_init: true)
 
     def cache_as(name)
       if (cached && result = instance_variable_get("@cached_#{name}"))
@@ -67,7 +67,7 @@ class Importmap::Map
           find_javascript_files_in_tree(absolute_path).each do |filename|
             module_filename = filename.relative_path_from(absolute_path)
             module_name     = module_name_from(module_filename, mapping.under)
-            module_path     = mapping.under ? absolute_path.basename.join(module_filename).to_s : module_filename.to_s
+            module_path     = module_path_from(module_filename, absolute_path, mapping.load_path, mapping.under)
 
             paths[module_name] = MappedFile.new(name: module_name, path: module_path, preload: mapping.preload)
           end
@@ -85,6 +85,16 @@ class Importmap::Map
         module_name = filename_without_ext.split("@").first
         under ? "#{under}/#{module_name}" : module_name
       end
+    end
+    
+    def module_path_from(filename, path, load_path, under)      
+      directory = if load_path
+        path.relative_path_from(absolute_root_of(load_path))
+      elsif under
+        path.basename
+      end
+      
+      directory ? directory.join(filename).to_s : filename.to_s
     end
 
     def find_javascript_files_in_tree(path)
