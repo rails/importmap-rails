@@ -10,11 +10,11 @@ class Importmap::Map
     instance_eval(&block)
   end
 
-  def pin(name, to: nil, preload: false)
+  def pin(name, to: nil, preload: true)
     @files[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
-  def pin_all_from(path, under: nil, preload: false)
+  def pin_all_from(path, under: nil, preload: true)
     @directories[path] = MappedDir.new(path: path, under: under, preload: preload)
   end
 
