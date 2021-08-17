@@ -14,8 +14,8 @@ class Importmap::Map
     @files[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
-  def pin_all_from(path, under: nil, preload: true)
-    @directories[path] = MappedDir.new(path: path, under: under, preload: preload)
+  def pin_all_from(dir, under: nil, to: nil, preload: true)
+    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
   end
 
   def preloaded_module_paths(resolver:)
@@ -32,7 +32,7 @@ class Importmap::Map
 
   private
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
-    MappedDir  = Struct.new(:path, :under, :preload, keyword_init: true)
+    MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
 
     def cache_as(name)
       if (cached && result = instance_variable_get("@cached_#{name}"))
@@ -63,11 +63,11 @@ class Importmap::Map
 
     def expand_directories_into(paths)
       @directories.values.each do |mapping|
-        if (absolute_path = absolute_root_of(mapping.path)).exist?
+        if (absolute_path = absolute_root_of(mapping.dir)).exist?
           find_javascript_files_in_tree(absolute_path).each do |filename|
             module_filename = filename.relative_path_from(absolute_path)
-            module_name     = module_name_from(module_filename, mapping.under)
-            module_path     = mapping.under ? absolute_path.basename.join(module_filename).to_s : module_filename.to_s
+            module_name     = module_name_from(module_filename, mapping)
+            module_path     = module_path_from(module_filename, mapping)
 
             paths[module_name] = MappedFile.new(name: module_name, path: module_path, preload: mapping.preload)
           end
@@ -75,16 +75,21 @@ class Importmap::Map
       end
     end
 
-    # Strip off the extension, /index, or any versioning data for an absolute module name.
-    def module_name_from(filename, under)
-      filename_without_ext = filename.to_s.remove(filename.extname)
+    def module_name_from(filename, mapping)
+      filename_without_ext_and_version = filename.to_s.remove(filename.extname).split("@").first
 
-      if filename_without_ext == "index" && under
-        under
+      case
+      when filename_without_ext_and_version == "index" && mapping.under
+        mapping.under
+      when mapping.under
+        "#{mapping.under}/#{filename_without_ext_and_version}"
       else
-        module_name = filename_without_ext.split("@").first
-        under ? "#{under}/#{module_name}" : module_name
+        module_name
       end
+    end
+
+    def module_path_from(filename, mapping)
+      [ mapping.path || mapping.under, filename.to_s ].join("/")
     end
 
     def find_javascript_files_in_tree(path)

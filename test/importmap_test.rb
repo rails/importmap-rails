@@ -10,6 +10,8 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "md5", to: "https://cdn.skypack.dev/md5"
 
         pin_all_from "app/javascript/controllers", under: "controllers"
+        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina"
+        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers"
       end
     end
   end
@@ -32,10 +34,16 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "directory pin mounted under matching subdir maps all files" do
     assert_match %r|assets/controllers/goodbye_controller-.*\.js|, generate_importmap_json["imports"]["controllers/goodbye_controller"]
+    assert_match %r|assets/controllers/utilities/md5_controller-.*\.js|, generate_importmap_json["imports"]["controllers/utilities/md5_controller"]
   end
 
   test "directory pin mounted under matching subdir maps index as root" do
     assert_match %r|assets/controllers/index.*\.js|, generate_importmap_json["imports"]["controllers"]
+  end
+
+  test "directory pin under custom asset path" do
+    assert_match %r|assets/spina/controllers/another_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/another_controller"]
+    assert_match %r|assets/spina/controllers/deeper/again_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/deeper/again_controller"]
   end
 
   test "preloaded modules are included in preload tags" do
