@@ -12,7 +12,7 @@ class Importmap::Reloader
         # Reload the importmap when it changes along with the js folder. The js
         # folder needs to trigger a reload so we pick up any new files in
         # pinned directories.
-        import_map_paths, javascript_path => %w(js)
+        import_map_paths, javascript_paths
       ) { reload! }
     end
 
@@ -24,7 +24,9 @@ class Importmap::Reloader
       Rails.application.config
     end
 
-    def javascript_path
-      config.paths["app/javascript"].existent.first
+    def javascript_paths
+      config.paths["app/javascript"].existent.map do |path|
+        [path, %w(js)]
+      end.to_h
     end
 end
