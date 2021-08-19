@@ -6,12 +6,10 @@ module Importmap
 
     config.autoload_once_paths = %W( #{root}/app/helpers )
 
-    config.before_configuration do |app|
+    initializer "importmap.reloader" do |app|
       app.config.paths.add "config/importmap.rb"
       app.config.paths.add "app/javascript"
-    end
 
-    initializer "importmap.reloader" do |app|
       reloader = Importmap::Reloader.new
 
       reloader.execute
