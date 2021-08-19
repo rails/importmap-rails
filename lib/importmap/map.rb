@@ -3,7 +3,13 @@ class Importmap::Map
   attr_accessor :cached
 
   def initialize
+    clear!
+  end
+
+  def clear!
     @files, @directories = {}, {}
+    @cached_json = nil
+    @cached_preloaded_module_paths = nil
   end
 
   def draw(&block)

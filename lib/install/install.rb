@@ -10,7 +10,7 @@ end
 
 say "Create application.js module as entrypoint"
 create_file Rails.root.join("app/javascript/application.js") do <<-JS
-// Configure your import map in config/initializers/importmap.rb
+// Configure your import map in config/importmap.rb
 
 // import "@rails/actioncable"
 // import "@rails/activestorage"
@@ -20,8 +20,8 @@ end
 say "Ensure JavaScript files are in the asset pipeline manifest"
 append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree ../../javascript .js\n)
 
-say "Configure importmap paths in config/initializers/importmap.rb"
-create_file Rails.root.join("config/initializers/importmap.rb") do <<-RUBY
+say "Configure importmap paths in config/importmap.rb"
+create_file Rails.root.join("config/importmap.rb") do <<-RUBY
 Rails.application.config.importmap.draw do
   pin "application"
 
