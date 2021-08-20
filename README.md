@@ -84,5 +84,3 @@ While import maps are native in Chrome and Edge, they need a shim in other brows
 ## License
 
 Importmap for Rails is released under the [MIT License](https://opensource.org/licenses/MIT).
-
-
