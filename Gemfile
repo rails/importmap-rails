@@ -15,6 +15,7 @@ group :test do
 
   gem "byebug"
 
+  gem "rexml"
   gem "capybara"
   gem "selenium-webdriver"
   gem "webdrivers"

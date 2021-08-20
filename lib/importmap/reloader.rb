@@ -1,5 +1,5 @@
 class Importmap::Reloader
-  delegate :execute, :updated?, to: :updater
+  delegate :execute_if_updated, :execute, :updated?, to: :updater
 
   def reload!
     import_map_paths.each { |path| load path }
