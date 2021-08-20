@@ -51,7 +51,7 @@ console.log(md5("Hash it out"))
 
 ## Preloading pinned modules
 
-To mitigate the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, we use [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload) in [browsers that support it](https://caniuse.com/?search=modulepreload). Pinned modules are preloaded by default, but you can turn this off with `preload: false`.
+To mitigate the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, we use [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload). Pinned modules are preloaded by default, but you can turn this off with `preload: false`.
 
 Example:
 
