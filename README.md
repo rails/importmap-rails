@@ -20,23 +20,13 @@ Note: In order to use JavaScript from Rails frameworks like Action Cable, Action
 
 ## Usage
 
-The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/importmap.rb` after running the installer. (Note that since this is a config initializer, you must restart your development server after making any changes.)
+The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/importmap.rb` after running the installer. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
 
 This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/assets/javascripts/application.js`, which is copied and digested by the asset pipeline.
 
 It's in `app/assets/javascripts/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
 
 It makes sense to use logical names that match the package names used by NPM, such that if you later want to start transpiling or bundling your code, you'll not have to change any module imports.
-
-
-## Use with Hotwire
-
-This gem was designed for use with [Hotwire](https://hotwired.dev) in mind. The Hotwire gems, like [turbo-rails](https://github.com/hotwired/turbo-rails) and [stimulus-rails](https://github.com/hotwired/stimulus-rails) (both bundled as [hotwire-rails](https://github.com/hotwired/hotwire-rails)), are automatically configured for use with `importmap-rails`. This means you won't have to manually setup the path mapping in `config/importmap.rb`, and instead can simply refer to the logical names directly in your `app/assets/javascripts/application.js`, like so:
-
-```js
-import "@hotwired/turbo-rails"
-import "@hotwired/stimulus-autoloader"
-```
 
 
 ## Use with Skypack (and other CDNs)
