@@ -135,6 +135,7 @@ GEM
       thor (~> 1.0)
     rake (13.0.6)
     regexp_parser (2.1.1)
+    rexml (3.2.5)
     rubyzip (2.3.2)
     selenium-webdriver (3.142.7)
       childprocess (>= 0.5, < 4.0)
@@ -175,6 +176,7 @@ DEPENDENCIES
   capybara
   importmap-rails!
   rails (~> 6.1.0)
+  rexml
   selenium-webdriver
   sqlite3
   stimulus-rails
