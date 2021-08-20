@@ -8,7 +8,6 @@ module Importmap
 
     initializer "importmap.reloader" do |app|
       app.config.paths.add "config/importmap.rb"
-      app.config.paths.add "app/javascript"
 
       reloader = Importmap::Reloader.new
 
