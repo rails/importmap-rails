@@ -9,9 +9,11 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "not_there", to: "nowhere.js", preload: false
         pin "md5", to: "https://cdn.skypack.dev/md5"
 
+
         pin_all_from "app/javascript/controllers", under: "controllers"
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina"
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers"
+        pin_all_from "app/javascript/helpers", under: "helpers"
       end
     end
   end
@@ -39,6 +41,10 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "directory pin mounted under matching subdir maps index as root" do
     assert_match %r|assets/controllers/index.*\.js|, generate_importmap_json["imports"]["controllers"]
+  end
+
+  test "directory pin mounted under matching subdir maps index as root at second depth" do
+    assert_match %r|assets/helpers/requests/index.*\.js|, generate_importmap_json["imports"]["helpers/requests"]
   end
 
   test "directory pin under custom asset path" do

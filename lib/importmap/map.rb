@@ -76,16 +76,7 @@ class Importmap::Map
     end
 
     def module_name_from(filename, mapping)
-      filename_without_ext = filename.to_s.remove(filename.extname)
-
-      case
-      when filename_without_ext == "index" && mapping.under
-        mapping.under
-      when mapping.under
-        "#{mapping.under}/#{filename_without_ext}"
-      else
-        module_name
-      end
+      [ mapping.under, filename.to_s.remove(filename.extname).remove(/\/?index$/).presence ].compact.join("/")
     end
 
     def module_path_from(filename, mapping)
