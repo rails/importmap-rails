@@ -76,13 +76,13 @@ class Importmap::Map
     end
 
     def module_name_from(filename, mapping)
-      filename_without_ext_and_version = filename.to_s.remove(filename.extname).split("@").first
+      filename_without_ext = filename.to_s.remove(filename.extname)
 
       case
-      when filename_without_ext_and_version == "index" && mapping.under
+      when filename_without_ext == "index" && mapping.under
         mapping.under
       when mapping.under
-        "#{mapping.under}/#{filename_without_ext_and_version}"
+        "#{mapping.under}/#{filename_without_ext}"
       else
         module_name
       end
