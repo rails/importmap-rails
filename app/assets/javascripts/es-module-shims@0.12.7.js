@@ -1,4 +1,4 @@
-/* ES Module Shims 0.12.6 */
+/* ES Module Shims 0.12.7 */
 (function () {
   // Bail on all shimming for Chrome until https://github.com/guybedford/es-module-shims/issues/150
   if (navigator.userAgent.match("Chrome")) return
@@ -271,7 +271,7 @@
 
   let waitingForImportMapsInterval;
   let firstTopLevelProcess = true;
-  async function topLevelLoad (url, fetchOpts, source, nativelyLoaded) {
+  async function topLevelLoad (url, fetchOpts, source, nativelyLoaded, lastStaticLoadPromise) {
     // no need to even fetch if we have feature support
     await featureDetectionPromise;
     if (waitingForImportMapsInterval > 0) {
@@ -285,7 +285,7 @@
     await importMapPromise;
     // early analysis opt-out
     if (nativelyLoaded && supportsDynamicImport && supportsImportMeta && supportsImportMaps && supportsJsonAssertions && supportsCssAssertions && !importMapSrcOrLazy) {
-      // dont reexec inline for polyfills -> just return null
+      // dont reexec inline for polyfills -> just return null (since no module id for executed inline module scripts)
       return source && nativelyLoaded ? null : dynamicImport(source ? createBlob(source) : url);
     }
     await init;
@@ -294,17 +294,30 @@
     await loadAll(load, seen);
     lastLoad = undefined;
     resolveDeps(load, seen);
+    await lastStaticLoadPromise;
     if (source && !shimMode && !load.n) {
+      if (lastStaticLoadPromise) {
+        didExecForReadyPromise = true;
+        if (domContentLoaded)
+          didExecForDomContentLoaded = true;
+      }
       const module = dynamicImport(createBlob(source));
       if (shouldRevokeBlobURLs) revokeObjectURLs(Object.keys(seen));
       return module;
     }
     const module = await dynamicImport(load.b);
+    if (lastStaticLoadPromise && (!nativelyLoaded || load.b !== load.u)) {
+      didExecForReadyPromise = true;
+      if (domContentLoaded)
+        didExecForDomContentLoaded = true;
+    }
     // if the top-level load is a shell, run its update function
     if (load.s) {
       (await dynamicImport(load.s)).u$_(module);
     }
     if (shouldRevokeBlobURLs) revokeObjectURLs(Object.keys(seen));
+    // when tla is supported, this should return the tla promise as an actual handle
+    // so readystate can still correspond to the sync subgraph exec completions
     return module;
   }
 
@@ -354,6 +367,7 @@
   const skip = esmsInitOptions.skip || /^https?:\/\/(cdn\.skypack\.dev|jspm\.dev)\//;
   const onerror = esmsInitOptions.onerror || ((e) => { throw e; });
   const shouldRevokeBlobURLs = esmsInitOptions.revokeBlobURLs;
+  const noLoadEventRetriggers = esmsInitOptions.noLoadEventRetriggers;
 
   function urlJsString (url) {
     return `'${url.replace(/'/g, "\\'")}'`;
@@ -550,7 +564,7 @@
     return load;
   }
 
-  async function processScripts () {
+  function processScripts () {
     if (waitingForImportMapsInterval > 0 && document.readyState !== 'loading') {
       clearTimeout(waitingForImportMapsInterval);
       waitingForImportMapsInterval = 0;
@@ -558,7 +572,7 @@
     for (const link of document.querySelectorAll('link[rel="modulepreload"]'))
       processPreload(link);
     for (const script of document.querySelectorAll('script[type="module-shim"],script[type="importmap-shim"],script[type="module"],script[type="importmap"]'))
-      await processScript(script);
+      processScript(script);
   }
 
   function getFetchOpts (script) {
@@ -576,12 +590,29 @@
     return fetchOpts;
   }
 
-  async function processScript (script, dynamic) {
+  let staticLoadCnt = 0;
+  let didExecForReadyPromise = false;
+  let didExecForDomContentLoaded = false;
+  let lastStaticLoadPromise = Promise.resolve();
+  let domContentLoaded = false;
+  document.addEventListener('DOMContentLoaded', () => domContentLoaded = true);
+  function staticLoadCheck () {
+    staticLoadCnt--;
+    if (staticLoadCnt === 0 && !noLoadEventRetriggers) {
+      if (didExecForDomContentLoaded)
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+      if (didExecForReadyPromise && document.readyState === 'complete')
+        document.dispatchEvent(new Event('readystatechange'));
+    }
+  }
+
+  function processScript (script, dynamic) {
     if (script.ep) // ep marker = script processed
       return;
     const shim = script.type.endsWith('-shim');
     if (shim) shimMode = true;
-    const type = shim ? script.type.slice(0, -5) : script.type;
+    const type = shimMode ? script.type.slice(0, -5) : script.type;
+    // dont process module scripts in shim mode or noshim module scripts in polyfill mode
     if (!shim && shimMode || script.getAttribute('noshim') !== null)
       return;
     // empty inline scripts sometimes show before domready
@@ -589,7 +620,14 @@
       return;
     script.ep = true;
     if (type === 'module') {
-      await topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shim).catch(onerror);
+      const isReadyScript = document.readyState !== 'complete';
+      if (isReadyScript) staticLoadCnt++;
+      const p = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isReadyScript && lastStaticLoadPromise);
+      p.catch(onerror);
+      if (isReadyScript) {
+        lastStaticLoadPromise = p.catch(staticLoadCheck);
+        p.then(staticLoadCheck);
+      }
     }
     else if (type === 'importmap') {
       importMapPromise = importMapPromise.then(async () => {
