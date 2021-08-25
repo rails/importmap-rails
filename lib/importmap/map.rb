@@ -26,7 +26,7 @@ class Importmap::Map
 
   def to_json(resolver:)
     cache_as(:json) do
-      { "imports" => resolve_asset_paths(expanded_files_and_directories, resolver: resolver) }.to_json
+      JSON.pretty_generate({ "imports" => resolve_asset_paths(expanded_files_and_directories, resolver: resolver) })
     end
   end
 

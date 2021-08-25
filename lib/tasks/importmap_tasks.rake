@@ -7,6 +7,6 @@ namespace :importmap do
   desc "Show the importmap"
   task :pins do
     require Rails.root.join("config/environment")
-    puts JSON.pretty_generate(JSON.parse(Rails.application.config.importmap.to_json(resolver: ActionController::Base.helpers)))
+    puts Rails.application.config.importmap.to_json(resolver: ActionController::Base.helpers)
   end
 end
