@@ -1,4 +1,4 @@
-/* ES Module Shims 0.12.7 */
+/* ES Module Shims 0.12.8 */
 (function () {
   // Bail on all shimming for Chrome until https://github.com/guybedford/es-module-shims/issues/150
   if (navigator.userAgent.match("Chrome")) return
@@ -643,6 +643,8 @@
     if (link.ep) // ep marker = processed
       return;
     link.ep = true;
+    if (fetchCache[link.href])
+      return;
     fetchCache[link.href] = doFetch(link.href, getFetchOpts(link));
   }
 
