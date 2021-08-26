@@ -10,10 +10,7 @@ end
 
 say "Create application.js module as entrypoint"
 create_file Rails.root.join("app/javascript/application.js") do <<-JS
-// Configure your import map in config/importmap.rb
-
-// import "@rails/actioncable"
-// import "@rails/activestorage"
+// Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 JS
 end
 
@@ -25,8 +22,11 @@ create_file Rails.root.join("config/importmap.rb") do <<-RUBY
 Rails.application.config.importmap.draw do
   pin "application"
 
-  # Use libraries available via the asset pipeline (locally or via gems).
+  # Use Action Cable channels (remember to import "@rails/actionable" in your application.js)
   # pin "@rails/actioncable", to: "actioncable.esm.js"
+  # pin_all_from "app/javascript/channels", under: "channels"
+
+  # Use direct uploads for Active Storage (remember to import "@rails/activestorage" in your application.js)
   # pin "@rails/activestorage", to: "activestorage.esm.js"
 
   # Use libraries directly from JavaScript CDNs (see https://www.skypack.dev, https://esm.sh, https://www.jsdelivr.com/esm)
