@@ -22,9 +22,9 @@ class Importmap::Map
     @provider = provider
   end
 
-  def pin(name, to: nil, version: nil, file: nil, provider: nil, preload: true)
+  def pin(name, to: nil, version: nil, file: nil, from: nil, preload: true)
     if version
-      @packages[name] = MappedLink.new(name: name, package: to || name, version: version, file: file, provider: provider || @provider, preload: preload)
+      @packages[name] = MappedLink.new(name: name, package: to || name, version: version, file: file, provider: from || @provider, preload: preload)
     else
       @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
     end

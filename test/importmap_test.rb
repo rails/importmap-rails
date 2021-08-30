@@ -12,10 +12,10 @@ class ImportmapTest < ActiveSupport::TestCase
         provider :jspm
 
         pin "react", version: "17.0.0", file: "index.js"
-        pin "three", version: "0.132.2", file: "build/three.js", provider: :unpkg
-        pin "vue", version: "latest", file: "?bundle", provider: :esmsh
-        pin "lodash-es", version: "4.17.21", provider: :skypack
-        pin "stimulus", to: "@hotwired/stimulus", version: "3.0.0-beta.1", file: "dist/stimulus.js", provider: :jsdelivr
+        pin "three", version: "0.132.2", file: "build/three.js", from: :unpkg
+        pin "vue", version: "latest", file: "?bundle", from: :esmsh
+        pin "lodash-es", version: "4.17.21", from: :skypack
+        pin "stimulus", to: "@hotwired/stimulus", version: "3.0.0-beta.1", file: "dist/stimulus.js", from: :jsdelivr
 
         pin_all_from "app/javascript/controllers", under: "controllers"
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina"
@@ -63,7 +63,7 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "remote pin with unknown provider" do
     @importmap = Importmap::Map.new.draw do
-      pin "react", version: "17.0.0", file: "index.js", provider: :nowhere
+      pin "react", version: "17.0.0", file: "index.js", from: :nowhere
     end
     
     assert_raises "Unknown provider 'nowhere' for 'react'" do

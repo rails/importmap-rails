@@ -35,8 +35,8 @@ provider :jspm
 
 # Use NPM libraries from CDN
 # pin "local-time", version: "2.1.0", file: "app/assets/javascripts/local-time.js"
-# pin "vue", version: "2.6.14", file: "dist/vue.esm.browser.js", provider: :jsdelivr
-# pin "d3", version: "7.0.1", file: "?bundle", provider: :esmsh
+# pin "vue", version: "2.6.14", file: "dist/vue.esm.browser.js", from: :jsdelivr
+# pin "d3", version: "7.0.1", file: "?bundle", from: :esmsh
 
 pin "application"
 RUBY
