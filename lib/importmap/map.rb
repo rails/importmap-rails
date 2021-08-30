@@ -10,7 +10,11 @@ class Importmap::Map
 
   def draw(path = nil, &block)
     if path
-      instance_eval(File.read(path))
+      begin
+        instance_eval(File.read(path))
+      rescue Exception => e
+        Rails.logger.error "Unable to parse import map from #{path}: #{e.message}"
+      end
     else
       instance_eval(&block)
     end
