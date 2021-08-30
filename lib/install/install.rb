@@ -19,23 +19,21 @@ append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree
 
 say "Configure importmap paths in config/importmap.rb"
 create_file Rails.root.join("config/importmap.rb") do <<-RUBY
-Rails.application.config.importmap.draw do
-  pin "application"
+# Use Action Cable channels (remember to import "@rails/actionable" in your application.js)
+# pin "@rails/actioncable", to: "actioncable.esm.js"
+# pin_all_from "app/javascript/channels", under: "channels"
 
-  # Use Action Cable channels (remember to import "@rails/actionable" in your application.js)
-  # pin "@rails/actioncable", to: "actioncable.esm.js"
-  # pin_all_from "app/javascript/channels", under: "channels"
+# Use direct uploads for Active Storage (remember to import "@rails/activestorage" in your application.js)
+# pin "@rails/activestorage", to: "activestorage.esm.js"
 
-  # Use direct uploads for Active Storage (remember to import "@rails/activestorage" in your application.js)
-  # pin "@rails/activestorage", to: "activestorage.esm.js"
+# Use libraries directly from JavaScript CDNs (see https://www.skypack.dev, https://esm.sh, https://www.jsdelivr.com/esm)
+# pin "vue", to: "https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.esm.browser.js"
+# pin "d3", to: "https://esm.sh/d3?bundle"
 
-  # Use libraries directly from JavaScript CDNs (see https://www.skypack.dev, https://esm.sh, https://www.jsdelivr.com/esm)
-  # pin "vue", to: "https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.esm.browser.js"
-  # pin "d3", to: "https://esm.sh/d3?bundle"
+# Pin vendored modules by first adding the following to app/assets/config/manifest.js:
+# //= link_tree ../../../vendor/assets/javascripts .js
+# pin_all_from "vendor/assets/javascripts"
 
-  # Pin vendored modules by first adding the following to app/assets/config/manifest.js:
-  # //= link_tree ../../../vendor/assets/javascripts .js
-  # pin_all_from "vendor/assets/javascripts"
-end
+pin "application"
 RUBY
 end

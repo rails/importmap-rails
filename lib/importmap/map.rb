@@ -1,3 +1,5 @@
+require "pathname"
+
 class Importmap::Map
   attr_reader :files, :directories
   attr_accessor :cached
@@ -6,8 +8,12 @@ class Importmap::Map
     @files, @directories = {}, {}
   end
 
-  def draw(&block)
-    instance_eval(&block)
+  def draw(path = nil, &block)
+    if path
+      instance_eval(File.read(path))
+    else
+      instance_eval(&block)
+    end
   end
 
   def pin(name, to: nil, preload: true)
