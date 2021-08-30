@@ -3,7 +3,7 @@ require "test_helper"
 class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
   test "javascript_inline_importmap_tag" do
     assert_match \
-      %r{<script type="importmap" data-turbo-track="reload">{"imports":{"md5":"https://cdn.skypack.dev/md5".*}}</script>},
+      %r{<script type="importmap" data-turbo-track="reload">{\n  \"imports\": {\n    \"md5\": \"https://cdn.skypack.dev/md5\"\n  }\n}</script>},
       javascript_inline_importmap_tag
   end
 
