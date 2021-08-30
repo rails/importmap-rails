@@ -14,6 +14,9 @@ class Importmap::Map
     else
       instance_eval(&block)
     end
+
+    self
+  end
   end
 
   def pin(name, to: nil, version: nil, file: nil, provider: :jspm, preload: true)
