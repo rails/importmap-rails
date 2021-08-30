@@ -9,12 +9,10 @@ module Importmap
     initializer "importmap.reloader" do |app|
       app.config.paths.add "config/importmap.rb"
 
-      reloader = Importmap::Reloader.new
-
-      reloader.execute
-      app.reloaders << reloader
-      app.reloader.to_run do
+      Importmap::Reloader.new.tap do |reloader|
         reloader.execute
+        app.reloaders << reloader
+        app.reloader.to_run { reloader.execute }
       end
     end
 
