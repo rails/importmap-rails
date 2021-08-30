@@ -9,6 +9,8 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "not_there", to: "nowhere.js", preload: false
         pin "md5", to: "https://cdn.skypack.dev/md5"
 
+        pin "react", version: "17.0.0", file: "index.js"
+        pin "three", version: "0.132.2", file: "build/three.js", provider: :unpkg
 
         pin_all_from "app/javascript/controllers", under: "controllers"
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina"
@@ -33,6 +35,14 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "remote pin is not digest stamped" do
     assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
+  end
+
+  test "remote pin off default provider" do
+    assert_equal "https://ga.jspm.io/npm:react@17.0.0/index.js", generate_importmap_json["imports"]["react"]
+  end
+
+  test "remote pin off another provider" do
+    assert_equal "https://unpkg.com/three@0.132.2/build/three.js", generate_importmap_json["imports"]["three"]
   end
 
   test "directory pin mounted under matching subdir maps all files" do

@@ -1,11 +1,11 @@
 require "pathname"
 
 class Importmap::Map
-  attr_reader :files, :directories
+  attr_reader :packages, :directories
   attr_accessor :cached
 
   def initialize
-    @files, @directories = {}, {}
+    @packages, @directories = {}, {}
   end
 
   def draw(path = nil, &block)
@@ -16,8 +16,12 @@ class Importmap::Map
     end
   end
 
-  def pin(name, to: nil, preload: true)
-    @files[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
+  def pin(name, to: nil, version: nil, file: nil, provider: :jspm, preload: true)
+    if version
+      @packages[name] = MappedLink.new(name: name, package: to || name, version: version, file: file, provider: provider, preload: preload)
+    else
+      @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
+    end
   end
 
   def pin_all_from(dir, under: nil, to: nil, preload: true)
@@ -26,19 +30,27 @@ class Importmap::Map
 
   def preloaded_module_paths(resolver:)
     cache_as(:preloaded_module_paths) do
-      resolve_asset_paths(expanded_preloading_files_and_directories, resolver: resolver).values
+      resolve_asset_paths(expanded_preloading_packages_and_directories, resolver: resolver).values
     end
   end
 
   def to_json(resolver:)
     cache_as(:json) do
-      JSON.pretty_generate({ "imports" => resolve_asset_paths(expanded_files_and_directories, resolver: resolver) })
+      JSON.pretty_generate({ "imports" => resolve_asset_paths(expanded_packages_and_directories, resolver: resolver) })
     end
   end
 
   private
-    MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
     MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
+    MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
+    MappedLink = Struct.new(:name, :package, :version, :file, :provider, :preload, keyword_init: true) do
+      def path
+        case provider
+        when :jspm  then "https://ga.jspm.io/npm:#{package}@#{version}/#{file}"
+        when :unpkg then "https://unpkg.com/#{package}@#{version}/#{file}"
+        end
+      end
+    end
 
     def cache_as(name)
       if (cached && result = instance_variable_get("@cached_#{name}"))
@@ -59,12 +71,12 @@ class Importmap::Map
       end.compact
     end
 
-    def expanded_preloading_files_and_directories
-      expanded_files_and_directories.select { |name, mapping| mapping.preload }
+    def expanded_preloading_packages_and_directories
+      expanded_packages_and_directories.select { |name, mapping| mapping.preload }
     end
 
-    def expanded_files_and_directories
-      @files.dup.tap { |expanded| expand_directories_into expanded }
+    def expanded_packages_and_directories
+      @packages.dup.tap { |expanded| expand_directories_into expanded }
     end
 
     def expand_directories_into(paths)
