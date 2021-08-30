@@ -14,6 +14,7 @@ class Importmap::Map
         instance_eval(File.read(path))
       rescue Exception => e
         Rails.logger.error "Unable to parse import map from #{path}: #{e.message}"
+        raise "Unable to parse import map from #{path}: #{e.message}"
       end
     else
       instance_eval(&block)
