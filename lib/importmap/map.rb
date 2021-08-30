@@ -17,11 +17,14 @@ class Importmap::Map
 
     self
   end
+
+  def provider(provider)
+    @provider = provider
   end
 
-  def pin(name, to: nil, version: nil, file: nil, provider: :jspm, preload: true)
+  def pin(name, to: nil, version: nil, file: nil, provider: nil, preload: true)
     if version
-      @packages[name] = MappedLink.new(name: name, package: to || name, version: version, file: file, provider: provider, preload: preload)
+      @packages[name] = MappedLink.new(name: name, package: to || name, version: version, file: file, provider: provider || @provider, preload: preload)
     else
       @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
     end
@@ -49,8 +52,13 @@ class Importmap::Map
     MappedLink = Struct.new(:name, :package, :version, :file, :provider, :preload, keyword_init: true) do
       def path
         case provider
-        when :jspm  then "https://ga.jspm.io/npm:#{package}@#{version}/#{file}"
-        when :unpkg then "https://unpkg.com/#{package}@#{version}/#{file}"
+        when :jspm     then "https://ga.jspm.io/npm:#{package}@#{version}/#{file}"
+        when :jsdelivr then "https://cdn.jsdelivr.net/npm/#{package}@#{version}/#{file}"
+        when :unpkg    then "https://unpkg.com/#{package}@#{version}/#{file}"
+        when :esmsh    then "https://esm.sh/#{package}@#{version}/#{file}"
+        when :skypack  then "https://cdn.skypack.dev/#{package}@#{version}"
+        when nil       then raise("Missing provider for '#{package}'")
+        else                raise("Unknown provider '#{provider}' for '#{package}'")
         end
       end
     end
