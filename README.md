@@ -22,30 +22,49 @@ Note: In order to use JavaScript from Rails frameworks like Action Cable, Action
 
 The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/importmap.rb` after running the installer. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
 
-This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/assets/javascripts/application.js`, which is copied and digested by the asset pipeline.
+This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`, which is copied and digested by the asset pipeline.
 
-It's in `app/assets/javascripts/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
+It's in `app/javascript/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
 
 It makes sense to use logical names that match the package names used by NPM, such that if you later want to start transpiling or bundling your code, you'll not have to change any module imports.
 
 
-## Use with Skypack (and other CDNs)
+## Using node modules via JavaScript CDNs
 
-Instead of mapping JavaScript modules to files in your application's path, you can also reference them directly from JavaScript CDNs like Skypack. Simply add them to the `config/importmap.rb` with the URL instead of the local path:
+Importmap for Rails is designed to be used with JavaScript CDNs for your node package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
 
-```ruby
-Rails.application.config.importmap.draw do
-  pin "trix", to: "https://cdn.skypack.dev/trix"
-  pin "md5", to: "https://cdn.skypack.dev/md5"
-end
+You can use the bin/importmap command that's added as part of the install to pin additional packages to your importmap. This command uses an API from JSPM.org to resolve your package dependencies most efficiently, and then add the pins to your config/importmap.rb file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like unpkg.com, jsdelivr.com, skypack.dev, etc.
+
+It works like so:
+
+```bash
+./bin/importmap pin react react-dom
+
+Pinned 'react' to https://ga.jspm.io/npm:react@17.0.2/index.js
+Pinned 'react-dom' to https://ga.jspm.io/npm:react-dom@17.0.2/index.js
+Pinned 'object-assign' to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+Pinned 'scheduler' to https://ga.jspm.io/npm:scheduler@0.20.2/index.js
+
+./bin/importmap json
+
+{
+  "imports": {
+    "application": "/application.js",
+    "react": "https://ga.jspm.io/npm:react@17.0.2/index.js",
+    "react-dom": "https://ga.jspm.io/npm:react-dom@17.0.2/index.js",
+    "object-assign": "https://ga.jspm.io/npm:object-assign@4.1.1/index.js",
+    "scheduler": "https://ga.jspm.io/npm:scheduler@0.20.2/index.js"
+  }
+}
 ```
+
+As you can see, the two packages react and react-dom resolve to a total of four dependencies, when resolved via the jspm default.
 
 Now you can use these in your application.js entrypoint like you would any other module:
 
 ```js
-import "trix"
-import md5 from "md5"
-console.log(md5("Hash it out"))
+import React from "react"
+import ReactDOM from "react-dom"
 ```
 
 
@@ -57,16 +76,14 @@ Example:
 
 ```ruby
 # config/importmap.rb
-Rails.application.config.importmap.draw do
-  pin "trix", to: "https://cdn.skypack.dev/trix"
-  pin "md5", to: "https://cdn.skypack.dev/md5", preload: false
-end
+pin "@github/hotkey", to: "https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js"
+pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js", preload: false
 
 # app/views/layouts/application.html.erb
 <%= javascript_importmap_tags %> 
 
 # will include the following link before the importmap is setup:
-<link rel="modulepreload" href="https://cdn.skypack.dev/trix">
+<link rel="modulepreload" href="https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js">
 ...
 ```
 
