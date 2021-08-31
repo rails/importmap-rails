@@ -20,3 +20,6 @@ append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree
 say "Configure importmap paths in config/importmap.rb"
 copy_file "#{__dir__}/config/importmap.rb", "config/importmap.rb"
 
+say "Copying binstub"
+copy_file "#{__dir__}/bin/importmap", "bin/importmap"
+chmod "bin", 0755 & ~File.umask, verbose: false
