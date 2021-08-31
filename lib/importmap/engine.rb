@@ -2,8 +2,7 @@ require "importmap/map"
 
 module Importmap
   class Engine < ::Rails::Engine
-    config.importmap = Importmap::Map.new
-
+    config.importmap = Importmap::Map.new.draw("config/importmap.rb")
     config.autoload_once_paths = %W( #{root}/app/helpers )
 
     initializer "importmap.reloader" do |app|
