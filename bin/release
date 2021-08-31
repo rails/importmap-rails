@@ -10,4 +10,4 @@ git push
 git tag v$VERSION
 git push --tags
 gem build importmap-rails.gemspec
-gem push "importmap-rails-$VERSION.gem"
+gem push "importmap-rails-$VERSION.gem" --host https://rubygems.org
