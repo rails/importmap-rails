@@ -33,7 +33,7 @@ It makes sense to use logical names that match the package names used by NPM, su
 
 Importmap for Rails is designed to be used with JavaScript CDNs for your node package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
 
-You can use the bin/importmap command that's added as part of the install to pin additional packages to your importmap. This command uses an API from JSPM.org to resolve your package dependencies most efficiently, and then add the pins to your config/importmap.rb file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like unpkg.com, jsdelivr.com, skypack.dev, etc.
+You can use the `./bin/importmap` command that's added as part of the install to pin additional packages to your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies most efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com), [jsdelivr.com](https://www.jsdelivr.com), [skypack.dev](https://www.skypack.dev), etc.
 
 It works like so:
 
@@ -66,6 +66,8 @@ Now you can use these in your application.js entrypoint like you would any other
 import React from "react"
 import ReactDOM from "react-dom"
 ```
+
+Run `./bin/importmap` to see more options.
 
 
 ## Preloading pinned modules
