@@ -9,14 +9,6 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "not_there", to: "nowhere.js", preload: false
         pin "md5", to: "https://cdn.skypack.dev/md5"
 
-        provider :jspm
-
-        pin "react", version: "17.0.0", file: "index.js"
-        pin "three", version: "0.132.2", file: "build/three.js", from: :unpkg
-        pin "vue", version: "latest", file: "?bundle", from: :esmsh
-        pin "lodash-es", version: "4.17.21", from: :skypack
-        pin "stimulus", to: "@hotwired/stimulus", version: "3.0.0-beta.1", file: "dist/stimulus.js", from: :jsdelivr
-
         pin_all_from "app/javascript/controllers", under: "controllers"
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina"
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers"
@@ -40,35 +32,6 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "remote pin is not digest stamped" do
     assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
-  end
-
-  test "remote pin off provider" do
-    generate_importmap_json["imports"].tap do |imports|
-      assert_equal "https://ga.jspm.io/npm:react@17.0.0/index.js", imports["react"]
-      assert_equal "https://unpkg.com/three@0.132.2/build/three.js", imports["three"]
-      assert_equal "https://esm.sh/vue@latest/?bundle", imports["vue"]
-      assert_equal "https://cdn.jsdelivr.net/npm/@hotwired/stimulus@3.0.0-beta.1/dist/stimulus.js", imports["stimulus"]
-    end
-  end
-
-  test "remote pin with missing provider" do
-    @importmap = Importmap::Map.new.draw do
-      pin "react", version: "17.0.0", file: "index.js"
-    end
-    
-    assert_raises "Missing provider for 'react'" do
-      generate_importmap_json
-    end
-  end
-
-  test "remote pin with unknown provider" do
-    @importmap = Importmap::Map.new.draw do
-      pin "react", version: "17.0.0", file: "index.js", from: :nowhere
-    end
-    
-    assert_raises "Unknown provider 'nowhere' for 'react'" do
-      generate_importmap_json
-    end
   end
 
   test "directory pin mounted under matching subdir maps all files" do

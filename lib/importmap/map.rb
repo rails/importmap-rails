@@ -23,16 +23,8 @@ class Importmap::Map
     self
   end
 
-  def provider(provider)
-    @provider = provider
-  end
-
-  def pin(name, to: nil, version: nil, file: nil, from: nil, preload: true)
-    if version
-      @packages[name] = MappedLink.new(name: name, package: to || name, version: version, file: file, provider: from || @provider, preload: preload)
-    else
-      @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
-    end
+  def pin(name, to: nil, preload: true)
+    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
   def pin_all_from(dir, under: nil, to: nil, preload: true)
@@ -54,19 +46,6 @@ class Importmap::Map
   private
     MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
-    MappedLink = Struct.new(:name, :package, :version, :file, :provider, :preload, keyword_init: true) do
-      def path
-        case provider
-        when :jspm     then "https://ga.jspm.io/npm:#{package}@#{version}/#{file}"
-        when :jsdelivr then "https://cdn.jsdelivr.net/npm/#{package}@#{version}/#{file}"
-        when :unpkg    then "https://unpkg.com/#{package}@#{version}/#{file}"
-        when :esmsh    then "https://esm.sh/#{package}@#{version}/#{file}"
-        when :skypack  then "https://cdn.skypack.dev/#{package}@#{version}"
-        when nil       then raise("Missing provider for '#{package}'")
-        else                raise("Unknown provider '#{provider}' for '#{package}'")
-        end
-      end
-    end
 
     def cache_as(name)
       if (cached && result = instance_variable_get("@cached_#{name}"))
