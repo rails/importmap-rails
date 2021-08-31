@@ -23,7 +23,7 @@ class Importmap::Pinner
       response = self.class.post("/generate", body: {
         "install"      => Array(packages), 
         "flattenScope" => true,
-        "env"          => [ "browser", env ],
+        "env"          => [ "browser", "module", env ],
         "provider"     => provider.to_s
       }.to_json)
       
