@@ -4,8 +4,8 @@ class Importmap::Pinner
   include HTTParty
   base_uri "https://api.jspm.io"
 
-  def pin(*packages, env: "production", provider: "jspm")
-    fetch_imports(*packages, env: env, provider: provider)&.tap do |imports|
+  def pin(*packages, env: "production", from: "jspm")
+    fetch_imports(*packages, env: env, provider: from)&.tap do |imports|
       imports.each do |package, url|
         append_to_importmap package, url
       end

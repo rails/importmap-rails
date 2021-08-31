@@ -4,9 +4,9 @@ require "importmap/pinner"
 class Importmap::Commands < Thor
   desc "pin [*PACKAGES]", "Pin new packages"
   option :env, type: :string, aliases: :e, default: "production"
-  option :provider, type: :string, aliases: :p, default: "jspm"
+  option :from, type: :string, aliases: :f, default: "jspm"
   def pin(*packages)
-    if imports = Importmap::Pinner.new.pin(*packages, env: options[:env], provider: options[:provider])
+    if imports = Importmap::Pinner.new.pin(*packages, env: options[:env], from: options[:from])
       imports.each do |package, url|
         puts "Pinned '#{package}' to #{url}"
       end
