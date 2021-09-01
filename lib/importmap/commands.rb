@@ -15,9 +15,9 @@ class Importmap::Commands < Thor
         pin = packager.pin_for(package, url)
 
         if packager.packaged?(package)
-          gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin)
+          gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin, verbose: false)
         else
-          append_to_file("config/importmap.rb", "#{pin}\n")
+          append_to_file("config/importmap.rb", "#{pin}\n", verbose: false)
         end
       end
     else
@@ -52,8 +52,6 @@ class Importmap::Commands < Thor
     end
 
     def remove_line_from_file(path, pattern)
-      say_status :remove_line, relative_to_original_destination_root(path)
-
       path = File.expand_path(path, destination_root)
 
       all_lines = File.readlines(path)
