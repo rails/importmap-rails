@@ -33,7 +33,7 @@ It makes sense to use logical names that match the package names used by NPM, su
 
 Importmap for Rails is designed to be used with JavaScript CDNs for your node package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
 
-You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update node packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com), [jsdelivr.com](https://www.jsdelivr.com), [skypack.dev](https://www.skypack.dev), etc.
+You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update node packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com), [jsdelivr.com](https://www.jsdelivr.com), etc.
 
 It works like so:
 
@@ -84,7 +84,36 @@ Unpinning "object-assign"
 
 If you pin a package that has already been pinned, it'll be updated inline, along with its dependencies.
 
+You can control the environment of the package for packages with separate "production" (the default) and "development" builds:
+
+```bash
+./bin/importmap pin react --env development
+Pinning "react" to https://ga.jspm.io/npm:react@17.0.2/dev.index.js
+Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+```
+
+You can also pick an alternative, supported CDN provider when pinning, like `unpkg` or `jsdelivr` (`jspm` is the default):
+
+```bash
+./bin/importmap pin react --from jsdelivr
+Pinning "react" to https://cdn.jsdelivr.net/npm/react@17.0.2/index.js
+```
+
+Note that if you switch a pin from one provider to another, you may have to clean up dependencies added by the first provider that isn't used by the second provider.
+
 Run `./bin/importmap` to see all options.
+
+
+## What if I don't like to use a JavaScript CDN?
+
+You always have the option to simply download the compiled JavaScript packages from the CDNs, and saving them locally in your application. You can put such files in app/javascript/vendor, and then reference them with local pins, like:
+
+```ruby
+# config/importmap.rb
+pin "react", to: "vendor/react@17.0.2.js"
+```
+
+But using a JavaScript CDN is fast, secure, and easier to deal with. Start there.
 
 
 ## Preloading pinned modules
