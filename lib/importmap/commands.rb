@@ -10,9 +10,9 @@ class Importmap::Commands < Thor
   def pin(*packages)
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
       imports.each do |package, url|
-        pin = packager.pin_for(package, url)
+        puts %(Pinning "#{package}" to #{url})
 
-        puts pin
+        pin = packager.pin_for(package, url)
 
         if packager.packaged?(package)
           gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin)
