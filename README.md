@@ -20,20 +20,20 @@ Note: In order to use JavaScript from Rails frameworks like Action Cable, Action
 
 ## Usage
 
-The import map is configured programmatically through the `Rails.application.config.importmap` assignment, which by default is setup in `config/importmap.rb` after running the installer. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
+The import map is configured programmatically through `Rails.application.config.importmap`, which by default is setup in `config/importmap.rb` after running the installer. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
 
-This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`, which is copied and digested by the asset pipeline.
+This programmatically configured import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
 
 It's in `app/javascript/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
 
-It makes sense to use logical names that match the package names used by NPM, such that if you later want to start transpiling or bundling your code, you'll not have to change any module imports.
+It makes sense to use logical names that match the package names used by NPM, such that if you later want to start transpiling or bundling your code, you won't have to change any module imports.
 
 
 ## Using node modules via JavaScript CDNs
 
 Importmap for Rails is designed to be used with JavaScript CDNs for your node package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
 
-You can use the `./bin/importmap` command that's added as part of the install to pin additional packages to your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies most efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com), [jsdelivr.com](https://www.jsdelivr.com), [skypack.dev](https://www.skypack.dev), etc.
+You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update node packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com), [jsdelivr.com](https://www.jsdelivr.com), [skypack.dev](https://www.skypack.dev), etc.
 
 It works like so:
 
