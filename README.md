@@ -38,12 +38,11 @@ You can use the `./bin/importmap` command that's added as part of the install to
 It works like so:
 
 ```bash
-./bin/importmap pin react react-dom
-
-Pinned 'react' to https://ga.jspm.io/npm:react@17.0.2/index.js
-Pinned 'react-dom' to https://ga.jspm.io/npm:react-dom@17.0.2/index.js
-Pinned 'object-assign' to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
-Pinned 'scheduler' to https://ga.jspm.io/npm:scheduler@0.20.2/index.js
+/bin/importmap pin react react-dom
+Pinning "react" to https://ga.jspm.io/npm:react@17.0.2/index.js
+Pinning "react-dom" to https://ga.jspm.io/npm:react-dom@17.0.2/index.js
+Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+Pinning "scheduler" to https://ga.jspm.io/npm:scheduler@0.20.2/index.js
 
 ./bin/importmap json
 
@@ -67,7 +66,25 @@ import React from "react"
 import ReactDOM from "react-dom"
 ```
 
-Run `./bin/importmap` to see more options.
+You can also designate a specific version to pin:
+
+```bash
+./bin/importmap pin react@17.0.1
+Pinning "react" to https://ga.jspm.io/npm:react@17.0.1/index.js
+Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+```
+
+Or even remove pins:
+
+```bash
+./bin/importmap unpin react
+Unpinning "react"
+Unpinning "object-assign"
+```
+
+If you pin a package that has already been pinned, it'll be updated inline, along with its dependencies.
+
+Run `./bin/importmap` to see all options.
 
 
 ## Preloading pinned modules
