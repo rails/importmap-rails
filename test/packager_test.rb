@@ -2,7 +2,7 @@ require "test_helper"
 require "importmap/packager"
 
 class Importmap::PackagerTest < ActiveSupport::TestCase
-  setup { @packager = Importmap::Packager.new }
+  setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
 
   test "successful import with mock" do
     response = Class.new do
@@ -43,7 +43,12 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
     end
   end
 
+  test "packaged?" do
+    assert @packager.packaged?("md5")
+    assert_not @packager.packaged?("md5-extension")
   end
 
+  test "pin_for" do
+    assert_equal %(pin "react", to: "https://cdn/react"), @packager.pin_for("react", "https://cdn/react")
   end
 end
