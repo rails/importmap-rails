@@ -151,6 +151,9 @@ The import map should be cached in production, and is so by default via the `con
 
 While import maps are native in Chrome and Edge, they need a shim in other browsers that'll produce a JavaScript console error like `TypeError: Module specifier, 'application' does not start with "/", "./", or "../".`. This error is normal and does not have any user-facing consequences.
 
+## Upgrading
+
+When moving from `v0.3.x` or lower to `v0.4.x` or above, the format of `config/importmap.rb` has changed — the config should no longer be wrapped in `Rails.application.config.importmap.draw`, but directly specified as in https://github.com/rails/importmap-rails/issues/17#issuecomment-909778319
 
 ## License
 
