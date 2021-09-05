@@ -1,11 +1,16 @@
 require "test_helper"
 require "importmap/packager"
+require "minitest/mock"
 
 class Importmap::PackagerTest < ActiveSupport::TestCase
   setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
 
   test "successful import with mock" do
     response = Class.new do
+      def body
+        { "map" => { "imports" => imports } }.to_json
+      end
+
       def imports
         {
           "react" => "https://ga.jspm.io/npm:react@17.0.2/index.js",
@@ -13,31 +18,29 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
         }
       end
 
-      def code() 200 end
-      def dig(*args) imports end
+      def code() "200" end
     end.new
 
-    @packager.class.stub(:post, response) do
+    @packager.stub(:post_json, response) do
       assert_equal(response.imports, @packager.import("react@17.0.2"))
     end
   end
 
   test "missing import with mock" do
-    response = Class.new { def code() 404 end }.new
+    response = Class.new { def code() "404" end }.new
 
-    @packager.class.stub(:post, response) do
+    @packager.stub(:post_json, response) do
       assert_nil @packager.import("missing-package-that-doesnt-exist@17.0.2")
     end
   end
 
   test "failed request with mock" do
     response = Class.new do
-      def code() 500 end
-      def throw_exception() raise HTTParty::ResponseError.new({}) end
+      def code() "500" end
     end.new
 
-    @packager.class.stub(:post, response) do
-      assert_raises(HTTParty::ResponseError) do
+    Net::HTTP.stub(:post, proc { raise "Unexpected Error" }) do
+      assert_raises(Importmap::Packager::HTTPError) do
         @packager.import("missing-package-that-doesnt-exist@17.0.2")
       end
     end

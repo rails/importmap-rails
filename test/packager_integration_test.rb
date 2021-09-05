@@ -13,12 +13,13 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
   end
 
   test "failed request against live bad domain" do
-    Importmap::Packager.base_uri "https://this-is-not-a-real-url.com"
+    original_endpoint = Importmap::Packager.endpoint
+    Importmap::Packager.endpoint = URI("https://invalid./error")
 
-    assert_raises(SocketError) do
+    assert_raises(Importmap::Packager::HTTPError) do
       @packager.import("missing-package-that-doesnt-exist@17.0.2")
     end
   ensure
-    Importmap::Packager.base_uri "https://api.jspm.io"
+    Importmap::Packager.endpoint = original_endpoint
   end
 end
