@@ -1,11 +1,10 @@
 require "net/http"
 require "uri"
 require "json"
-require "minitest/mock"
 
 class Importmap::Packager
-  Error = Class.new(StandardError)
-  HTTPError = Class.new(Error)
+  Error        = Class.new(StandardError)
+  HTTPError    = Class.new(Error)
   ServiceError = Error.new(Error)
 
   singleton_class.attr_accessor :endpoint
@@ -24,16 +23,9 @@ class Importmap::Packager
     })
 
     case response.code
-    when "200"
-      JSON.parse(response.body).dig("map", "imports")
-    when "404", "401" # 401 is returned on package not found
-      nil
-    else
-      if error_message = parse_service_error(response)
-        raise ServiceError, error_message
-      else
-        raise HTTPError, "Unexpected response code (#{response.code})"
-      end
+    when "200"        then extract_parsed_imports(response)
+    when "404", "401" then nil
+    else                   handle_failure_response(response)
     end
   end
 
@@ -46,27 +38,28 @@ class Importmap::Packager
   end
 
   private
-    def parse_service_error(response)
-      return unless response.body
-
-      json_error = begin
-        JSON.parse(response.body)
-      rescue JSON::ParserError
-        return
+    def extract_parsed_imports(response)
+      JSON.parse(response.body).dig("map", "imports")
+    end
+      
+    def handle_failure_response(response)
+      if error_message = parse_service_error(response)
+        raise ServiceError, error_message
+      else
+        raise HTTPError, "Unexpected response code (#{response.code})"
       end
-
-      return unless json_error.is_a?(Hash)
-      json_error["error"]
+    end
+  
+    def parse_service_error(response)
+      JSON.parse(response.body.to_s)["error"]
+    rescue JSON::ParserError
+      nil
     end
 
     def post_json(body)
-      json_body = body.to_json
-
-      begin
-        Net::HTTP.post(self.class.endpoint, json_body, { "Content-Type" => "application/json" })
-      rescue => error
-        raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
-      end
+      Net::HTTP.post(self.class.endpoint, body.to_json, { "Content-Type" => "application/json" })
+    rescue => error
+      raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
     end
 
     def importmap
