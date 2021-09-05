@@ -1,5 +1,6 @@
 require "test_helper"
 require "importmap/packager"
+require "minitest/mock"
 
 class Importmap::PackagerTest < ActiveSupport::TestCase
   setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
