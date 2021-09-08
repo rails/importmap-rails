@@ -38,7 +38,7 @@ You can use the `./bin/importmap` command that's added as part of the install to
 It works like so:
 
 ```bash
-/bin/importmap pin react react-dom
+./bin/importmap pin react react-dom
 Pinning "react" to https://ga.jspm.io/npm:react@17.0.2/index.js
 Pinning "react-dom" to https://ga.jspm.io/npm:react-dom@17.0.2/index.js
 Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
