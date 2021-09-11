@@ -141,6 +141,32 @@ pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js", preload: false
 ...
 ```
 
+## Composing import maps
+
+By default, Rails loads import map definition from the application's `config/importmap.rb` to the `Importmap::Map` object available at `Rails.application.config.importmap`.
+
+You can combine multiple import maps by drawing their definitions onto the `Rails.application.config.importmap`. For example, appending import maps defined in Rails engines:
+
+```ruby
+# my_engine/lib/my_engine/engine.rb
+
+module MyEngine
+  class Engine < ::Rails::Engine
+    # ...
+    initializer "my-engine.importmap" do |app|
+      app.config.importmap.draw(Engine.root.join("config/importmap.rb"))
+    end
+  end
+end
+```
+
+And pinning JavaScript modules from the engine:
+
+```ruby
+# my_engine/config/importmap.rb
+
+pin_all_from File.expand_path("../app/assets/javascripts", __dir__)
+```
 
 ## Caching the import map and preload modules
 
