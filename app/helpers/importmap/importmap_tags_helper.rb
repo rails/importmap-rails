@@ -21,9 +21,11 @@ module Importmap::ImportmapTagsHelper
     javascript_include_tag "es-module-shims", async: true, "data-turbo-track": "reload"
   end
 
-  # Import a named JavaScript module using a script-module tag.
-  def javascript_import_module_tag(module_name)
-    tag.script %(import "#{module_name}").html_safe, type: "module"
+  # Import a named JavaScript module(s) using a script-module tag.
+  def javascript_import_module_tag(*module_names)
+    imports = Array(module_names).collect { |m| %(import "#{m}") }.join("\n")
+    tag.script imports.html_safe, 
+      type: "module", nonce: content_security_policy_nonce
   end
 
   # Link tags for preloading all modules marked as preload: true in the `importmap`
