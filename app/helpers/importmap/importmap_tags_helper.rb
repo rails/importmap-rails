@@ -4,9 +4,10 @@ module Importmap::ImportmapTagsHelper
     safe_join [
       javascript_inline_importmap_tag,
       javascript_importmap_module_preload_tags,
+      javascript_importmap_shim_nonce_configuration_tag,
       javascript_importmap_shim_tag,
       javascript_import_module_tag(entry_point)
-    ], "\n"
+    ].compact, "\n"
   end
 
   # Generate an inline importmap tag using the passed `importmap_json` JSON string.
@@ -16,7 +17,14 @@ module Importmap::ImportmapTagsHelper
       type: "importmap", "data-turbo-track": "reload", nonce: content_security_policy_nonce
   end
 
-  # Include the es-module-shim needed to make importmaps work in browsers without native support (like Firefox + Safari).
+  # Configure es-modules-shim with nonce support if the application is using a content security policy.
+  def javascript_importmap_shim_nonce_configuration_tag
+    if content_security_policy?
+      tag.script({ nonce: content_security_policy_nonce }.to_json.html_safe, type: "esms-options")
+    end
+  end
+
+  # Include the es-modules-shim needed to make importmaps work in browsers without native support (like Firefox + Safari).
   def javascript_importmap_shim_tag
     javascript_include_tag "es-module-shims", async: true, "data-turbo-track": "reload"
   end
