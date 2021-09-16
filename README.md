@@ -168,11 +168,6 @@ And pinning JavaScript modules from the engine:
 pin_all_from File.expand_path("../app/assets/javascripts", __dir__)
 ```
 
-## Caching the import map and preload modules
-
-The import map should be cached in production, and is so by default via the `config.importmap.cached` option that will be set to the same value as `config.action_controller.perform_caching`, unless explicitly set differently.
-
-
 ## Expected errors from using the es-module-shim
 
 While import maps are native in Chrome and Edge, they need a shim in other browsers that'll produce a JavaScript console error like `TypeError: Module specifier, 'application' does not start with "/", "./", or "../".`. This error is normal and does not have any user-facing consequences.
