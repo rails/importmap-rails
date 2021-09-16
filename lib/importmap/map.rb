@@ -45,6 +45,12 @@ class Importmap::Map
 
   # Returns a SHA1 digest of the import map json that can be used as a part of a page etag to
   # ensure that a html cache is invalidated when the import map is changed.
+  #
+  # Example:
+  #
+  #   class ApplicationController < ActionController::Base
+  #     etag { Rails.application.config.importmap.digest(resolver: helpers) if request.format&.html? }
+  #   end
   def digest(resolver:)
     Digest::SHA1.hexdigest(to_json(resolver: resolver).to_s)
   end
