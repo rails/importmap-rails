@@ -30,7 +30,7 @@ module Importmap
 
     initializer "importmap.caching" do |app|
       if Rails.application.config.importmap.cached.nil?
-        Rails.application.config.importmap.cached = app.config.action_controller.perform_caching
+        Rails.application.config.importmap.cached = Rails.env.test? || app.config.action_controller.perform_caching
       end
     end
   end
