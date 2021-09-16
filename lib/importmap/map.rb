@@ -2,7 +2,6 @@ require "pathname"
 
 class Importmap::Map
   attr_reader :packages, :directories
-  attr_accessor :cached
 
   def initialize
     @packages, @directories = {}, {}
@@ -24,10 +23,12 @@ class Importmap::Map
   end
 
   def pin(name, to: nil, preload: true)
+    clear_cache
     @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
   def pin_all_from(dir, under: nil, to: nil, preload: true)
+    clear_cache
     @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
   end
 
@@ -60,11 +61,16 @@ class Importmap::Map
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
 
     def cache_as(name)
-      if (cached && result = instance_variable_get("@cached_#{name}"))
+      if result = instance_variable_get("@cached_#{name}")
         result
       else
         instance_variable_set("@cached_#{name}", yield)
       end
+    end
+
+    def clear_cache
+      @cached_json = nil
+      @cached_preloaded_module_paths = nil
     end
 
     def resolve_asset_paths(paths, resolver:)

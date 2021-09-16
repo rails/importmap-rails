@@ -27,11 +27,5 @@ module Importmap
         helper Importmap::ImportmapTagsHelper
       end
     end
-
-    initializer "importmap.caching" do |app|
-      if Rails.application.config.importmap.cached.nil?
-        Rails.application.config.importmap.cached = true
-      end
-    end
   end
 end
