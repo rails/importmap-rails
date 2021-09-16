@@ -43,6 +43,12 @@ class Importmap::Map
     end
   end
 
+  # Returns a SHA1 digest of the import map json that can be used as a part of a page etag to
+  # ensure that a html cache is invalidated when the import map is changed.
+  def digest(resolver:)
+    Digest::SHA1.hexdigest(to_json(resolver: resolver).to_s)
+  end
+
   private
     MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)

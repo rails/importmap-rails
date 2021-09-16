@@ -74,6 +74,10 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_equal "https://cdn.jsdelivr.net/npm/d3/+esm", generate_importmap_json["imports"]["d3"]
   end
 
+  test "digest" do
+    assert_match /^\w{40}$/, @importmap.digest(resolver: ApplicationController.helpers)
+  end
+
   private
     def generate_importmap_json
       JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
