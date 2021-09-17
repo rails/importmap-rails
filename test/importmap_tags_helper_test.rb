@@ -5,6 +5,11 @@ def content_security_policy_nonce() nil end
 def content_security_policy?() false end
 
 class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
+  test "javascript_importmap_tags with and without shim" do
+    assert_match /shim/, javascript_importmap_tags("application")
+    assert_no_match /shim/, javascript_importmap_tags("application", shim: false)
+  end
+
   test "javascript_inline_importmap_tag" do
     assert_match \
       %r{<script type="importmap" data-turbo-track="reload">{\n  \"imports\": {\n    \"md5\": \"https://cdn.skypack.dev/md5\",\n    \"not_there\": \"/nowhere.js\"\n  }\n}</script>},
