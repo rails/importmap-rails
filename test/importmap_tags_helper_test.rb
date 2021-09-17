@@ -2,6 +2,7 @@ require "test_helper"
 
 # Stub method
 def content_security_policy_nonce() nil end
+def content_security_policy?() false end
 
 class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
   test "javascript_inline_importmap_tag" do
