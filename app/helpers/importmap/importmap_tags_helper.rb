@@ -20,13 +20,15 @@ module Importmap::ImportmapTagsHelper
   # Configure es-modules-shim with nonce support if the application is using a content security policy.
   def javascript_importmap_shim_nonce_configuration_tag
     if content_security_policy?
-      tag.script({ nonce: content_security_policy_nonce }.to_json.html_safe, type: "esms-options")
+      tag.script({ nonce: content_security_policy_nonce }.to_json.html_safe, 
+        type: "esms-options", nonce: content_security_policy_nonce)
     end
   end
 
   # Include the es-modules-shim needed to make importmaps work in browsers without native support (like Firefox + Safari).
   def javascript_importmap_shim_tag
-    javascript_include_tag "es-module-shims", async: true, "data-turbo-track": "reload"
+    javascript_include_tag "es-module-shims", async: true, "data-turbo-track": "reload",
+      nonce: content_security_policy_nonce
   end
 
   # Import a named JavaScript module(s) using a script-module tag.
@@ -45,6 +47,8 @@ module Importmap::ImportmapTagsHelper
 
   # Link tag(s) for preloading the JavaScript module residing in `*paths`. Will return one link tag per path element.
   def javascript_module_preload_tag(*paths)
-    safe_join(Array(paths).collect { |path| tag.link rel: "modulepreload", href: path }, "\n")
+    safe_join(Array(paths).collect { |path|
+      tag.link rel: "modulepreload", href: path, nonce: content_security_policy_nonce
+    }, "\n")
   end
 end
