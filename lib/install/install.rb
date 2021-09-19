@@ -14,8 +14,10 @@ create_file Rails.root.join("app/javascript/application.js") do <<-JS
 JS
 end
 
-say "Ensure JavaScript files are in the asset pipeline manifest"
-append_to_file Rails.root.join("app/assets/config/manifest.js"), %(//= link_tree ../../javascript .js\n)
+if (sprockets_manifest_path = Rails.root.join("app/assets/config/manifest.js")).exist?
+  say "Ensure JavaScript files are in the Sprocket manifest"
+  append_to_file sprockets_manifest_path, %(//= link_tree ../../javascript .js\n)
+end
 
 say "Configure importmap paths in config/importmap.rb"
 copy_file "#{__dir__}/config/importmap.rb", "config/importmap.rb"
