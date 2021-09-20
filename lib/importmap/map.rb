@@ -50,7 +50,7 @@ class Importmap::Map
   # Example:
   #
   #   class ApplicationController < ActionController::Base
-  #     etag { Rails.application.config.importmap.digest(resolver: helpers) if request.format&.html? }
+  #     etag { Rails.application.importmap.digest(resolver: helpers) if request.format&.html? }
   #   end
   def digest(resolver:)
     Digest::SHA1.hexdigest(to_json(resolver: resolver).to_s)
