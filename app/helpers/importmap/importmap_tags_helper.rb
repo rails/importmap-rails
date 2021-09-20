@@ -11,8 +11,8 @@ module Importmap::ImportmapTagsHelper
   end
 
   # Generate an inline importmap tag using the passed `importmap_json` JSON string.
-  # By default, `Rails.application.config.importmap.to_json(resolver: self)` is used.
-  def javascript_inline_importmap_tag(importmap_json = Rails.application.config.importmap.to_json(resolver: self))
+  # By default, `Rails.application.importmap.to_json(resolver: self)` is used.
+  def javascript_inline_importmap_tag(importmap_json = Rails.application.importmap.to_json(resolver: self))
     tag.script importmap_json.html_safe,
       type: "importmap", "data-turbo-track": "reload", nonce: content_security_policy_nonce
   end
@@ -39,9 +39,9 @@ module Importmap::ImportmapTagsHelper
   end
 
   # Link tags for preloading all modules marked as preload: true in the `importmap`
-  # (defaults to Rails.application.config.importmap), such that they'll be fetched
+  # (defaults to Rails.application.importmap), such that they'll be fetched
   # in advance by browsers supporting this link type (https://caniuse.com/?search=modulepreload).
-  def javascript_importmap_module_preload_tags(importmap = Rails.application.config.importmap)
+  def javascript_importmap_module_preload_tags(importmap = Rails.application.importmap)
     javascript_module_preload_tag(*importmap.preloaded_module_paths(resolver: self))
   end
 

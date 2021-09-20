@@ -43,7 +43,7 @@ class Importmap::Commands < Thor
 
   desc "json", "Show the full importmap in json"
   def json
-    puts Rails.application.config.importmap.to_json(resolver: ActionController::Base.helpers)
+    puts Rails.application.importmap.to_json(resolver: ActionController::Base.helpers)
   end
 
   private

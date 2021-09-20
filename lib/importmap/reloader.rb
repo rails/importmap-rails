@@ -2,7 +2,7 @@ class Importmap::Reloader
   delegate :execute_if_updated, :execute, :updated?, to: :updater
 
   def reload!
-    import_map_paths.each { |path| config.importmap.draw(path) }
+    import_map_paths.each { |path| Rails.application.importmap.draw(path) }
   end
 
   private

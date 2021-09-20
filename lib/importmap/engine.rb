@@ -1,9 +1,14 @@
 require "importmap/map"
 
+Rails::Application.send(:attr_accessor, :importmap)
+
 module Importmap
   class Engine < ::Rails::Engine
-    config.importmap = Importmap::Map.new.draw("config/importmap.rb")
     config.autoload_once_paths = %W( #{root}/app/helpers )
+
+    initializer "importmap" do |app|
+      app.importmap = Importmap::Map.new.draw("config/importmap.rb")
+    end
 
     initializer "importmap.reloader" do |app|
       app.config.paths.add "config/importmap.rb"
