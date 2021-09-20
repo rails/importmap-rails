@@ -1,5 +1,4 @@
 require "pathname"
-require "active_support/evented_file_update_checker"
 
 class Importmap::Map
   attr_reader :packages, :directories
@@ -63,11 +62,11 @@ class Importmap::Map
   def cache_sweeper(watches: nil)
     if watches
       @cache_sweeper =
-        ActiveSupport::EventedFileUpdateChecker.new([], Array(watches).collect { |dir| [ dir, "js"] }.to_h) do
+        Rails.application.config.file_watcher.new([], Array(watches).collect { |dir| [ dir.to_s, "js"] }.to_h) do
           clear_cache
         end
     else
-      @cache_sweeper  
+      @cache_sweeper
     end
   end
 
