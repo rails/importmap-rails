@@ -182,7 +182,7 @@ end
 
 ## Sweeping the cache in development and test
 
-Generating the import map json and modulepreloads may require resolving hundreds of assets. This can take a while, so these operations are cached, but in development and test, we watch for changes to both `config/importmap.rb` and files in `app/javascript` to clear this cache. This feature can be controlled in an environment configuration file via the boolean `config.importmap.sweep_cache`.
+Generating the import map json and modulepreloads may require resolving hundreds of assets. This can take a while, so these operations are cached, but in development and test, we watch for changes to both `config/importmap.rb` and files in `app/javascript` to clear this cache. This feature can be controlled in an environment configuration file via the boolean `config.importmap.sweep_cache`. If you're pinning local files from outside of `app/javascript`, you'll need to restart your development server upon changes.
 
 
 ## Expected errors from using the es-module-shim
