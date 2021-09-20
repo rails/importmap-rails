@@ -188,9 +188,11 @@ While import maps are native in Chrome and Edge, they need a shim in other brows
 
 Under certain circumstances, like running system tests using chromedriver under CI (which may be resource constrained and trigger errors in certain cases), you may want to explicitly turn off including the shim. If can do this by calling the bulk tag helper with `javascript_importmap_tags("application", shim: false)`. Thus you can pass in something like `shim: !ENV["CI"]`. If you want, and are sure you're not doing any full-page caching, you can also connect this directive to a user agent check (using a gem like `useragent`) to check whether the browser is chrome/edge 89+. But you really shouldn't have to, as the shim is designed to gracefully work with natively compatible drivers.
 
+
 ## A note about browser extensions
 
 Certain extensions that also load Javascript modules may block import maps from being loaded (for instance, the Apollo Client Devtools extension). If you see a console message like `An import map is added after module script load was triggered`, browser extensions are likely the culprit. 
+
 
 ## License
 
