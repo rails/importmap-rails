@@ -1,4 +1,5 @@
 require "pathname"
+require "active_support/evented_file_update_checker"
 
 class Importmap::Map
   attr_reader :packages, :directories
@@ -54,6 +55,20 @@ class Importmap::Map
   #   end
   def digest(resolver:)
     Digest::SHA1.hexdigest(to_json(resolver: resolver).to_s)
+  end
+
+  # Returns an instance ActiveSupport::EventedFileUpdateChecker configured to clear the cache of the map
+  # when the directories passed on initialization via `watches:` have changes. This is used in development
+  # and test to ensure the map caches are reset when javascript files are changed.
+  def cache_sweeper(watches: nil)
+    if watches
+      @cache_sweeper =
+        ActiveSupport::EventedFileUpdateChecker.new([], Array(watches).collect { |dir| [ dir, "js"] }.to_h) do
+          clear_cache
+        end
+    else
+      @cache_sweeper  
+    end
   end
 
   private
