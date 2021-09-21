@@ -1,7 +1,5 @@
-/* ES Module Shims CSP 0.15.1 */
+/* ES Module Shims 1.0.0 */
 (function () {
-
-  Promise.resolve();
 
   const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
 
@@ -331,7 +329,7 @@
 
   let importMap = { imports: {}, scopes: {} };
   let importMapSrcOrLazy = false;
-  let importMapPromise = featureDetectionPromise;
+  let importMapPromise = featureDetectionPromise.then(() => undefined);
 
   let acceptingImportMaps = true;
   let nativeAcceptingImportMaps = true;
@@ -346,21 +344,20 @@
     }
     await importMapPromise;
     // early analysis opt-out - no need to even fetch if we have feature support
-    if (!shimMode && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy) {
+    if (!shimMode && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false) {
       // for polyfill case, only dynamic import needs a return value here, and dynamic import will never pass nativelyLoaded
       if (nativelyLoaded)
         return null;
       await lastStaticLoadPromise;
       return dynamicImport(source ? createBlob(source) : url, { errUrl: url || source });
     }
-    await undefined;
     const load = getOrCreateLoad(url, fetchOpts, source);
     const seen = {};
     await loadAll(load, seen);
     lastLoad = undefined;
     resolveDeps(load, seen);
     await lastStaticLoadPromise;
-    if (source && !shimMode && !load.n) {
+    if (source && !shimMode && !load.n && !false) {
       const module = await dynamicImport(createBlob(source), { errUrl: source });
       if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
       return module;
@@ -490,17 +487,11 @@
       resolvedSource += source.slice(lastIndex);
     }
 
-    resolvedSource = resolvedSource.replace(/\/\/# sourceMappingURL=(.*)\s*$/, (match, url) => {
-      return match.replace(url, new URL(url, load.r));
-    });
+    resolvedSource = resolvedSource.replace(/\/\/# sourceMappingURL=(.*)\s*$/, (match, url) => match.replace(url, () => new URL(url, load.r)));
     let hasSourceURL = false;
-    resolvedSource = resolvedSource.replace(/\/\/# sourceURL=(.*)\s*$/, (match, url) => {
-      hasSourceURL = true;
-      return match.replace(url, new URL(url, load.r));
-    });
-    if (!hasSourceURL) {
+    resolvedSource = resolvedSource.replace(/\/\/# sourceURL=(.*)\s*$/, (match, url) => (hasSourceURL = true, match.replace(url, () => new URL(url, load.r))));
+    if (!hasSourceURL)
       resolvedSource += '\n//# sourceURL=' + load.r;
-    }
 
     load.b = lastLoad = createBlob(resolvedSource);
     load.S = undefined;
@@ -627,13 +618,10 @@
     return load;
   }
 
-  const scriptQuery = 'script[type="module-shim"],script[type="importmap-shim"],script[type="module"],script[type="importmap"]';
-  const preloadQuery = 'link[rel="modulepreload"]';
-
   function processScripts () {
-    for (const link of document.querySelectorAll(preloadQuery))
+    for (const link of document.querySelectorAll('link[rel="modulepreload"]'))
       processPreload(link);
-    const scripts = document.querySelectorAll(scriptQuery);
+    const scripts = document.querySelectorAll('script[type="module-shim"],script[type="importmap-shim"],script[type="module"],script[type="importmap"]');
     // early shim mode opt-in
     if (!shimMode) {
       for (const script of scripts) {
