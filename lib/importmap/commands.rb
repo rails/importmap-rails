@@ -43,6 +43,7 @@ class Importmap::Commands < Thor
 
   desc "json", "Show the full importmap in json"
   def json
+    require Rails.root.join("config/environment")
     puts Rails.application.importmap.to_json(resolver: ActionController::Base.helpers)
   end
 
