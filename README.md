@@ -48,7 +48,7 @@ Pinning "scheduler" to https://ga.jspm.io/npm:scheduler@0.20.2/index.js
 
 {
   "imports": {
-    "application": "/application.js",
+    "application": "/assets/application-37f365cbecf1fa2810a8303f4b6571676fa1f9c56c248528bc14ddb857531b95.js",
     "react": "https://ga.jspm.io/npm:react@17.0.2/index.js",
     "react-dom": "https://ga.jspm.io/npm:react-dom@17.0.2/index.js",
     "object-assign": "https://ga.jspm.io/npm:object-assign@4.1.1/index.js",
