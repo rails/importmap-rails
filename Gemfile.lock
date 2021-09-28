@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    importmap-rails (0.7.4)
+    importmap-rails (0.7.5)
       rails (>= 6.0.0)
 
 GEM
@@ -184,4 +184,4 @@ DEPENDENCIES
   webdrivers
 
 BUNDLED WITH
-   2.2.24
+   2.2.28
