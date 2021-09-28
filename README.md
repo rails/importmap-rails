@@ -29,11 +29,11 @@ It's in `app/javascript/application.js` you setup your application by importing 
 It makes sense to use logical names that match the package names used by npm, such that if you later want to start transpiling or bundling your code, you won't have to change any module imports.
 
 
-## Using node modules via JavaScript CDNs
+## Using npm packages via JavaScript CDNs
 
-Importmap for Rails is designed to be used with JavaScript CDNs for your node package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
+Importmap for Rails is designed to be used with JavaScript CDNs for your npm package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
 
-You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update node packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com) and [jsdelivr.com](https://www.jsdelivr.com).
+You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update npm packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com) and [jsdelivr.com](https://www.jsdelivr.com).
 
 It works like so:
 
