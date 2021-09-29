@@ -26,9 +26,9 @@ module Importmap::ImportmapTagsHelper
   end
 
   # Include the es-modules-shim needed to make importmaps work in browsers without native support (like Firefox + Safari).
-  def javascript_importmap_shim_tag
-    javascript_include_tag "es-module-shims", async: true, "data-turbo-track": "reload",
-      nonce: content_security_policy_nonce
+  def javascript_importmap_shim_tag(minimized: true)
+    javascript_include_tag minimized ? "es-module-shims.min.js" : "es-module-shims.js",
+      async: true, "data-turbo-track": "reload", nonce: content_security_policy_nonce
   end
 
   # Import a named JavaScript module(s) using a script-module tag.
