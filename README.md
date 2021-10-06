@@ -153,8 +153,8 @@ You can combine multiple import maps by drawing their definitions onto the `Rail
 module MyEngine
   class Engine < ::Rails::Engine
     # ...
-    initializer "my-engine.importmap" do |app|
-      app.config.importmap.draw(Engine.root.join("config/importmap.rb"))
+    initializer "my-engine.importmap", after: "importmap" do |app|
+      app.importmap.draw(Engine.root.join("config/importmap.rb"))
     end
   end
 end
