@@ -110,16 +110,34 @@ pin "react", to: "https://cdn.skypack.dev/react"
 ```
 
 
-## What if I don't like to use a JavaScript CDN?
+## Downloading vendor files from the JavaScript CDN
 
-You always have the option to simply download the compiled JavaScript packages from the CDNs, and saving them locally in your application. You can put such files in app/javascript/vendor, and then reference them with local pins, like:
+If you don't want to use a JavaScript CDN in production, you can also download vendored files from the CDN when you're setting up your pins:
 
-```ruby
-# config/importmap.rb
-pin "react", to: "vendor/react@17.0.2.js"
+```bash
+./bin/importmap pin react --download
+Pinning "react" to vendor/react.js via download from https://ga.jspm.io/npm:react@17.0.2/index.js
+Pinning "object-assign" to vendor/object-assign.js via download from https://ga.jspm.io/npm:object-assign@4.1.1/index.js
 ```
 
-But using a JavaScript CDN is fast, secure, and easier to deal with. Start there.
+This will produce pins in your `config/importmap.rb` like so:
+
+```ruby
+pin "react", to: "vendor/react.js" # https://ga.jspm.io/npm:react@17.0.2/index.js
+pin "object-assign", to: "vendor/object-assign.js" # https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+```
+
+The packages are downloaded to `app/javascript/vendor`, which you can check into your source control, and they'll be available through your application's own asset pipeline serving.
+
+If you later wish to remove a downloaded pin, you again pass `--download`:
+
+```bash
+./bin/importmap unpin react --download
+Unpinning and removing "react"
+Unpinning and removing "object-assign"
+```
+
+Just like with a normal pin, you can also update a pin by running the `pin --download` command again.
 
 
 ## Preloading pinned modules
