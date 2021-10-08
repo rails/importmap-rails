@@ -106,8 +106,14 @@ class Importmap::Packager
       end
     end
 
-    def save_vendored_package(package, content)
-      File.open(vendored_package_path(package), "w+") { |f| f.write(content) }
+    def save_vendored_package(package, source)
+      File.open(vendored_package_path(package), "w+") do |vendored_package|
+        vendored_package.write remove_sourcemap_comment_from(source)
+      end
+    end
+
+    def remove_sourcemap_comment_from(source)
+      source.gsub(%r|^\/\/# sourceMappingURL=.*|, "")
     end
 
     def vendored_package_path(package)
