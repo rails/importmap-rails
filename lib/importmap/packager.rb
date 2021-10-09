@@ -75,7 +75,7 @@ class Importmap::Packager
     end
 
     def post_json(body)
-      Net::HTTP.post(self.class.endpoint, body.to_json, { "Content-Type" => "application/json" })
+      Net::HTTP.post(self.class.endpoint, body.to_json, "Content-Type" => "application/json")
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
     end
