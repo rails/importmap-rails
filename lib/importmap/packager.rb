@@ -121,6 +121,6 @@ class Importmap::Packager
     end
 
     def package_filename(package)
-      "#{package.gsub("/", "-")}.js"
+      "#{package.gsub("/", "--")}.js"
     end
 end

@@ -23,11 +23,15 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
     Importmap::Packager.endpoint = original_endpoint
   end
 
-  test "successful download from live service" do
+  test "successful downloads from live service" do
     Dir.mktmpdir do |vendor_dir|
       @packager = Importmap::Packager.new \
         Rails.root.join("config/importmap.rb"),
         vendor_path: Pathname.new(vendor_dir)
+
+      @packager.download("@github/webauthn-json",
+        "https://ga.jspm.io/npm:@github/webauthn-json@0.5.7/dist/main/webauthn-json.js")
+      assert File.exist?(Pathname.new(vendor_dir).join("@github--webauthn-json.js"))
 
       @packager.download("react", "https://ga.jspm.io/npm:react@17.0.2/index.js")
       assert File.exist?(Pathname.new(vendor_dir).join("react.js"))
