@@ -41,12 +41,11 @@ class Importmap::Commands < Thor
         if packager.packaged?(package)
           if options[:download]
             puts %(Unpinning and removing "#{package}")
-            packager.remove(package)
           else
             puts %(Unpinning "#{package}")
           end
 
-          remove_line_from_file "config/importmap.rb", /pin "#{package}"/
+          packager.remove(package)
         end
       end
     else

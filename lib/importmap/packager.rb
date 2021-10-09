@@ -53,6 +53,7 @@ class Importmap::Packager
 
   def remove(package)
     remove_existing_package_file(package)
+    remove_package_from_importmap(package)
   end
 
   private
@@ -92,6 +93,15 @@ class Importmap::Packager
     def remove_existing_package_file(package)
       FileUtils.rm_rf vendored_package_path(package)
       FileUtils.rm_rf "#{vendored_package_path(package)}.br" # Temp workaround for jspm.io
+    end
+
+    def remove_package_from_importmap(package)
+      all_lines = File.readlines(@importmap_path)
+      with_lines_removed = all_lines.select { |line| line !~ /pin "#{package}"/ }
+
+      File.open(@importmap_path, "w") do |file|
+        with_lines_removed.each { |line| file.write(line) }
+      end
     end
 
     def download_package_file(package, url)
