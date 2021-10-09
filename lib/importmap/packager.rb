@@ -124,7 +124,7 @@ class Importmap::Packager
     end
 
     def package_filename(package)
-      "#{package.gsub("/", "--")}.js"
+      package.gsub("/", "--") + ".js"
     end
 
     def extract_package_version_from(url)
