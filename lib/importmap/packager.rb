@@ -91,7 +91,7 @@ class Importmap::Packager
 
     def remove_existing_package_file(package)
       FileUtils.rm_rf vendored_package_path(package)
-      FileUtils.rm_rf "#{vendored_package_path(package)}.br"
+      FileUtils.rm_rf "#{vendored_package_path(package)}.br" # Temp workaround for jspm.io
     end
 
     def download_package_file(package, url)
