@@ -116,7 +116,7 @@ class Importmap::Packager
     end
 
     def remove_sourcemap_comment_from(source)
-      source.gsub(%r|^\/\/# sourceMappingURL=.*|, "")
+      source.gsub(/^\/\/# sourceMappingURL=.*/, "")
     end
 
     def vendored_package_path(package)
