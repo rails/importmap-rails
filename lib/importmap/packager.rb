@@ -35,7 +35,10 @@ class Importmap::Packager
   end
 
   def vendored_pin_for(package, url)
-    %(pin "#{package}", to: "vendor/#{package_filename(package)}" # #{url})
+    filename = package_filename(package)
+    version  = extract_package_version_from(url)
+
+    %(pin "#{package}", to: "vendor/#{filename}" # #{version})
   end
 
   def packaged?(package)
@@ -122,5 +125,9 @@ class Importmap::Packager
 
     def package_filename(package)
       "#{package.gsub("/", "--")}.js"
+    end
+
+    def extract_package_version_from(url)
+      url.match(/@\d+\.\d+\.\d+/)&.to_a&.first
     end
 end
