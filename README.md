@@ -142,14 +142,14 @@ Just like with a normal pin, you can also update a pin by running the `pin --dow
 
 ## Preloading pinned modules
 
-To avoid the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, we use [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload). Pinned modules are preloaded by default, but you can turn this off with `preload: false`.
+To avoid the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, importmap-rails supports [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload). Pinned modules can be preloaded by appending `preload: true` to the pin.
 
 Example:
 
 ```ruby
 # config/importmap.rb
-pin "@github/hotkey", to: "https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js"
-pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js", preload: false
+pin "@github/hotkey", to: "https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js", preload: true
+pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js"
 
 # app/views/layouts/application.html.erb
 <%= javascript_importmap_tags %> 

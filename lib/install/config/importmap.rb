@@ -3,4 +3,4 @@
 
 # Use npm packages from a JavaScript CDN by running ./bin/importmap
 
-pin "application"
+pin "application", preload: true

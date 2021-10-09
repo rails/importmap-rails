@@ -4,16 +4,16 @@ class ImportmapTest < ActiveSupport::TestCase
   def setup
     @importmap = Importmap::Map.new.tap do |map|
       map.draw do
-        pin "application", preload: false
-        pin "editor", to: "rich_text.js", preload: false
-        pin "not_there", to: "nowhere.js", preload: false
-        pin "md5", to: "https://cdn.skypack.dev/md5"
+        pin "application"
+        pin "editor", to: "rich_text.js"
+        pin "not_there", to: "nowhere.js"
+        pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
 
-        pin_all_from "app/javascript/controllers", under: "controllers"
-        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina"
-        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers"
-        pin_all_from "app/javascript/helpers", under: "helpers"
-        pin_all_from "lib/assets/javascripts"
+        pin_all_from "app/javascript/controllers", under: "controllers", preload: true
+        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", preload: true
+        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers", preload: true
+        pin_all_from "app/javascript/helpers", under: "helpers", preload: true
+        pin_all_from "lib/assets/javascripts", preload: true
       end
     end
   end
