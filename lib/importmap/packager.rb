@@ -56,6 +56,12 @@ class Importmap::Packager
   end
 
   private
+    def post_json(body)
+      Net::HTTP.post(self.class.endpoint, body.to_json, "Content-Type" => "application/json")
+    rescue => error
+      raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
+    end
+
     def extract_parsed_imports(response)
       JSON.parse(response.body).dig("map", "imports")
     end
@@ -72,12 +78,6 @@ class Importmap::Packager
       JSON.parse(response.body.to_s)["error"]
     rescue JSON::ParserError
       nil
-    end
-
-    def post_json(body)
-      Net::HTTP.post(self.class.endpoint, body.to_json, "Content-Type" => "application/json")
-    rescue => error
-      raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
     end
 
     def importmap
