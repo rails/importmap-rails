@@ -3,6 +3,10 @@ require "importmap/packager"
 
 class Importmap::Commands < Thor
   include Thor::Actions
+
+  def self.exit_on_failure?
+    false
+  end
   
   desc "pin [*PACKAGES]", "Pin new packages"
   option :env, type: :string, aliases: :e, default: "production"
