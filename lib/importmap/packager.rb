@@ -116,7 +116,7 @@ class Importmap::Packager
 
     def save_vendored_package(package, source)
       File.open(vendored_package_path(package), "w+") do |vendored_package|
-        vendored_package.write remove_sourcemap_comment_from(source)
+        vendored_package.write remove_sourcemap_comment_from(source).force_encoding("UTF-8")
       end
     end
 
