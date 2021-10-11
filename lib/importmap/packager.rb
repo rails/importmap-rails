@@ -109,12 +109,17 @@ class Importmap::Packager
     end
 
     def download_package_file(package, url)
-      response = Net::HTTP.get_response(URI(url))
-
-      if response.code == "200"
-        save_vendored_package(package, response.body)
+      if url =~ /jspm.io/
+        # Temporary workaround jspm.io only sending brotli
+        `curl -s '#{url}' | brotli -d > #{vendored_package_path(package)}`
       else
-        handle_failure_response(response)
+        response = Net::HTTP.get_response(URI(url))
+
+        if response.code == "200"
+          save_vendored_package(package, response.body)
+        else
+          handle_failure_response(response)
+        end
       end
     end
 
