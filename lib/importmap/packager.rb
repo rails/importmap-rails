@@ -38,7 +38,11 @@ class Importmap::Packager
     filename = package_filename(package)
     version  = extract_package_version_from(url)
 
-    %(pin "#{package}", to: "vendor/#{filename}" # #{version})
+    if "#{package}.js" == filename
+      %(pin "#{package}" # #{version})
+    else
+      %(pin "#{package}", to: "#{filename}" # #{version})
+    end
   end
 
   def packaged?(package)
