@@ -26,7 +26,9 @@ module Importmap
 
     initializer "importmap.cache_sweeper" do |app|
       if app.config.importmap.sweep_cache
-        app.importmap.cache_sweeper watches: app.root.join("app/javascript")
+        app.importmap.cache_sweeper watches: [ 
+          app.root.join("app/javascript"), app.root.join("vendor/javascript")
+        ]
 
         ActiveSupport.on_load(:action_controller_base) do
           before_action { Rails.application.importmap.cache_sweeper.execute_if_updated }
@@ -38,6 +40,7 @@ module Importmap
       if Rails.application.config.respond_to?(:assets)
         Rails.application.config.assets.precompile += %w( es-module-shims.js es-module-shims.min.js )
         Rails.application.config.assets.paths << Rails.root.join("app/javascript")
+        Rails.application.config.assets.paths << Rails.root.join("vendor/javascript")
       end
     end
 
