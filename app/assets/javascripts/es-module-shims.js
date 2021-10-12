@@ -1,4 +1,4 @@
-/* ES Module Shims 1.1.0 */
+/* ES Module Shims 1.2.0 */
 (function () {
 
   const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
@@ -216,7 +216,7 @@
 
   const { revokeBlobURLs, noLoadEventRetriggers } = esmsInitOptions$1;
 
-  const fetchHook = esmsInitOptions$1.fetchHook ? globalHook(esmsInitOptions$1.fetchHook) : fetch;
+  const fetchHook = esmsInitOptions$1.fetch ? globalHook(esmsInitOptions$1.fetch) : fetch;
 
   function globalHook (name) {
     return typeof name === 'string' ? self[name] : name;
