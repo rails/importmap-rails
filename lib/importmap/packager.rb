@@ -96,7 +96,6 @@ class Importmap::Packager
 
     def remove_existing_package_file(package)
       FileUtils.rm_rf vendored_package_path(package)
-      FileUtils.rm_rf "#{vendored_package_path(package)}.br" # Temp workaround for jspm.io
     end
 
     def remove_package_from_importmap(package)
@@ -109,17 +108,12 @@ class Importmap::Packager
     end
 
     def download_package_file(package, url)
-      if url =~ /jspm.io/
-        # Temporary workaround jspm.io only sending brotli
-        `curl -s '#{url}' | brotli -d > #{vendored_package_path(package)}`
-      else
-        response = Net::HTTP.get_response(URI(url))
+      response = Net::HTTP.get_response(URI(url))
 
-        if response.code == "200"
-          save_vendored_package(package, response.body)
-        else
-          handle_failure_response(response)
-        end
+      if response.code == "200"
+        save_vendored_package(package, response.body)
+      else
+        handle_failure_response(response)
       end
     end
 
