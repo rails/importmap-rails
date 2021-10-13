@@ -14,6 +14,10 @@ create_file Rails.root.join("app/javascript/application.js") do <<-JS
 JS
 end
 
+say "Use vendor/javascript for downloaded pins"
+empty_directory "vendor/javascript"
+keep_file "vendor/javascript"
+
 if (sprockets_manifest_path = Rails.root.join("app/assets/config/manifest.js")).exist?
   say "Ensure JavaScript files are in the Sprocket manifest"
   append_to_file sprockets_manifest_path,
