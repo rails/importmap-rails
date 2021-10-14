@@ -123,11 +123,11 @@ Pinning "object-assign" to vendor/object-assign.js via download from https://ga.
 This will produce pins in your `config/importmap.rb` like so:
 
 ```ruby
-pin "react", to: "vendor/react.js" # https://ga.jspm.io/npm:react@17.0.2/index.js
-pin "object-assign", to: "vendor/object-assign.js" # https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+pin "react" # https://ga.jspm.io/npm:react@17.0.2/index.js
+pin "object-assign" # https://ga.jspm.io/npm:object-assign@4.1.1/index.js
 ```
 
-The packages are downloaded to `app/javascript/vendor`, which you can check into your source control, and they'll be available through your application's own asset pipeline serving.
+The packages are downloaded to `vendor/javascript`, which you can check into your source control, and they'll be available through your application's own asset pipeline serving.
 
 If you later wish to remove a downloaded pin, you again pass `--download`:
 
