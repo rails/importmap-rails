@@ -16,7 +16,7 @@ class Importmap::Commands < Thor
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
       imports.each do |package, url|
         if options[:download]
-          puts %(Pinning "#{package}" to vendor/#{package}.js via download from #{url})
+          puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
           packager.download(package, url)
           pin = packager.vendored_pin_for(package, url)
         else
