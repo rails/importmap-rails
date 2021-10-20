@@ -1,7 +1,7 @@
 namespace :importmap do
   desc "Setup Importmap for the app"
   task :install do |task|
-    namespace = task.name.split(/turbo:install/).first
+    namespace = task.name.split(/installmap:install/).first
     system "#{RbConfig.ruby} ./bin/rails #{namespace}app:template LOCATION=#{File.expand_path("../install/install.rb",  __dir__)}"
   end
 end
