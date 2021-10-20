@@ -9,6 +9,8 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 
 ## Installation
 
+Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
+
 ### a) Rails apps
 
 Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications: 
@@ -17,17 +19,27 @@ Importmap for Rails is automatically included in Rails 7+ for new applications, 
 2. Run `./bin/bundle install`
 3. Run `./bin/rails importmap:install`
 
-Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
-
 ### b) Rails engines
 
-Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications:
+This gem behaves differently when it is loaded into a Rails Engine.  We assume that you wish to load the gem's behaviour into the Engine's codebase rather than loading it into the **dummy** application's codebase. You may wish to copy the changes that the installer makes into the **dummy** application. 
 
-1. Add `importmap-rails` to your Gemfile with `gem 'importmap-rails'`
-2. Run `./bin/bundle install`
-3. Run `./bin/rails app:importmap:install`
+Importmap for Rails is automatically included in Rails 7+ for new engines, but you can also install it manually in existing engines:
 
-Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
+1. In your `<engine>.gemspec` file, add the following:
+    ```ruby
+    spec.add_dependency 'importmap-rails'
+    ```
+2. Near the top of your `lib/<engine_name>/engine.rb` file, add the following:
+    ```ruby
+    require 'importmap-rails'
+    ```
+3. If you wish to load a non-standard version of this gem, such as the latest unreleased version in the **main** 
+   branch, add the following to your `Gemfile`:
+    ```ruby
+    gem 'importmap-rails'
+    ```
+4. Run `./bin/bundle install`
+5. Run `./bin/rails app:importmap:install`. Please note the addition of `app:` in this command.
 
 
 ## Usage
