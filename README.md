@@ -9,6 +9,8 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 
 ## Installation
 
+### a) Rails apps
+
 Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications: 
 
 1. Add `importmap-rails` to your Gemfile with `gem 'importmap-rails'`
@@ -17,12 +19,22 @@ Importmap for Rails is automatically included in Rails 7+ for new applications, 
 
 Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
 
+### b) Rails engines
+
+Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications:
+
+1. Add `importmap-rails` to your Gemfile with `gem 'importmap-rails'`
+2. Run `./bin/bundle install`
+3. Run `./bin/rails app:importmap:install`
+
+Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
+
 
 ## Usage
 
 The import map is setup through `Rails.application.importmap` via the configuration in `config/importmap.rb`. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
 
-This import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
+This import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will set up the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
 
 It's in `app/javascript/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
 
