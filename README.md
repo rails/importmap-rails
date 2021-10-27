@@ -174,6 +174,11 @@ module MyEngine
     initializer "my-engine.importmap", after: "importmap" do |app|
       app.importmap.draw(Engine.root.join("config/importmap.rb"))
     end
+    
+    # If using Rails version < 7 and engine uses the newer app/javascript path for javascript assets
+    initializer "my-engine.importmap.assets" do |app|
+      Rails.application.config.assets.paths << Engine.root.join("app/javascript")
+    end
   end
 end
 ```
