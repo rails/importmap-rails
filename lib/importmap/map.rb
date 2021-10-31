@@ -87,13 +87,21 @@ class Importmap::Map
       @cached_preloaded_module_paths = nil
     end
 
+    def rescuable_asset_error?(error)
+      error.is_a?(Sprockets::Rails::Helper::AssetNotFound)
+    end
+
     def resolve_asset_paths(paths, resolver:)
       paths.transform_values do |mapping|
         begin
           resolver.asset_path(mapping.path)
-        rescue Sprockets::Rails::Helper::AssetNotFound
-          Rails.logger.warn "Importmap skipped missing path: #{mapping.path}"
-          nil
+        rescue => e
+          if rescuable_asset_error?(e)
+            Rails.logger.warn "Importmap skipped missing path: #{mapping.path}"
+            nil
+          else
+            raise e
+          end
         end
       end.compact
     end
