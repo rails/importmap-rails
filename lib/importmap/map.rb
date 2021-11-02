@@ -88,7 +88,7 @@ class Importmap::Map
     end
 
     def rescuable_asset_error?(error)
-      error.is_a?(Sprockets::Rails::Helper::AssetNotFound)
+      Rails.application.config.importmap.rescuable_asset_errors.any? { |e| error.is_a?(e) }
     end
 
     def resolve_asset_paths(paths, resolver:)
