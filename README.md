@@ -30,7 +30,7 @@ Importmap-rails provides a clean API for mapping "bare module specifiers" like `
 For example:
 
 ```rb
-// config/importmaps.rb
+# config/importmaps.rb
 pin "react" to "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
