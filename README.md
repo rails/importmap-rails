@@ -21,9 +21,9 @@ Note: In order to use JavaScript from Rails frameworks like Action Cable, Action
 
 At their core, importmaps are essentially a string substitution for what are referred to as "bare module specifiers". A "bare module specifier" looks like this: `import React from "react"`. This is not compatible with the ES Module loader spec. Instead, to be ESM compatible, you must provide 1 of the 3 following types of specifiers:
 
-A.) Absolute path `import React from "/Users/DHH/projects/basecamp/node_modules/react"`
-B.) Relative path `import React from "./node_modules/react"`
-C.) HTTP path: `import React from "https://ga.jspm.io/npm:react@17.0.1/index.js"`
+- Absolute path `import React from "/Users/DHH/projects/basecamp/node_modules/react"`
+- Relative path `import React from "./node_modules/react"`
+- HTTP path: `import React from "https://ga.jspm.io/npm:react@17.0.1/index.js"`
 
 Importmap-rails provides a clean API for mapping "bare module specifiers" like `"react"` to 1 of the 3 viable ways of loading ES Module javascript packages.
 
