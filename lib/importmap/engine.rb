@@ -7,6 +7,7 @@ module Importmap
   class Engine < ::Rails::Engine
     config.importmap = ActiveSupport::OrderedOptions.new
     config.importmap.sweep_cache = Rails.env.development? || Rails.env.test?
+    config.importmap.rescuable_asset_errors = []
 
     config.autoload_once_paths = %W( #{root}/app/helpers )
 
@@ -47,6 +48,12 @@ module Importmap
     initializer "importmap.helpers" do
       ActiveSupport.on_load(:action_controller_base) do
         helper Importmap::ImportmapTagsHelper
+      end
+    end
+
+    initializer 'importmap.rescuable_asset_errors' do |app|
+      if defined?(Sprockets::Rails)
+        app.config.importmap.rescuable_asset_errors << Sprockets::Rails::Helper::AssetNotFound
       end
     end
   end
