@@ -17,6 +17,42 @@ Importmap for Rails is automatically included in Rails 7+ for new applications, 
 
 Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
 
+## How do importmaps work?
+
+At their core, importmaps are essentially a string substitution for what are referred to as "bare module specifiers". A "bare module specifier" looks like this: `import React from "react"`. This is not compatible with the ES Module loader spec. Instead, to be ESM compatible, you must provide 1 of the 3 following types of specifiers:
+
+- Absolute path:
+```js
+import React from "/Users/DHH/projects/basecamp/node_modules/react"
+```
+
+- Relative path:
+```js
+import React from "./node_modules/react"
+```
+
+- HTTP path:
+```js
+import React from "https://ga.jspm.io/npm:react@17.0.1/index.js"
+```
+
+Importmap-rails provides a clean API for mapping "bare module specifiers" like `"react"` 
+to 1 of the 3 viable ways of loading ES Module javascript packages.
+
+For example:
+
+```rb
+# config/importmaps.rb
+pin "react" to "https://ga.jspm.io/npm:react@17.0.2/index.js"
+```
+
+means "everytime you see `import React from "react"` 
+change it to `import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"`"
+
+```js
+import React from "react" 
+// => import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"
+```
 
 ## Usage
 
