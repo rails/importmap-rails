@@ -31,7 +31,7 @@ class Importmap::Commands < Thor
         end
       end
     else
-      puts "Couldn't find any packages in #{packages.inspect} on #{options[:provider]}"
+      puts "Couldn't find any packages in #{packages.inspect} on #{options[:from]}"
     end
   end
 
@@ -53,7 +53,7 @@ class Importmap::Commands < Thor
         end
       end
     else
-      puts "Couldn't find any packages in #{packages.inspect} on #{options[:provider]}"
+      puts "Couldn't find any packages in #{packages.inspect} on #{options[:from]}"
     end
   end
 
