@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    importmap-rails (0.8.1)
+    importmap-rails (0.8.2)
       rails (>= 6.0.0)
 
 GEM
@@ -168,6 +168,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-20
+  arm64-darwin-21
   x86_64-darwin-20
   x86_64-linux
 
@@ -184,4 +185,4 @@ DEPENDENCIES
   webdrivers
 
 BUNDLED WITH
-   2.2.28
+   2.2.30
