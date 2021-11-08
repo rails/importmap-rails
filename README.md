@@ -9,7 +9,7 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 
 ## Installation
 
-Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications: 
+Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications:
 
 1. Add `importmap-rails` to your Gemfile with `gem 'importmap-rails'`
 2. Run `./bin/bundle install`
@@ -188,7 +188,7 @@ pin "@github/hotkey", to: "https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/inde
 pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js"
 
 # app/views/layouts/application.html.erb
-<%= javascript_importmap_tags %> 
+<%= javascript_importmap_tags %>
 
 # will include the following link before the importmap is setup:
 <link rel="modulepreload" href="https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js">
@@ -199,7 +199,7 @@ pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js"
 
 By default, Rails loads import map definition from the application's `config/importmap.rb` to the `Importmap::Map` object available at `Rails.application.importmap`.
 
-You can combine multiple import maps by drawing their definitions onto the `Rails.application.importmap`. For example, appending import maps defined in Rails engines:
+You can combine multiple import maps by adding paths to additional import map configs to `Rails.application.config.importmap.paths`. For example, appending import maps defined in Rails engines:
 
 ```ruby
 # my_engine/lib/my_engine/engine.rb
@@ -207,8 +207,9 @@ You can combine multiple import maps by drawing their definitions onto the `Rail
 module MyEngine
   class Engine < ::Rails::Engine
     # ...
-    initializer "my-engine.importmap", after: "importmap" do |app|
-      app.importmap.draw(Engine.root.join("config/importmap.rb"))
+    initializer "my-engine.importmap", before: "importmap" do |app|
+      app.config.importmap.paths << Engine.root.join("config/importmap.rb")
+      # ...
     end
   end
 end
@@ -238,14 +239,19 @@ end
 
 Generating the import map json and modulepreloads may require resolving hundreds of assets. This can take a while, so these operations are cached, but in development and test, we watch for changes to both `config/importmap.rb` and files in `app/javascript` to clear this cache. This feature can be controlled in an environment configuration file via the boolean `config.importmap.sweep_cache`.
 
-If you're pinning local files from outside of `app/javascript`, you'll need to add them to the cache sweeper configuration or restart your development server upon changes to those external files. To add them to the configuration to clear the cache on changes, for instance when locally developing an engine, use an initializer like the following sample `config/initializers/importmap-caching.rb`:
+If you're pinning local files from outside of `app/javascript`, you'll need to add them to the cache sweeper configuration or restart your development server upon changes to those external files. For example, here's how you can do it for Rails engine:
 
 ```ruby
-if Rails.env.development?
-  Rails.application.importmap.cache_sweeper watches: [
-    Rails.application.root.join("app/javascript"),
-    MyEngine::Engine.root.join("app/assets/javascripts"),
-  ]
+# my_engine/lib/my_engine/engine.rb
+
+module MyEngine
+  class Engine < ::Rails::Engine
+    # ...
+    initializer "my-engine.importmap", before: "importmap" do |app|
+      # ...
+      app.config.importmap.cache_sweepers << Engine.root.join("app/assets/javascripts")
+    end
+  end
 end
 ```
 

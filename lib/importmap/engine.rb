@@ -6,18 +6,20 @@ Rails::Application.send(:attr_accessor, :importmap)
 module Importmap
   class Engine < ::Rails::Engine
     config.importmap = ActiveSupport::OrderedOptions.new
+    config.importmap.paths = []
     config.importmap.sweep_cache = Rails.env.development? || Rails.env.test?
+    config.importmap.cache_sweepers = []
     config.importmap.rescuable_asset_errors = []
 
     config.autoload_once_paths = %W( #{root}/app/helpers )
 
     initializer "importmap" do |app|
-      app.importmap = Importmap::Map.new.draw("config/importmap.rb")
+      app.importmap = Importmap::Map.new
+      app.config.importmap.paths << app.root.join("config/importmap.rb")
+      app.config.importmap.paths.each { |path| app.importmap.draw(path) }
     end
 
     initializer "importmap.reloader" do |app|
-      app.config.paths.add "config/importmap.rb"
-
       Importmap::Reloader.new.tap do |reloader|
         reloader.execute
         app.reloaders << reloader
@@ -27,9 +29,9 @@ module Importmap
 
     initializer "importmap.cache_sweeper" do |app|
       if app.config.importmap.sweep_cache
-        app.importmap.cache_sweeper watches: [ 
-          app.root.join("app/javascript"), app.root.join("vendor/javascript")
-        ]
+        app.config.importmap.cache_sweepers << app.root.join("app/javascript")
+        app.config.importmap.cache_sweepers << app.root.join("vendor/javascript")
+        app.importmap.cache_sweeper(watches: app.config.importmap.cache_sweepers)
 
         ActiveSupport.on_load(:action_controller_base) do
           before_action { Rails.application.importmap.cache_sweeper.execute_if_updated }
