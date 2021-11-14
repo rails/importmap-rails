@@ -21,4 +21,22 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
       %(<link rel="modulepreload" href="https://cdn.skypack.dev/md5">),
       javascript_importmap_module_preload_tags
   end
+
+  test "javascript_importmap_tags with explicit importmap" do
+    map_path = File.expand_path( File.join(__dir__,'./dummy/config/importmap.alternate.rb'))
+    assert File.exists?(map_path) # avoid silent failure on #draw
+    importmap_tags = javascript_importmap_tags("alternate_app", importmap: Importmap::Map.new.draw(map_path))
+
+    assert_match \
+      %r{<script type="module">import "alternate_app"</script>},
+      importmap_tags
+
+    assert_match \
+      %r{"application": "/alternate/alternate_app.js"},
+      importmap_tags
+
+    assert_match \
+      %{"controllers/hello_controller": "/alternate/controllers/hello_controller.js"},
+      importmap_tags
+  end
 end
