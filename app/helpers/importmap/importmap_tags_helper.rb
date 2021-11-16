@@ -1,19 +1,20 @@
 module Importmap::ImportmapTagsHelper
   # Setup all script tags needed to use an importmap-powered entrypoint (which defaults to application.js)
-  def javascript_importmap_tags(entry_point = "application", shim: true, importmap: Rails.application.importmap)
+  def javascript_importmap_tags(map: 'default', entry_point: nil, shim: true)
+    importmap = Rails.application.importmaps[map.to_s]
     safe_join [
       javascript_inline_importmap_tag(importmap.to_json(resolver: self)),
       javascript_importmap_module_preload_tags(importmap),
       (javascript_importmap_shim_nonce_configuration_tag if shim),
       (javascript_importmap_shim_tag if shim),
-      javascript_import_module_tag(entry_point)
+      javascript_import_module_tag(entry_point || importmap.entry_point)
     ].compact, "\n"
   end
 
   # Generate an inline importmap tag using the passed `importmap_json` JSON string.
-  # By default, `Rails.application.importmap.to_json(resolver: self)` is used.
-  def javascript_inline_importmap_tag(importmap_json = Rails.application.importmap.to_json(resolver: self))
-    tag.script importmap_json.html_safe,
+  def javascript_inline_importmap_tag(importmap_json = Rails.application.importmaps.default.to_json(resolver: self))
+    json_string = importmap_json.is_a?(Importmap::Map) ? importmap_json.to_json(resolver: self) : importmap_json
+    tag.script json_string.html_safe,
       type: "importmap", "data-turbo-track": "reload", nonce: content_security_policy_nonce
   end
 
@@ -41,7 +42,7 @@ module Importmap::ImportmapTagsHelper
   # Link tags for preloading all modules marked as preload: true in the `importmap`
   # (defaults to Rails.application.importmap), such that they'll be fetched
   # in advance by browsers supporting this link type (https://caniuse.com/?search=modulepreload).
-  def javascript_importmap_module_preload_tags(importmap = Rails.application.importmap)
+  def javascript_importmap_module_preload_tags(importmap = Rails.application.importmaps.default)
     javascript_module_preload_tag(*importmap.preloaded_module_paths(resolver: self))
   end
 

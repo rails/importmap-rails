@@ -1,26 +1,19 @@
 require "pathname"
 
-class Importmap::Map
-  attr_reader :packages, :directories
 
-  def initialize
+class Importmap::Map
+  attr_reader :packages, :directories, :entry_point
+
+  def initialize(entry_point: nil)
+    @entry_point = entry_point || 'application'
     @packages, @directories = {}, {}
   end
 
-  def draw(path = nil, &block)
-    if path && File.exist?(path)
-      begin
-        instance_eval(File.read(path), path.to_s)
-      rescue Exception => e
-        Rails.logger.error "Unable to parse import map from #{path}: #{e.message}"
-        raise "Unable to parse import map from #{path}: #{e.message}"
-      end
-    elsif block_given?
-      instance_eval(&block)
-    end
+  def draw(&block)
+    instance_eval(&block)
 
     self
-  end
+  end  
 
   def pin(name, to: nil, preload: false)
     clear_cache
@@ -56,18 +49,9 @@ class Importmap::Map
     Digest::SHA1.hexdigest(to_json(resolver: resolver).to_s)
   end
 
-  # Returns an instance ActiveSupport::EventedFileUpdateChecker configured to clear the cache of the map
-  # when the directories passed on initialization via `watches:` have changes. This is used in development
-  # and test to ensure the map caches are reset when javascript files are changed.
-  def cache_sweeper(watches: nil)
-    if watches
-      @cache_sweeper =
-        Rails.application.config.file_watcher.new([], Array(watches).collect { |dir| [ dir.to_s, "js"] }.to_h) do
-          clear_cache
-        end
-    else
-      @cache_sweeper
-    end
+  def clear_cache
+    @cached_json = nil
+    @cached_preloaded_module_paths = nil
   end
 
   private
@@ -82,13 +66,8 @@ class Importmap::Map
       end
     end
 
-    def clear_cache
-      @cached_json = nil
-      @cached_preloaded_module_paths = nil
-    end
-
     def rescuable_asset_error?(error)
-      Rails.application.config.importmap.rescuable_asset_errors.any? { |e| error.is_a?(e) }
+      Rails.application.config.importmaps.rescuable_asset_errors.any? { |e| error.is_a?(e) }
     end
 
     def resolve_asset_paths(paths, resolver:)

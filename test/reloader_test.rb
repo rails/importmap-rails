@@ -12,11 +12,11 @@ class ReloaderTest < ActiveSupport::TestCase
     end
   end
 
-  test "redraws importmap when config changes" do
-    Rails.application.importmap = Importmap::Map.new.draw { pin "md5", to: "https://cdn.skypack.dev/md5" }
+  test "redraws importmaps when config changes" do
+    Rails.application.importmaps = Importmap::Maps.new.draw { pin "md5", to: "https://cdn.skypack.dev/md5" }
     assert_not_predicate @reloader, :updated?
 
-    assert_changes -> { Rails.application.importmap.packages.keys }, from: %w[ md5 ], to: %w[ md5 not_there ] do
+    assert_changes -> { Rails.application.importmaps.default.packages.keys }, from: %w[ md5 ], to: %w[ md5 not_there ] do
       touch_config
       assert @reloader.execute_if_updated
     end
