@@ -8,12 +8,11 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "editor", to: "rich_text.js"
         pin "not_there", to: "nowhere.js"
         pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
+        pin "my_lib", preload: true
 
-        pin_all_from "app/javascript/controllers", under: "controllers", preload: true
-        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", preload: true
-        pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers", preload: true
-        pin_all_from "app/javascript/helpers", under: "helpers", preload: true
-        pin_all_from "lib/assets/javascripts", preload: true
+        pin_under "controllers", preload: true
+        pin_under "controllers/spina", inside: "spina/controllers"
+        pin_under "helpers", inside: "helpers"
       end
     end
   end
@@ -30,16 +29,20 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_nil generate_importmap_json["imports"]["not_there"]
   end
 
+  test "local pin for other folder" do
+    assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
+  end
+
   test "remote pin is not digest stamped" do
     assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
   end
 
-  test "directory pin mounted under matching subdir maps all files" do
+  test "directory pin with inferred inside" do
     assert_match %r|assets/controllers/goodbye_controller-.*\.js|, generate_importmap_json["imports"]["controllers/goodbye_controller"]
     assert_match %r|assets/controllers/utilities/md5_controller-.*\.js|, generate_importmap_json["imports"]["controllers/utilities/md5_controller"]
   end
 
-  test "directory pin mounted under matching subdir maps index as root" do
+  test "directory pin maps index as root" do
     assert_match %r|assets/controllers/index.*\.js|, generate_importmap_json["imports"]["controllers"]
   end
 
@@ -47,13 +50,9 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match %r|assets/helpers/requests/index.*\.js|, generate_importmap_json["imports"]["helpers/requests"]
   end
 
-  test "directory pin under custom asset path" do
+  test "directory pin with explicit inside" do
     assert_match %r|assets/spina/controllers/another_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/another_controller"]
     assert_match %r|assets/spina/controllers/deeper/again_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/deeper/again_controller"]
-  end
-
-  test "directory pin without path or under" do
-    assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
   end
 
   test "preloaded modules are included in preload tags" do

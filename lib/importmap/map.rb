@@ -27,9 +27,9 @@ class Importmap::Map
     @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
-  def pin_all_from(dir, under: nil, to: nil, preload: false)
+  def pin_under(under, inside: nil, preload: false)
     clear_cache
-    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
+    @directories[under] = MappedDir.new(under: under, path: inside || under, preload: preload)
   end
 
   def preloaded_module_paths(resolver:)
@@ -71,7 +71,7 @@ class Importmap::Map
   end
 
   private
-    MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
+    MappedDir  = Struct.new(:under, :path, :preload, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
 
     def cache_as(name)
@@ -116,9 +116,10 @@ class Importmap::Map
 
     def expand_directories_into(paths)
       @directories.values.each do |mapping|
-        if (absolute_path = absolute_root_of(mapping.dir)).exist?
-          find_javascript_files_in_tree(absolute_path).each do |filename|
-            module_filename = filename.relative_path_from(absolute_path)
+        unless (asset_path = asset_path_containing(mapping.path)).nil?
+          dir_path = asset_path.join(mapping.path)
+          find_javascript_files_in_tree(dir_path).each do |filename|
+            module_filename = filename.relative_path_from(dir_path)
             module_name     = module_name_from(module_filename, mapping)
             module_path     = module_path_from(module_filename, mapping)
 
@@ -133,14 +134,16 @@ class Importmap::Map
     end
 
     def module_path_from(filename, mapping)
-      [ mapping.path || mapping.under, filename.to_s ].compact.join("/")
+      [ mapping.path, filename.to_s ].compact.join("/")
     end
 
     def find_javascript_files_in_tree(path)
       Dir[path.join("**/*.js{,m}")].collect { |file| Pathname.new(file) }.select(&:file?)
     end
 
-    def absolute_root_of(path)
-      (pathname = Pathname.new(path)).absolute? ? pathname : Rails.root.join(path)
+    def asset_path_containing(path)
+      Rails.application.config.assets.paths.find do |asset_path|
+        Pathname.new(asset_path).join(path).directory?
+      end
     end
 end
