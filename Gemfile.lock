@@ -68,6 +68,10 @@ GEM
       zeitwerk (~> 2.3)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
+    appraisal (2.4.1)
+      bundler
+      rake
+      thor (>= 0.14.0)
     builder (3.2.4)
     byebug (11.1.3)
     capybara (3.35.3)
@@ -173,6 +177,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  appraisal
   byebug
   capybara
   importmap-rails!

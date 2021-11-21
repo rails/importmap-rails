@@ -9,6 +9,10 @@ gem "rails", "~> #{rails_version}"
 
 gem "sqlite3"
 
+group :development do
+  gem "appraisal"
+end
+
 group :test do
   gem "turbo-rails"
   gem "stimulus-rails"
