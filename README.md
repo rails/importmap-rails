@@ -211,6 +211,11 @@ module MyEngine
       app.config.importmap.paths << Engine.root.join("config/importmap.rb")
       # ...
     end
+
+    initializer "my-engine.javascript-assets" do |app|
+      app.config.assets.paths << File.expand_path("../../app/javascript")
+      # ...
+    end
   end
 end
 ```
@@ -220,7 +225,7 @@ And pinning JavaScript modules from the engine:
 ```ruby
 # my_engine/config/importmap.rb
 
-pin_all_from File.expand_path("../app/assets/javascripts", __dir__)
+pin_under "blorgh/application"
 ```
 
 
