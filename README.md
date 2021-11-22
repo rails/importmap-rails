@@ -43,7 +43,7 @@ For example:
 
 ```rb
 # config/importmaps.rb
-pin "react" to "https://ga.jspm.io/npm:react@17.0.2/index.js"
+pin "react", to: "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
 means "everytime you see `import React from "react"` 
