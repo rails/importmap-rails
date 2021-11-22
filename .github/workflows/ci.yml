@@ -7,11 +7,17 @@ jobs:
         ruby-version:
           - "2.7"
           - "3.0"
+        gemfile:
+          - Gemfile
+          - gemfiles/rails_7.gemfile
         continue-on-error: [ false ]
 
-    name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
+    name: ${{ format('Tests (Ruby {0}, {1})', matrix.ruby-version, matrix.gemfile) }}
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.continue-on-error }}
+
+    env:
+      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
 
     steps:
       - uses: actions/checkout@v1
