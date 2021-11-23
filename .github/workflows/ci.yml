@@ -9,7 +9,8 @@ jobs:
           - "3.0"
         gemfile:
           - Gemfile
-          - gemfiles/rails_7.gemfile
+          - gemfiles/rails_7_propshaft.gemfile
+          - gemfiles/rails_7_sprockets.gemfile
         continue-on-error: [ false ]
 
     name: ${{ format('Tests (Ruby {0}, {1})', matrix.ruby-version, matrix.gemfile) }}
