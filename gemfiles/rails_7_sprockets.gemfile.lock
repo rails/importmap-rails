@@ -86,7 +86,7 @@ GIT
 PATH
   remote: ..
   specs:
-    importmap-rails (0.8.2)
+    importmap-rails (0.9.0)
       rails (>= 6.0.0)
 
 GEM
