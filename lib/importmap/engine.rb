@@ -53,10 +53,11 @@ module Importmap
       end
     end
 
-    initializer 'importmap.rescuable_asset_errors' do |app|
+    initializer "importmap.rescuable_asset_errors" do |app|
       if defined?(Propshaft)
         app.config.importmap.rescuable_asset_errors << Propshaft::MissingAssetError
       end
+
       if defined?(Sprockets::Rails)
         app.config.importmap.rescuable_asset_errors << Sprockets::Rails::Helper::AssetNotFound
       end
