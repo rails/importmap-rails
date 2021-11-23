@@ -1,4 +1,4 @@
-/* ES Module Shims 1.3.0 */
+/* ES Module Shims 1.3.2 */
 (function () {
 
   const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
@@ -211,7 +211,7 @@
   if (!nonce) {
     const nonceElement = document.querySelector('script[nonce]');
     if (nonceElement)
-      nonce = nonceElement.getAttribute('nonce');
+      nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
   }
 
   const onerror = globalHook(esmsInitOptions$1.onerror || noop);
@@ -404,7 +404,7 @@
       if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
       return module;
     }
-    const module = await dynamicImport((shimMode || load.n) ? load.b : load.u, { errUrl: load.u });
+    const module = await dynamicImport(!shimMode && !load.n && nativelyLoaded ? load.u : load.b, { errUrl: load.u });
     // if the top-level load is a shell, run its update function
     if (load.s)
       (await dynamicImport(load.s)).u$_(module);
@@ -530,9 +530,9 @@
       resolvedSource += source.slice(lastIndex);
     }
 
-    resolvedSource = resolvedSource.replace(/\/\/# sourceMappingURL=(.*)\s*$/, (match, url) => match.replace(url, () => new URL(url, load.r)));
+    resolvedSource = resolvedSource.replace(/\n\/\/# sourceMappingURL=([^\n]+)\s*$/, (match, url) => match.replace(url, () => new URL(url, load.r)));
     let hasSourceURL = false;
-    resolvedSource = resolvedSource.replace(/\/\/# sourceURL=(.*)\s*$/, (match, url) => (hasSourceURL = true, match.replace(url, () => new URL(url, load.r))));
+    resolvedSource = resolvedSource.replace(/\n\/\/# sourceURL=([^\n]+)\s*$/, (match, url) => (hasSourceURL = true, match.replace(url, () => new URL(url, load.r))));
     if (!hasSourceURL)
       resolvedSource += '\n//# sourceURL=' + load.r;
 
@@ -760,11 +760,12 @@
     const isDomContentLoadedScript = domContentLoadedCnt > 0;
     if (isReadyScript) readyStateCompleteCnt++;
     if (isDomContentLoadedScript) domContentLoadedCnt++;
-    const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isReadyScript && lastStaticLoadPromise).catch(e => {
+    const blocks = script.getAttribute('async') === null && isReadyScript;
+    const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, blocks && lastStaticLoadPromise).catch(e => {
       setTimeout(() => { throw e });
       onerror(e);
     });
-    if (isReadyScript)
+    if (blocks)
       lastStaticLoadPromise = loadPromise.then(readyStateCompleteCheck);
     if (isDomContentLoadedScript)
       loadPromise.then(domContentLoadedCheck);
