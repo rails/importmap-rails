@@ -4,7 +4,8 @@ VERSION=$1
 
 printf "module Importmap\n  VERSION = \"$VERSION\"\nend\n" > ./lib/importmap/version.rb
 bundle
-git add Gemfile.lock lib/importmap/version.rb
+for gemfile in $(ls gemfiles/*.gemfile); do BUNDLE_GEMFILE="$gemfile" bundle; done
+git add Gemfile.lock gemfiles/*.lock lib/importmap/version.rb
 git commit -m "Bump version for $VERSION"
 git push
 git tag v$VERSION
