@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+VERSION=$1
+
+curl -s "https://unpkg.com/es-module-shims@$VERSION/dist/es-module-shims.js" > app/assets/javascripts/es-module-shims.js
+curl -s "https://ga.jspm.io/npm:es-module-shims@$VERSION/dist/es-module-shims.js" > app/assets/javascripts/es-module-shims.min.js
+curl -s "https://ga.jspm.io/npm:es-module-shims@$VERSION/dist/es-module-shims.js.map" > app/assets/javascripts/es-module-shims.js.map
