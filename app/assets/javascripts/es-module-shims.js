@@ -1,4 +1,4 @@
-/* ES Module Shims 1.3.4 */
+/* ES Module Shims 1.3.5 */
 (function () {
 
   const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
@@ -539,7 +539,7 @@
     load.S = undefined;
   }
 
-  const sourceMapURLRegEx = /\n\/\/# source(Mapping)?URL=([^\n]+)\s*((;|\/\/[^#][^\n]+)\s*)*$/;
+  const sourceMapURLRegEx = /\n\/\/# source(Mapping)?URL=([^\n]+)\s*((;|\/\/[^#][^\n]*)\s*)*$/;
 
   const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
   const jsonContentType = /^(text|application)\/json(;|$)/;
