@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gem "rails", ref: "main", git: "https://github.com/rails/rails.git"
+gem "rails", "7.0.0.rc1"
 gem "sqlite3"
 gem "sprockets-rails"
 
