@@ -2,6 +2,11 @@
 
 VERSION=$1
 
+if [ -z "$VERSION" ]; then
+  echo "Usage: $0 <version>"
+  exit 1
+fi
+
 printf "module Importmap\n  VERSION = \"$VERSION\"\nend\n" > ./lib/importmap/version.rb
 bundle
 for gemfile in $(ls gemfiles/*.gemfile); do BUNDLE_GEMFILE="$gemfile" bundle; done
