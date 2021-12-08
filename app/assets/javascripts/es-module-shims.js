@@ -1,4 +1,4 @@
-/* ES Module Shims 1.3.5 */
+/* ES Module Shims 1.3.6 */
 (function () {
 
   const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
@@ -199,14 +199,14 @@
 
   const optionsScript = document.querySelector('script[type=esms-options]');
 
-  const esmsInitOptions$1 = optionsScript ? JSON.parse(optionsScript.innerHTML) : self.esmsInitOptions ? self.esmsInitOptions : {};
+  const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : self.esmsInitOptions ? self.esmsInitOptions : {};
 
-  let shimMode = !!esmsInitOptions$1.shimMode;
-  const resolveHook = globalHook(shimMode && esmsInitOptions$1.resolve);
+  let shimMode = !!esmsInitOptions.shimMode;
+  const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
 
-  const skip = esmsInitOptions$1.skip ? new RegExp(esmsInitOptions$1.skip) : null;
+  const skip = esmsInitOptions.skip ? new RegExp(esmsInitOptions.skip) : null;
 
-  let nonce = esmsInitOptions$1.nonce;
+  let nonce = esmsInitOptions.nonce;
 
   if (!nonce) {
     const nonceElement = document.querySelector('script[nonce]');
@@ -214,18 +214,18 @@
       nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
   }
 
-  const onerror = globalHook(esmsInitOptions$1.onerror || noop);
-  const onpolyfill = globalHook(esmsInitOptions$1.onpolyfill || noop);
+  const onerror = globalHook(esmsInitOptions.onerror || noop);
+  const onpolyfill = globalHook(esmsInitOptions.onpolyfill || noop);
 
-  const { revokeBlobURLs, noLoadEventRetriggers } = esmsInitOptions$1;
+  const { revokeBlobURLs, noLoadEventRetriggers } = esmsInitOptions;
 
-  const fetchHook = esmsInitOptions$1.fetch ? globalHook(esmsInitOptions$1.fetch) : fetch;
+  const fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
 
   function globalHook (name) {
     return typeof name === 'string' ? self[name] : name;
   }
 
-  const enable = Array.isArray(esmsInitOptions$1.polyfillEnable) ? esmsInitOptions$1.polyfillEnable : [];
+  const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
   const cssModulesEnabled = enable.includes('css-modules');
   const jsonModulesEnabled = enable.includes('json-modules');
 
@@ -318,7 +318,7 @@
     };
   }
 
-  const resolve = resolveHook ? async (id, parentUrl) => ({ r: await esmsInitOptions.resolve(id, parentUrl, defaultResolve), b: false }) : _resolve;
+  const resolve = resolveHook ? async (id, parentUrl) => ({ r: await resolveHook(id, parentUrl, defaultResolve), b: false }) : _resolve;
 
   let id = 0;
   const registry = {};
