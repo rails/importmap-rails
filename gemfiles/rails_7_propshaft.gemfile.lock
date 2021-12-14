@@ -2,7 +2,8 @@ PATH
   remote: ..
   specs:
     importmap-rails (0.9.4)
-      rails (>= 6.0.0)
+      actionpack (>= 6.0.0)
+      railties (>= 6.0.0)
 
 GEM
   remote: https://rubygems.org/
