@@ -3,7 +3,6 @@ PATH
   specs:
     importmap-rails (0.9.4)
       actionpack (>= 6.0.0)
-      activesupport (>= 6.0.0)
       railties (>= 6.0.0)
 
 GEM
