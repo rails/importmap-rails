@@ -2,7 +2,8 @@ PATH
   remote: .
   specs:
     importmap-rails (0.9.4)
-      rails (>= 6.0.0)
+      actionpack (>= 6.0.0)
+      railties (>= 6.0.0)
 
 GEM
   remote: https://rubygems.org/
@@ -174,6 +175,7 @@ PLATFORMS
   arm64-darwin-20
   arm64-darwin-21
   x86_64-darwin-20
+  x86_64-darwin-21
   x86_64-linux
 
 DEPENDENCIES
@@ -190,4 +192,4 @@ DEPENDENCIES
   webdrivers
 
 BUNDLED WITH
-   2.2.30
+   2.2.33
