@@ -1,4 +1,4 @@
-/* ES Module Shims 1.3.6 */
+/* ES Module Shims 1.4.0 */
 (function () {
 
   const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
@@ -130,17 +130,17 @@
     for (let p in packages) {
       const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
       if (outPackages[resolvedLhs]) {
-        throw new Error(`Dynamic import map rejected: Overrides entry "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+        throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
       }
       let target = packages[p];
-      if (typeof target !== 'string') 
+      if (typeof target !== 'string')
         continue;
       const mapped = resolveImportMap(parentMap, resolveIfNotPlainOrUrl(target, baseUrl) || target, baseUrl);
       if (mapped) {
         outPackages[resolvedLhs] = mapped;
         continue;
       }
-      targetWarning(p, packages[p], 'bare specifier did not resolve');
+      console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
     }
   }
 
@@ -175,15 +175,8 @@
     if (pkgName) {
       const pkg = packages[pkgName];
       if (pkg === null) return;
-      if (id.length > pkgName.length && pkg[pkg.length - 1] !== '/')
-        targetWarning(pkgName, pkg, "should have a trailing '/'");
-      else
-        return pkg + id.slice(pkgName.length);
+      return pkg + id.slice(pkgName.length);
     }
-  }
-
-  function targetWarning (match, target, msg) {
-    console.warn("Package target " + msg + ", resolving target '" + target + "' for " + match);
   }
 
   function resolveImportMap (importMap, resolvedOrPlain, parentUrl) {
@@ -215,9 +208,9 @@
   }
 
   const onerror = globalHook(esmsInitOptions.onerror || noop);
-  const onpolyfill = globalHook(esmsInitOptions.onpolyfill || noop);
+  const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : () => console.info(`OK: "Uncaught TypeError" module failure has been polyfilled`);
 
-  const { revokeBlobURLs, noLoadEventRetriggers } = esmsInitOptions;
+  const { revokeBlobURLs, noLoadEventRetriggers, enforceIntegrity } = esmsInitOptions;
 
   const fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
 
@@ -340,34 +333,36 @@
   const initPromise = featureDetectionPromise.then(() => {
     // shim mode is determined on initialization, no late shim mode
     if (!shimMode) {
-      let seenScript = false;
-      for (const script of document.querySelectorAll('script[type="module-shim"],script[type="importmap-shim"],script[type="module"],script[type="importmap"]')) {
-        if (!seenScript && script.type === 'module')
-          seenScript = true;
-        if (script.type.endsWith('-shim')) {
-          setShimMode();
-          break;
-        }
-        if (seenScript && script.type === 'importmap') {
-          importMapSrcOrLazy = true;
-          break;
+      if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
+        setShimMode();
+      }
+      else {
+        let seenScript = false;
+        for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')) {
+          if (!seenScript) {
+            if (script.type === 'module')
+              seenScript = true;
+          }
+          else if (script.type === 'importmap') {
+            importMapSrcOrLazy = true;
+            break;
+          }
         }
       }
     }
     baselinePassthrough = supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false;
-    if (!baselinePassthrough) onpolyfill();
     if (shimMode || !baselinePassthrough) {
       new MutationObserver(mutations => {
         for (const mutation of mutations) {
           if (mutation.type !== 'childList') continue;
           for (const node of mutation.addedNodes) {
             if (node.tagName === 'SCRIPT') {
-              if (!shimMode && node.type === 'module' || shimMode && node.type === 'module-shim')
+              if (node.type === (shimMode ? 'module-shim' : 'module'))
                 processScript(node);
-              if (!shimMode && node.type === 'importmap' || shimMode && node.type === 'importmap-shim')
+              if (node.type === (shimMode ? 'importmap-shim' : 'importmap'))
                 processImportMap(node);
             }
-            else if (node.tagName === 'LINK' && node.rel === 'modulepreload')
+            else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload'))
               processPreload(node);
           }
         }
@@ -378,8 +373,9 @@
     }
   });
   let importMapPromise = initPromise;
-
+  let firstPolyfillLoad = true;
   let acceptingImportMaps = true;
+
   async function topLevelLoad (url, fetchOpts, source, nativelyLoaded, lastStaticLoadPromise) {
     if (!shimMode)
       acceptingImportMaps = false;
@@ -402,6 +398,10 @@
       const module = await dynamicImport(createBlob(source), { errUrl: source });
       if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
       return module;
+    }
+    if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
+      onpolyfill();
+      firstPolyfillLoad = false;
     }
     const module = await dynamicImport(!shimMode && !load.n && nativelyLoaded ? load.u : load.b, { errUrl: load.u });
     // if the top-level load is a shell, run its update function
@@ -544,7 +544,6 @@
   const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
   const jsonContentType = /^(text|application)\/json(;|$)/;
   const cssContentType = /^(text|application)\/css(;|$)/;
-  const wasmContentType = /^application\/wasm(;|$)/;
 
   const cssUrlRegEx = /url\(\s*(?:(["'])((?:\\.|[^\n\\"'])+)\1|((?:\\.|[^\s,"'()\\])+))\s*\)/g;
 
@@ -562,6 +561,8 @@
   }
 
   async function doFetch (url, fetchOpts) {
+    if (enforceIntegrity && !fetchOpts.integrity)
+      throw Error(`No integrity for ${url}`);
     const poolQueue = pushFetchPool();
     if (poolQueue) await poolQueue;
     try {
@@ -571,7 +572,7 @@
       popFetchPool();
     }
     if (!res.ok)
-      throw new Error(`${res.status} ${res.statusText} ${res.url}`);
+      throw Error(`${res.status} ${res.statusText} ${res.url}`);
     const contentType = res.headers.get('content-type');
     if (jsContentType.test(contentType))
       return { r: res.url, s: await res.text(), t: 'js' };
@@ -581,10 +582,8 @@
       return { r: res.url, s: `var s=new CSSStyleSheet();s.replaceSync(${
       JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))
     });export default s;`, t: 'css' };
-    else if (wasmContentType.test(contentType))
-      throw new Error('WASM modules not supported');
     else
-      throw new Error(`Unknown Content-Type "${contentType}"`);
+      throw Error(`Unsupported Content-Type "${contentType}"`);
   }
 
   function getOrCreateLoad (url, fetchOpts, source) {
@@ -624,7 +623,7 @@
         ({ r: load.r, s: source, t } = await (fetchCache[url] || doFetch(url, fetchOpts)));
         if (t && !shimMode) {
           if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled)
-            throw new Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
+            throw Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
           if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions)
             load.n = true;
         }
@@ -663,9 +662,9 @@
   }
 
   function processScriptsAndPreloads () {
-    for (const script of document.querySelectorAll(shimMode ? 'script[type="module-shim"]' : 'script[type="module"]'))
+    for (const script of document.querySelectorAll(shimMode ? 'script[type=module-shim]' : 'script[type=module]'))
       processScript(script);
-    for (const link of document.querySelectorAll('link[rel="modulepreload"]'))
+    for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]'))
       processPreload(link);
   }
 
@@ -763,7 +762,8 @@
     if (isDomContentLoadedScript) domContentLoadedCnt++;
     const blocks = script.getAttribute('async') === null && isReadyScript;
     const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, blocks && lastStaticLoadPromise).catch(e => {
-      setTimeout(() => { throw e });
+      // This used to be a setTimeout(() => { throw e }) but this breaks Safari stacks
+      console.error(e);
       onerror(e);
     });
     if (blocks)
