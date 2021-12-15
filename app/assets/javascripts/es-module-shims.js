@@ -1,7 +1,9 @@
-/* ES Module Shims 1.4.0 */
+/* ES Module Shims 1.4.1 */
 (function () {
 
-  const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
+  const uaMatch = navigator.userAgent.match(/(Edge|Safari)\/\d+\.\d+/);
+  const edge = uaMatch && uaMatch[1] === 'Edge';
+  const safari = uaMatch && uaMatch[1] === 'Safari';
 
   let baseUrl;
 
@@ -762,8 +764,12 @@
     if (isDomContentLoadedScript) domContentLoadedCnt++;
     const blocks = script.getAttribute('async') === null && isReadyScript;
     const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, blocks && lastStaticLoadPromise).catch(e => {
-      // This used to be a setTimeout(() => { throw e }) but this breaks Safari stacks
-      console.error(e);
+      // Safari only gives error via console.error
+      if (safari)
+        console.error(e);
+      // Firefox only gives error stack via setTimeout
+      else
+        setTimeout(() => { throw e});
       onerror(e);
     });
     if (blocks)
