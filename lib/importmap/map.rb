@@ -87,13 +87,21 @@ class Importmap::Map
       if result = instance_variable_get("@cached_#{name}")
         result
       else
+        remember_cache_key(name)
         instance_variable_set("@cached_#{name}", yield)
       end
     end
 
+    def remember_cache_key(name)
+      @cache_keys ||= Set.new
+      @cache_keys.add name
+    end
+
+
     def clear_cache
-      @cached_json = nil
-      @cached_preloaded_module_paths = nil
+      @cache_keys&.each do |name|
+        instance_variable_set("@cached_#{name}", nil)
+      end
     end
 
     def rescuable_asset_error?(error)
