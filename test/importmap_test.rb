@@ -67,6 +67,28 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match /^\w{40}$/, @importmap.digest(resolver: ApplicationController.helpers)
   end
 
+  test "separate caches" do
+    set_one = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "1").to_s
+
+    ActionController::Base.asset_host = "http://assets.example.com"
+
+    set_two = @importmap.preloaded_module_paths(resolver: ActionController::Base.helpers, cache_key: "2").to_s
+
+    assert_not_equal set_one, set_two
+  ensure
+    ActionController::Base.asset_host = nil
+  end
+
+  test "all caches reset" do
+    set_one = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "1").to_s
+    set_two = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "2").to_s
+
+    @importmap.pin "something", to: "https://cdn.example.com/somewhere.js", preload: true
+
+    assert_not_equal set_one, @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "1").to_s
+    assert_not_equal set_two, @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "2").to_s
+  end
+
   private
     def generate_importmap_json
       JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)

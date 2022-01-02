@@ -1,7 +1,9 @@
-/* ES Module Shims 1.3.0 */
+/* ES Module Shims 1.4.1 */
 (function () {
 
-  const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
+  const uaMatch = navigator.userAgent.match(/(Edge|Safari)\/\d+\.\d+/);
+  const edge = uaMatch && uaMatch[1] === 'Edge';
+  const safari = uaMatch && uaMatch[1] === 'Safari';
 
   let baseUrl;
 
@@ -130,17 +132,17 @@
     for (let p in packages) {
       const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
       if (outPackages[resolvedLhs]) {
-        throw new Error(`Dynamic import map rejected: Overrides entry "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+        throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
       }
       let target = packages[p];
-      if (typeof target !== 'string') 
+      if (typeof target !== 'string')
         continue;
       const mapped = resolveImportMap(parentMap, resolveIfNotPlainOrUrl(target, baseUrl) || target, baseUrl);
       if (mapped) {
         outPackages[resolvedLhs] = mapped;
         continue;
       }
-      targetWarning(p, packages[p], 'bare specifier did not resolve');
+      console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
     }
   }
 
@@ -175,15 +177,8 @@
     if (pkgName) {
       const pkg = packages[pkgName];
       if (pkg === null) return;
-      if (id.length > pkgName.length && pkg[pkg.length - 1] !== '/')
-        targetWarning(pkgName, pkg, "should have a trailing '/'");
-      else
-        return pkg + id.slice(pkgName.length);
+      return pkg + id.slice(pkgName.length);
     }
-  }
-
-  function targetWarning (match, target, msg) {
-    console.warn("Package target " + msg + ", resolving target '" + target + "' for " + match);
   }
 
   function resolveImportMap (importMap, resolvedOrPlain, parentUrl) {
@@ -199,33 +194,33 @@
 
   const optionsScript = document.querySelector('script[type=esms-options]');
 
-  const esmsInitOptions$1 = optionsScript ? JSON.parse(optionsScript.innerHTML) : self.esmsInitOptions ? self.esmsInitOptions : {};
+  const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : self.esmsInitOptions ? self.esmsInitOptions : {};
 
-  let shimMode = !!esmsInitOptions$1.shimMode;
-  const resolveHook = globalHook(shimMode && esmsInitOptions$1.resolve);
+  let shimMode = !!esmsInitOptions.shimMode;
+  const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
 
-  const skip = esmsInitOptions$1.skip ? new RegExp(esmsInitOptions$1.skip) : null;
+  const skip = esmsInitOptions.skip ? new RegExp(esmsInitOptions.skip) : null;
 
-  let nonce = esmsInitOptions$1.nonce;
+  let nonce = esmsInitOptions.nonce;
 
   if (!nonce) {
     const nonceElement = document.querySelector('script[nonce]');
     if (nonceElement)
-      nonce = nonceElement.getAttribute('nonce');
+      nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
   }
 
-  const onerror = globalHook(esmsInitOptions$1.onerror || noop);
-  const onpolyfill = globalHook(esmsInitOptions$1.onpolyfill || noop);
+  const onerror = globalHook(esmsInitOptions.onerror || noop);
+  const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : () => console.info(`OK: "Uncaught TypeError" module failure has been polyfilled`);
 
-  const { revokeBlobURLs, noLoadEventRetriggers } = esmsInitOptions$1;
+  const { revokeBlobURLs, noLoadEventRetriggers, enforceIntegrity } = esmsInitOptions;
 
-  const fetchHook = esmsInitOptions$1.fetch ? globalHook(esmsInitOptions$1.fetch) : fetch;
+  const fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
 
   function globalHook (name) {
     return typeof name === 'string' ? self[name] : name;
   }
 
-  const enable = Array.isArray(esmsInitOptions$1.polyfillEnable) ? esmsInitOptions$1.polyfillEnable : [];
+  const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
   const cssModulesEnabled = enable.includes('css-modules');
   const jsonModulesEnabled = enable.includes('json-modules');
 
@@ -298,8 +293,7 @@
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         document.head.appendChild(iframe);
-        // we use document.write here because eg Weixin built-in browser doesn't support setting srcdoc
-        iframe.contentWindow.document.write(`<script type=importmap nonce="${nonce}">{"imports":{"x":"data:text/javascript,"}}<${''}/script><script nonce="${nonce}">import('x').then(()=>1,()=>0).then(v=>parent._$s(v))<${''}/script>`);
+        iframe.src = createBlob(`<script type=importmap nonce="${nonce}">{"imports":{"x":"data:text/javascript,"}}<${''}/script><script nonce="${nonce}">import('x').then(()=>1,()=>0).then(v=>parent._$s(v))<${''}/script>`, 'text/html');
       })
     ]);
   });
@@ -319,7 +313,7 @@
     };
   }
 
-  const resolve = resolveHook ? async (id, parentUrl) => ({ r: await esmsInitOptions.resolve(id, parentUrl, defaultResolve), b: false }) : _resolve;
+  const resolve = resolveHook ? async (id, parentUrl) => ({ r: await resolveHook(id, parentUrl, defaultResolve), b: false }) : _resolve;
 
   let id = 0;
   const registry = {};
@@ -341,34 +335,36 @@
   const initPromise = featureDetectionPromise.then(() => {
     // shim mode is determined on initialization, no late shim mode
     if (!shimMode) {
-      let seenScript = false;
-      for (const script of document.querySelectorAll('script[type="module-shim"],script[type="importmap-shim"],script[type="module"],script[type="importmap"]')) {
-        if (!seenScript && script.type === 'module')
-          seenScript = true;
-        if (script.type.endsWith('-shim')) {
-          setShimMode();
-          break;
-        }
-        if (seenScript && script.type === 'importmap') {
-          importMapSrcOrLazy = true;
-          break;
+      if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
+        setShimMode();
+      }
+      else {
+        let seenScript = false;
+        for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')) {
+          if (!seenScript) {
+            if (script.type === 'module')
+              seenScript = true;
+          }
+          else if (script.type === 'importmap') {
+            importMapSrcOrLazy = true;
+            break;
+          }
         }
       }
     }
     baselinePassthrough = supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false;
-    if (!baselinePassthrough) onpolyfill();
     if (shimMode || !baselinePassthrough) {
       new MutationObserver(mutations => {
         for (const mutation of mutations) {
           if (mutation.type !== 'childList') continue;
           for (const node of mutation.addedNodes) {
             if (node.tagName === 'SCRIPT') {
-              if (!shimMode && node.type === 'module' || shimMode && node.type === 'module-shim')
+              if (node.type === (shimMode ? 'module-shim' : 'module'))
                 processScript(node);
-              if (!shimMode && node.type === 'importmap' || shimMode && node.type === 'importmap-shim')
+              if (node.type === (shimMode ? 'importmap-shim' : 'importmap'))
                 processImportMap(node);
             }
-            else if (node.tagName === 'LINK' && node.rel === 'modulepreload')
+            else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload'))
               processPreload(node);
           }
         }
@@ -379,8 +375,9 @@
     }
   });
   let importMapPromise = initPromise;
-
+  let firstPolyfillLoad = true;
   let acceptingImportMaps = true;
+
   async function topLevelLoad (url, fetchOpts, source, nativelyLoaded, lastStaticLoadPromise) {
     if (!shimMode)
       acceptingImportMaps = false;
@@ -404,7 +401,11 @@
       if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
       return module;
     }
-    const module = await dynamicImport((shimMode || load.n) ? load.b : load.u, { errUrl: load.u });
+    if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
+      onpolyfill();
+      firstPolyfillLoad = false;
+    }
+    const module = await dynamicImport(!shimMode && !load.n && nativelyLoaded ? load.u : load.b, { errUrl: load.u });
     // if the top-level load is a shell, run its update function
     if (load.s)
       (await dynamicImport(load.s)).u$_(module);
@@ -530,9 +531,9 @@
       resolvedSource += source.slice(lastIndex);
     }
 
-    resolvedSource = resolvedSource.replace(/\/\/# sourceMappingURL=(.*)\s*$/, (match, url) => match.replace(url, () => new URL(url, load.r)));
+    // ; and // trailer support added for Ruby 7 source maps compatibility
     let hasSourceURL = false;
-    resolvedSource = resolvedSource.replace(/\/\/# sourceURL=(.*)\s*$/, (match, url) => (hasSourceURL = true, match.replace(url, () => new URL(url, load.r))));
+    resolvedSource = resolvedSource.replace(sourceMapURLRegEx, (match, isMapping, url) => (hasSourceURL = !isMapping, match.replace(url, () => new URL(url, load.r))));
     if (!hasSourceURL)
       resolvedSource += '\n//# sourceURL=' + load.r;
 
@@ -540,10 +541,11 @@
     load.S = undefined;
   }
 
+  const sourceMapURLRegEx = /\n\/\/# source(Mapping)?URL=([^\n]+)\s*((;|\/\/[^#][^\n]*)\s*)*$/;
+
   const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
   const jsonContentType = /^(text|application)\/json(;|$)/;
   const cssContentType = /^(text|application)\/css(;|$)/;
-  const wasmContentType = /^application\/wasm(;|$)/;
 
   const cssUrlRegEx = /url\(\s*(?:(["'])((?:\\.|[^\n\\"'])+)\1|((?:\\.|[^\s,"'()\\])+))\s*\)/g;
 
@@ -561,6 +563,8 @@
   }
 
   async function doFetch (url, fetchOpts) {
+    if (enforceIntegrity && !fetchOpts.integrity)
+      throw Error(`No integrity for ${url}`);
     const poolQueue = pushFetchPool();
     if (poolQueue) await poolQueue;
     try {
@@ -570,7 +574,7 @@
       popFetchPool();
     }
     if (!res.ok)
-      throw new Error(`${res.status} ${res.statusText} ${res.url}`);
+      throw Error(`${res.status} ${res.statusText} ${res.url}`);
     const contentType = res.headers.get('content-type');
     if (jsContentType.test(contentType))
       return { r: res.url, s: await res.text(), t: 'js' };
@@ -580,10 +584,8 @@
       return { r: res.url, s: `var s=new CSSStyleSheet();s.replaceSync(${
       JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))
     });export default s;`, t: 'css' };
-    else if (wasmContentType.test(contentType))
-      throw new Error('WASM modules not supported');
     else
-      throw new Error(`Unknown Content-Type "${contentType}"`);
+      throw Error(`Unsupported Content-Type "${contentType}"`);
   }
 
   function getOrCreateLoad (url, fetchOpts, source) {
@@ -623,7 +625,7 @@
         ({ r: load.r, s: source, t } = await (fetchCache[url] || doFetch(url, fetchOpts)));
         if (t && !shimMode) {
           if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled)
-            throw new Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
+            throw Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
           if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions)
             load.n = true;
         }
@@ -662,9 +664,9 @@
   }
 
   function processScriptsAndPreloads () {
-    for (const script of document.querySelectorAll(shimMode ? 'script[type="module-shim"]' : 'script[type="module"]'))
+    for (const script of document.querySelectorAll(shimMode ? 'script[type=module-shim]' : 'script[type=module]'))
       processScript(script);
-    for (const link of document.querySelectorAll('link[rel="modulepreload"]'))
+    for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]'))
       processPreload(link);
   }
 
@@ -760,11 +762,17 @@
     const isDomContentLoadedScript = domContentLoadedCnt > 0;
     if (isReadyScript) readyStateCompleteCnt++;
     if (isDomContentLoadedScript) domContentLoadedCnt++;
-    const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isReadyScript && lastStaticLoadPromise).catch(e => {
-      setTimeout(() => { throw e });
+    const blocks = script.getAttribute('async') === null && isReadyScript;
+    const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, blocks && lastStaticLoadPromise).catch(e => {
+      // Safari only gives error via console.error
+      if (safari)
+        console.error(e);
+      // Firefox only gives error stack via setTimeout
+      else
+        setTimeout(() => { throw e});
       onerror(e);
     });
-    if (isReadyScript)
+    if (blocks)
       lastStaticLoadPromise = loadPromise.then(readyStateCompleteCheck);
     if (isDomContentLoadedScript)
       loadPromise.then(domContentLoadedCheck);
