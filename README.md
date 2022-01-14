@@ -42,7 +42,7 @@ to 1 of the 3 viable ways of loading ES Module javascript packages.
 For example:
 
 ```rb
-# config/importmaps.rb
+# config/importmap.rb
 pin "react", to: "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
