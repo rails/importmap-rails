@@ -13,7 +13,7 @@ class Importmap::Map
     if path && File.exist?(path)
       begin
         instance_eval(File.read(path), path.to_s)
-      rescue Exception => e
+      rescue StandardError => e
         Rails.logger.error "Unable to parse import map from #{path}: #{e.message}"
         raise InvalidFile, "Unable to parse import map from #{path}: #{e.message}"
       end
