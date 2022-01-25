@@ -11,7 +11,7 @@ class Importmap::Reloader
     end
 
     def import_map_paths
-      config.paths["config/importmap.rb"].existent
+      config.importmap.paths
     end
 
     def config
