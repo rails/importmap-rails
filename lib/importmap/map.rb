@@ -3,6 +3,8 @@ require "pathname"
 class Importmap::Map
   attr_reader :packages, :directories
 
+  class InvalidFile < StandardError; end
+
   def initialize
     @packages, @directories = {}, {}
   end
@@ -11,9 +13,9 @@ class Importmap::Map
     if path && File.exist?(path)
       begin
         instance_eval(File.read(path), path.to_s)
-      rescue Exception => e
+      rescue StandardError => e
         Rails.logger.error "Unable to parse import map from #{path}: #{e.message}"
-        raise "Unable to parse import map from #{path}: #{e.message}"
+        raise InvalidFile, "Unable to parse import map from #{path}: #{e.message}"
       end
     elsif block_given?
       instance_eval(&block)
