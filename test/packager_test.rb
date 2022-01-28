@@ -35,10 +35,6 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   end
 
   test "failed request with mock" do
-    response = Class.new do
-      def code() "500" end
-    end.new
-
     Net::HTTP.stub(:post, proc { raise "Unexpected Error" }) do
       assert_raises(Importmap::Packager::HTTPError) do
         @packager.import("missing-package-that-doesnt-exist@17.0.2")
