@@ -34,10 +34,11 @@ class Importmap::Map
     @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
   end
 
-  # Returns an array of all the resolved module paths of the pinned packages. The `resolver` must respond to `asset_path`,
-  # such as `ActionController::Base.helpers` or `ApplicationController.helpers`. You'll want to use the resolver that has
-  # been configured for the `asset_host` you want these resolved paths to use. In case you need to resolve for different
-  # asset hosts, you can pass in a custom `cache_key` to vary the cache used by this method for the different cases.
+  # Returns an array of all the resolved module paths of the pinned packages. The `resolver` must respond to
+  # `path_to_asset`, such as `ActionController::Base.helpers` or `ApplicationController.helpers`. You'll want to use the
+  # resolver that has been configured for the `asset_host` you want these resolved paths to use. In case you need to
+  # resolve for different asset hosts, you can pass in a custom `cache_key` to vary the cache used by this method for
+  # the different cases.
   def preloaded_module_paths(resolver:, cache_key: :preloaded_module_paths)
     cache_as(cache_key) do
       resolve_asset_paths(expanded_preloading_packages_and_directories, resolver: resolver).values
@@ -45,10 +46,10 @@ class Importmap::Map
   end
 
   # Returns a JSON hash (as a string) of all the resolved module paths of the pinned packages in the import map format.
-  # The `resolver` must respond to `asset_path`, such as `ActionController::Base.helpers` or `ApplicationController.helpers`.
-  # You'll want to use the resolver that has been configured for the `asset_host` you want these resolved paths to use.
-  # In case you need to resolve for different asset hosts, you can pass in a custom `cache_key` to vary the cache used
-  # by this method for the different cases.
+  # The `resolver` must respond to `path_to_asset`, such as `ActionController::Base.helpers` or
+  # `ApplicationController.helpers`. You'll want to use the resolver that has been configured for the `asset_host` you
+  # want these resolved paths to use. In case you need to resolve for different asset hosts, you can pass in a custom
+  # `cache_key` to vary the cache used by this method for the different cases.
   def to_json(resolver:, cache_key: :json)
     cache_as(cache_key) do
       JSON.pretty_generate({ "imports" => resolve_asset_paths(expanded_packages_and_directories, resolver: resolver) })
@@ -113,7 +114,7 @@ class Importmap::Map
     def resolve_asset_paths(paths, resolver:)
       paths.transform_values do |mapping|
         begin
-          resolver.asset_path(mapping.path)
+          resolver.path_to_asset(mapping.path)
         rescue => e
           if rescuable_asset_error?(e)
             Rails.logger.warn "Importmap skipped missing path: #{mapping.path}"
