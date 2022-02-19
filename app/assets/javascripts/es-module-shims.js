@@ -1,40 +1,81 @@
-/* ES Module Shims 1.4.1 */
+/* ES Module Shims 1.4.6 */
 (function () {
 
-  const uaMatch = navigator.userAgent.match(/(Edge|Safari)\/\d+\.\d+/);
-  const edge = uaMatch && uaMatch[1] === 'Edge';
-  const safari = uaMatch && uaMatch[1] === 'Safari';
+  const noop = () => {};
 
-  let baseUrl;
+  const optionsScript = document.querySelector('script[type=esms-options]');
+
+  const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : self.esmsInitOptions ? self.esmsInitOptions : {};
+
+  let shimMode = !!esmsInitOptions.shimMode;
+  const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
+
+  const skip = esmsInitOptions.skip ? new RegExp(esmsInitOptions.skip) : null;
+
+  let nonce = esmsInitOptions.nonce;
+
+  const mapOverrides = esmsInitOptions.mapOverrides;
+
+  if (!nonce) {
+    const nonceElement = document.querySelector('script[nonce]');
+    if (nonceElement)
+      nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
+  }
+
+  const onerror = globalHook(esmsInitOptions.onerror || noop);
+  const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : () => console.info(`OK: ^ TypeError module failure has been polyfilled`);
+
+  const { revokeBlobURLs, noLoadEventRetriggers, enforceIntegrity } = esmsInitOptions;
+
+  const fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
+
+  function globalHook (name) {
+    return typeof name === 'string' ? self[name] : name;
+  }
+
+  const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
+  const cssModulesEnabled = enable.includes('css-modules');
+  const jsonModulesEnabled = enable.includes('json-modules');
+
+  function setShimMode () {
+    shimMode = true;
+  }
+
+  const edge = !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
+
+  const baseUrl = document.baseURI;
 
   function createBlob (source, type = 'text/javascript') {
     return URL.createObjectURL(new Blob([source], { type }));
   }
 
-  const noop = () => {};
+  const eoop = err => setTimeout(() => { throw err });
 
-  const baseEl = document.querySelector('base[href]');
-  if (baseEl)
-    baseUrl = baseEl.href;
-
-  if (!baseUrl && typeof location !== 'undefined') {
-    baseUrl = location.href.split('#')[0].split('?')[0];
-    const lastSepIndex = baseUrl.lastIndexOf('/');
-    if (lastSepIndex !== -1)
-      baseUrl = baseUrl.slice(0, lastSepIndex + 1);
-  }
+  const throwError = err => { (window.reportError || window.safari && console.error || eoop)(err), void onerror(err); };
 
   function isURL (url) {
     try {
       new URL(url);
       return true;
     }
-    catch {
+    catch (_) {
       return false;
     }
   }
 
   const backslashRegEx = /\\/g;
+
+  /*
+   * Import maps implementation
+   *
+   * To make lookups fast we pre-resolve the entire import map
+   * and then match based on backtracked hash lookups
+   *
+   */
+  function resolveUrl (relUrl, parentUrl) {
+    return resolveIfNotPlainOrUrl(relUrl, parentUrl) || (relUrl.indexOf(':') !== -1 ? relUrl : resolveIfNotPlainOrUrl('./' + relUrl, parentUrl));
+  }
+
   function resolveIfNotPlainOrUrl (relUrl, parentUrl) {
     // strip off any trailing query params or hashes
     parentUrl = parentUrl && parentUrl.split('#')[0].split('?')[0];
@@ -87,62 +128,30 @@
             output.push(segmented.slice(segmentIndex, i + 1));
             segmentIndex = -1;
           }
+          continue;
         }
-
         // new segment - check if it is relative
         else if (segmented[i] === '.') {
           // ../ segment
           if (segmented[i + 1] === '.' && (segmented[i + 2] === '/' || i + 2 === segmented.length)) {
             output.pop();
             i += 2;
+            continue;
           }
           // ./ segment
           else if (segmented[i + 1] === '/' || i + 1 === segmented.length) {
             i += 1;
-          }
-          else {
-            // the start of a new segment as below
-            segmentIndex = i;
+            continue;
           }
         }
         // it is the start of a new segment
-        else {
-          segmentIndex = i;
-        }
+        while (segmented[i] === '/') i++;
+        segmentIndex = i; 
       }
       // finish reading out the last segment
       if (segmentIndex !== -1)
         output.push(segmented.slice(segmentIndex));
       return parentUrl.slice(0, parentUrl.length - pathname.length) + output.join('');
-    }
-  }
-
-  /*
-   * Import maps implementation
-   *
-   * To make lookups fast we pre-resolve the entire import map
-   * and then match based on backtracked hash lookups
-   *
-   */
-  function resolveUrl (relUrl, parentUrl) {
-    return resolveIfNotPlainOrUrl(relUrl, parentUrl) || (relUrl.indexOf(':') !== -1 ? relUrl : resolveIfNotPlainOrUrl('./' + relUrl, parentUrl));
-  }
-
-  function resolveAndComposePackages (packages, outPackages, baseUrl, parentMap) {
-    for (let p in packages) {
-      const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
-      if (outPackages[resolvedLhs]) {
-        throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
-      }
-      let target = packages[p];
-      if (typeof target !== 'string')
-        continue;
-      const mapped = resolveImportMap(parentMap, resolveIfNotPlainOrUrl(target, baseUrl) || target, baseUrl);
-      if (mapped) {
-        outPackages[resolvedLhs] = mapped;
-        continue;
-      }
-      console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
     }
   }
 
@@ -181,6 +190,7 @@
     }
   }
 
+
   function resolveImportMap (importMap, resolvedOrPlain, parentUrl) {
     let scopeUrl = parentUrl && getMatch(parentUrl, importMap.scopes);
     while (scopeUrl) {
@@ -192,40 +202,22 @@
     return applyPackages(resolvedOrPlain, importMap.imports) || resolvedOrPlain.indexOf(':') !== -1 && resolvedOrPlain;
   }
 
-  const optionsScript = document.querySelector('script[type=esms-options]');
-
-  const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : self.esmsInitOptions ? self.esmsInitOptions : {};
-
-  let shimMode = !!esmsInitOptions.shimMode;
-  const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
-
-  const skip = esmsInitOptions.skip ? new RegExp(esmsInitOptions.skip) : null;
-
-  let nonce = esmsInitOptions.nonce;
-
-  if (!nonce) {
-    const nonceElement = document.querySelector('script[nonce]');
-    if (nonceElement)
-      nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
-  }
-
-  const onerror = globalHook(esmsInitOptions.onerror || noop);
-  const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : () => console.info(`OK: "Uncaught TypeError" module failure has been polyfilled`);
-
-  const { revokeBlobURLs, noLoadEventRetriggers, enforceIntegrity } = esmsInitOptions;
-
-  const fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
-
-  function globalHook (name) {
-    return typeof name === 'string' ? self[name] : name;
-  }
-
-  const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
-  const cssModulesEnabled = enable.includes('css-modules');
-  const jsonModulesEnabled = enable.includes('json-modules');
-
-  function setShimMode () {
-    shimMode = true;
+  function resolveAndComposePackages (packages, outPackages, baseUrl, parentMap) {
+    for (let p in packages) {
+      const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
+      if ((!shimMode || !mapOverrides) && outPackages[resolvedLhs] && (outPackages[resolvedLhs] !== packages[resolvedLhs])) {
+        throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+      }
+      let target = packages[p];
+      if (typeof target !== 'string')
+        continue;
+      const mapped = resolveImportMap(parentMap, resolveIfNotPlainOrUrl(target, baseUrl) || target, baseUrl);
+      if (mapped) {
+        outPackages[resolvedLhs] = mapped;
+        continue;
+      }
+      console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
+    }
   }
 
   let err;
@@ -315,7 +307,6 @@
 
   const resolve = resolveHook ? async (id, parentUrl) => ({ r: await resolveHook(id, parentUrl, defaultResolve), b: false }) : _resolve;
 
-  let id = 0;
   const registry = {};
 
   async function loadAll (load, seen) {
@@ -390,7 +381,7 @@
       await lastStaticLoadPromise;
       return dynamicImport(source ? createBlob(source) : url, { errUrl: url || source });
     }
-    const load = getOrCreateLoad(url, fetchOpts, source);
+    const load = getOrCreateLoad(url, fetchOpts, null, source);
     const seen = {};
     await loadAll(load, seen);
     lastLoad = undefined;
@@ -432,7 +423,12 @@
     }
   }
 
-  async function importShim (id, parentUrl = baseUrl, _assertion) {
+  async function importShim (id, ...args) {
+    // parentUrl if present will be the last argument
+    let parentUrl = args[args.length - 1];
+    if (typeof parentUrl !== 'string') {
+      parentUrl = baseUrl;
+    }
     // needed for shim check
     await initPromise;
     if (acceptingImportMaps || shimMode || !baselinePassthrough) {
@@ -486,7 +482,7 @@
       // once all deps have loaded we can inline the dependency resolution blobs
       // and define this blob
       let lastIndex = 0, depIndex = 0;
-      for (const { s: start, se: end, d: dynamicImportIndex } of imports) {
+      for (const { s: start, e: end, se: statementEnd, d: dynamicImportIndex } of imports) {
         // dependency source replacements
         if (dynamicImportIndex === -1) {
           const depLoad = load.d[depIndex++];
@@ -507,31 +503,30 @@
           }
           // circular shell execution
           else if (depLoad.s) {
-            resolvedSource += `${source.slice(lastIndex, start - 1)}/*${source.slice(start - 1, end)}*/${urlJsString(blobUrl)};import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
-            lastIndex = end;
+            resolvedSource += `${source.slice(lastIndex, start - 1)}/*${source.slice(start - 1, statementEnd)}*/${urlJsString(blobUrl)};import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
+            lastIndex = statementEnd;
             depLoad.s = undefined;
             continue;
           }
-          resolvedSource += `${source.slice(lastIndex, start - 1)}/*${source.slice(start - 1, end)}*/${urlJsString(blobUrl)}`;
-          lastIndex = end;
+          resolvedSource += `${source.slice(lastIndex, start - 1)}/*${source.slice(start - 1, statementEnd)}*/${urlJsString(blobUrl)}`;
+          lastIndex = statementEnd;
         }
         // import.meta
         else if (dynamicImportIndex === -2) {
           meta[load.r] = { url: load.r, resolve: importMetaResolve };
           resolvedSource += `${source.slice(lastIndex, start)}self._esmsm[${urlJsString(load.r)}]`;
-          lastIndex = end;
+          lastIndex = statementEnd;
         }
         // dynamic import
         else {
-          resolvedSource += `${source.slice(lastIndex, dynamicImportIndex + 6)}Shim(${source.slice(start, end)}, ${load.r && urlJsString(load.r)}`;
-          lastIndex = end;
+          resolvedSource += `${source.slice(lastIndex, dynamicImportIndex + 6)}Shim(${source.slice(start, statementEnd)}, ${urlJsString(load.r)}`;
+          lastIndex = statementEnd;
         }
       }
 
       resolvedSource += source.slice(lastIndex);
     }
 
-    // ; and // trailer support added for Ruby 7 source maps compatibility
     let hasSourceURL = false;
     resolvedSource = resolvedSource.replace(sourceMapURLRegEx, (match, isMapping, url) => (hasSourceURL = !isMapping, match.replace(url, () => new URL(url, load.r))));
     if (!hasSourceURL)
@@ -541,6 +536,8 @@
     load.S = undefined;
   }
 
+  // ; and // trailer support added for Ruby on Rails 7 source maps compatibility
+  // https://github.com/guybedford/es-module-shims/issues/228
   const sourceMapURLRegEx = /\n\/\/# source(Mapping)?URL=([^\n]+)\s*((;|\/\/[^#][^\n]*)\s*)*$/;
 
   const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
@@ -562,42 +559,56 @@
       p.shift()();
   }
 
-  async function doFetch (url, fetchOpts) {
+  function fromParent (parent) {
+    return parent ? ` imported from ${parent}` : '';
+  }
+
+  async function doFetch (url, fetchOpts, parent) {
     if (enforceIntegrity && !fetchOpts.integrity)
-      throw Error(`No integrity for ${url}`);
+      throw Error(`No integrity for ${url}${fromParent(parent)}.`);
     const poolQueue = pushFetchPool();
     if (poolQueue) await poolQueue;
     try {
       var res = await fetchHook(url, fetchOpts);
     }
+    catch (e) {
+      e.message = `Unable to fetch ${url}${fromParent(parent)} - see network log for details.\n` + e.message;
+      throw e;
+    }
     finally {
       popFetchPool();
     }
     if (!res.ok)
-      throw Error(`${res.status} ${res.statusText} ${res.url}`);
+      throw Error(`${res.status} ${res.statusText} ${res.url}${fromParent(parent)}`);
+    return res;
+  }
+
+  async function fetchModule (url, fetchOpts, parent) {
+    const res = await doFetch(url, fetchOpts, parent);
     const contentType = res.headers.get('content-type');
     if (jsContentType.test(contentType))
       return { r: res.url, s: await res.text(), t: 'js' };
     else if (jsonContentType.test(contentType))
       return { r: res.url, s: `export default ${await res.text()}`, t: 'json' };
-    else if (cssContentType.test(contentType))
+    else if (cssContentType.test(contentType)) {
       return { r: res.url, s: `var s=new CSSStyleSheet();s.replaceSync(${
-      JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))
+      JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes = '', relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))
     });export default s;`, t: 'css' };
+    }
     else
-      throw Error(`Unsupported Content-Type "${contentType}"`);
+      throw Error(`Unsupported Content-Type "${contentType}" loading ${url}${fromParent(parent)}. Modules must be served with a valid MIME type like application/javascript.`);
   }
 
-  function getOrCreateLoad (url, fetchOpts, source) {
+  function getOrCreateLoad (url, fetchOpts, parent, source) {
     let load = registry[url];
-    if (load)
+    if (load && !source)
       return load;
 
-    load = registry[url] = {
+    load = {
       // url
       u: url,
       // response url
-      r: undefined,
+      r: source ? url : undefined,
       // fetchPromise
       f: undefined,
       // source
@@ -617,12 +628,18 @@
       // type
       t: null
     };
+    if (registry[url]) {
+      let i = 0;
+      while (registry[load.u + ++i]);
+      load.u += i;
+    }
+    registry[load.u] = load;
 
     load.f = (async () => {
       if (!source) {
         // preload fetch options override fetch options (race)
         let t;
-        ({ r: load.r, s: source, t } = await (fetchCache[url] || doFetch(url, fetchOpts)));
+        ({ r: load.r, s: source, t } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
         if (t && !shimMode) {
           if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled)
             throw Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
@@ -656,7 +673,7 @@
         if (skip && skip.test(r)) return { b: r };
         if (childFetchOpts.integrity)
           childFetchOpts = Object.assign({}, childFetchOpts, { integrity: undefined });
-        return getOrCreateLoad(r, childFetchOpts).f;
+        return getOrCreateLoad(r, childFetchOpts, load.r).f;
       }))).filter(l => l);
     });
 
@@ -739,9 +756,9 @@
     if (acceptingImportMaps) {
       importMapPromise = importMapPromise
         .then(async () => {
-          importMap = resolveAndComposeImportMap(script.src ? await (await fetchHook(script.src)).json() : JSON.parse(script.innerHTML), script.src || baseUrl, importMap);
+          importMap = resolveAndComposeImportMap(script.src ? await (await doFetch(script.src, getFetchOpts(script))).json() : JSON.parse(script.innerHTML), script.src || baseUrl, importMap);
         })
-        .catch(error => setTimeout(() => { throw error }));
+        .catch(throwError);
       if (!shimMode)
         acceptingImportMaps = false;
     }
@@ -763,15 +780,7 @@
     if (isReadyScript) readyStateCompleteCnt++;
     if (isDomContentLoadedScript) domContentLoadedCnt++;
     const blocks = script.getAttribute('async') === null && isReadyScript;
-    const loadPromise = topLevelLoad(script.src || `${baseUrl}?${id++}`, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, blocks && lastStaticLoadPromise).catch(e => {
-      // Safari only gives error via console.error
-      if (safari)
-        console.error(e);
-      // Firefox only gives error stack via setTimeout
-      else
-        setTimeout(() => { throw e});
-      onerror(e);
-    });
+    const loadPromise = topLevelLoad(script.src || baseUrl, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, blocks && lastStaticLoadPromise).catch(throwError);
     if (blocks)
       lastStaticLoadPromise = loadPromise.then(readyStateCompleteCheck);
     if (isDomContentLoadedScript)
@@ -785,11 +794,11 @@
     link.ep = true;
     if (fetchCache[link.href])
       return;
-    fetchCache[link.href] = doFetch(link.href, getFetchOpts(link));
+    fetchCache[link.href] = fetchModule(link.href, getFetchOpts(link));
   }
 
   function throwUnresolved (id, parentUrl) {
-    throw Error("Unable to resolve specifier '" + id + (parentUrl ? "' from " + parentUrl : "'"));
+    throw Error(`Unable to resolve specifier '${id}'${fromParent(parentUrl)}`);
   }
 
 })();
