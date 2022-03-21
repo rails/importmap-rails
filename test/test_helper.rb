@@ -14,3 +14,22 @@ if ActiveSupport::TestCase.respond_to?(:fixture_path=)
   ActiveSupport::TestCase.file_fixture_path = ActiveSupport::TestCase.fixture_path + "/files"
   ActiveSupport::TestCase.fixtures :all
 end
+
+MockResolver = Struct.new(:accept) do
+  def path_to_asset(path)
+    if source = source_file(path)
+      digest = Digest::SHA256.hexdigest(source.mtime.to_s)
+      "/assets/" + path.sub(/\.js\z/, "-#{digest}.js")
+    else
+      ApplicationController.helpers.asset_path(path)
+    end
+  end
+
+  def root
+    Rails.root.join('app', 'javascript')
+  end
+
+  def source_file(path)
+    accept.map { |ext| root.join("#{path.remove(/\.js\z/)}.#{ext}") }.detect(&:file?)
+  end
+end

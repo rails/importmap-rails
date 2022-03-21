@@ -25,6 +25,6 @@ class ReloaderTest < ActiveSupport::TestCase
   private
     def touch_config
       FileUtils.touch(@config)
-      sleep 1
+      sleep 2
     end
 end

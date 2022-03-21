@@ -13,6 +13,7 @@ class ImportmapTest < ActiveSupport::TestCase
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", preload: true
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers", preload: true
         pin_all_from "app/javascript/helpers", under: "helpers", preload: true
+        pin_all_from "app/javascript/components", under: "components"
         pin_all_from "lib/assets/javascripts", preload: true
       end
     end
@@ -71,6 +72,27 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_no_match /application/, preloading_module_paths
   end
 
+  test "jsx files are mapped to js when importmap accepts jsx" do
+    previous_accept = Rails.application.config.importmap.accept
+    Rails.application.config.importmap.accept += %w[jsx]
+    @importmap = Importmap::Map.new.tap do |map|
+      map.draw do
+        pin "application"
+        pin_all_from "app/javascript/controllers", under: "controllers", preload: true
+        pin_all_from "app/javascript/components", under: "components"
+      end
+    end
+    importmap_json = generate_importmap_json(resolver: MockResolver.new(%w[jsx]))
+    assert_match %r|assets/components/index-.*\.js|, importmap_json["imports"]["components"]
+    assert_match %r|assets/components/Clock-.*\.js|, importmap_json["imports"]["components/Clock"]
+  ensure
+    Rails.application.config.importmap.accept = previous_accept
+  end
+
+  test "jsx files are not mapped when importmap doesn't accept jsx" do
+    assert_nil generate_importmap_json["imports"]["components/Clock"]
+  end
+
   test "digest" do
     assert_match /^\w{40}$/, @importmap.digest(resolver: ApplicationController.helpers)
   end
@@ -98,7 +120,8 @@ class ImportmapTest < ActiveSupport::TestCase
   end
 
   private
-    def generate_importmap_json
-      JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
+
+    def generate_importmap_json(resolver: ApplicationController.helpers)
+      JSON.parse @importmap.to_json(resolver: resolver)
     end
 end
