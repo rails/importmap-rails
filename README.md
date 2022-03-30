@@ -250,7 +250,7 @@ Import your module on the specific page. Note: you'll likely want to use a `cont
 <% end %>
 ```
 
-**Important**: The `javacript_import_module_tag` should come after your `javascript_importmap_tags`
+**Important**: The `javascript_import_module_tag` should come after your `javascript_importmap_tags`
 
 ```erb
 <%= javascript_importmap_tags %>
