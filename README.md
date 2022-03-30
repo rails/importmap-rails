@@ -11,9 +11,8 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 
 Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications:
 
-1. Add `importmap-rails` to your Gemfile with `gem 'importmap-rails'`
-2. Run `./bin/bundle install`
-3. Run `./bin/rails importmap:install`
+1. Run `./bin/bundle add importmap-rails`
+2. Run `./bin/rails importmap:install`
 
 Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
 
