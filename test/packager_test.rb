@@ -35,10 +35,6 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   end
 
   test "failed request with mock" do
-    response = Class.new do
-      def code() "500" end
-    end.new
-
     Net::HTTP.stub(:post, proc { raise "Unexpected Error" }) do
       assert_raises(Importmap::Packager::HTTPError) do
         @packager.import("missing-package-that-doesnt-exist@17.0.2")
@@ -53,5 +49,10 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
 
   test "pin_for" do
     assert_equal %(pin "react", to: "https://cdn/react"), @packager.pin_for("react", "https://cdn/react")
+  end
+
+  test "vendored_pin_for" do
+    assert_equal %(pin "react" # @17.0.2), @packager.vendored_pin_for("react", "https://cdn/react@17.0.2")
+    assert_equal %(pin "javascript/react", to: "javascript--react.js" # @17.0.2), @packager.vendored_pin_for("javascript/react", "https://cdn/react@17.0.2")
   end
 end
