@@ -7,6 +7,7 @@ class Importmap::Map
 
   def initialize
     @packages, @directories = {}, {}
+    @cache = {}
   end
 
   def draw(path = nil, &block)
@@ -87,24 +88,15 @@ class Importmap::Map
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
 
     def cache_as(name)
-      if result = instance_variable_get("@cached_#{name}")
+      if result = @cache[name.to_s]
         result
       else
-        remember_cache_key(name)
-        instance_variable_set("@cached_#{name}", yield)
+        @cache[name.to_s] = yield
       end
     end
-
-    def remember_cache_key(name)
-      @cache_keys ||= Set.new
-      @cache_keys.add name
-    end
-
 
     def clear_cache
-      @cache_keys&.each do |name|
-        instance_variable_set("@cached_#{name}", nil)
-      end
+      @cache.clear
     end
 
     def rescuable_asset_error?(error)
