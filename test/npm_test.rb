@@ -32,7 +32,7 @@ class Importmap::NpmTest < ActiveSupport::TestCase
   end
 
   test "failed outdated packages request with mock" do
-    Net::HTTP.stub(:get, proc { raise "Unexpected Error" }) do
+    Net::HTTP.stub(:start, proc { raise "Unexpected Error" }) do
       assert_raises(Importmap::Npm::HTTPError) do
         @npm.outdated_packages
       end

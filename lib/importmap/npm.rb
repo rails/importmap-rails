@@ -71,7 +71,14 @@ class Importmap::Npm
     end
 
     def get_json(uri)
-      Net::HTTP.get(uri, "Content-Type" => "application/json")
+      request = Net::HTTP::Get.new(uri)
+      request["Content-Type"] = "application/json"
+
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+        http.request(request)
+      }
+
+      response.body
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
     end
