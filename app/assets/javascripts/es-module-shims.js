@@ -1,4 +1,4 @@
-/* ES Module Shims 1.5.5 */
+/* ES Module Shims 1.5.6 */
 (function () {
 
   const noop = () => {};
@@ -273,21 +273,20 @@
   let supportsJsonAssertions = false;
   let supportsCssAssertions = false;
 
-  let supportsImportMeta = false;
-  let supportsImportMaps = false;
-
+  let supportsImportMaps = HTMLScriptElement.supports ? HTMLScriptElement.supports('importmap') : false;
+  let supportsImportMeta = supportsImportMaps;
   let supportsDynamicImport = false;
 
-  const featureDetectionPromise = Promise.resolve(supportsDynamicImportCheck).then(_supportsDynamicImport => {
+  const featureDetectionPromise = Promise.resolve(supportsImportMaps || supportsDynamicImportCheck).then(_supportsDynamicImport => {
     if (!_supportsDynamicImport)
       return;
     supportsDynamicImport = true;
 
     return Promise.all([
-      dynamicImport(createBlob('import.meta')).then(() => supportsImportMeta = true, noop),
+      supportsImportMaps || dynamicImport(createBlob('import.meta')).then(() => supportsImportMeta = true, noop),
       cssModulesEnabled && dynamicImport(createBlob('import"data:text/css,{}"assert{type:"css"}')).then(() => supportsCssAssertions = true, noop),
       jsonModulesEnabled && dynamicImport(createBlob('import"data:text/json,{}"assert{type:"json"}')).then(() => supportsJsonAssertions = true, noop),
-      HTMLScriptElement.supports ? supportsImportMaps = HTMLScriptElement.supports('importmap') : new Promise(resolve => {
+      supportsImportMaps || new Promise(resolve => {
         self._$s = v => {
           document.head.removeChild(iframe);
           if (v) supportsImportMaps = true;
@@ -297,8 +296,11 @@
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.setAttribute('nonce', nonce);
-        iframe.srcdoc = `<script type=importmap nonce="${nonce}">{"imports":{"x":"data:text/javascript,"}}<${''}/script><script nonce="${nonce}">import('x').then(()=>1,()=>0).then(v=>parent._$s(v))<${''}/script>`;
         document.head.appendChild(iframe);
+        // we use document.write here because eg Weixin built-in browser doesn't support setting srcdoc
+        // setting src to a blob URL results in a navigation event in webviews
+        // setting srcdoc is not supported in React native webviews on iOS
+        iframe.contentWindow.document.write(`<script type=importmap nonce="${nonce}">{"imports":{"x":"data:text/javascript,"}}<${''}/script><script nonce="${nonce}">import('x').then(()=>1,()=>0).then(v=>parent._$s(v))<${''}/script>`);
       })
     ]);
   });
@@ -720,7 +722,7 @@
     load.L = load.f.then(async () => {
       let childFetchOpts = fetchOpts;
       load.d = (await Promise.all(load.a[0].map(async ({ n, d }) => {
-        if (d >= 0 && !supportsDynamicImport || d === 2 && !supportsImportMeta)
+        if (d >= 0 && !supportsDynamicImport || d === -2 && !supportsImportMeta)
           load.n = true;
         if (d !== -1 || !n) return;
         const { r, b } = await resolve(n, load.r || load.u);
