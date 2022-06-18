@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    importmap-rails (1.1.0)
+    importmap-rails (1.1.1)
       actionpack (>= 6.0.0)
       railties (>= 6.0.0)
 
@@ -99,13 +99,11 @@ GEM
     marcel (1.0.1)
     method_source (1.0.0)
     mini_mime (1.0.3)
+    mini_portile2 (2.5.3)
     minitest (5.14.4)
     nio4r (2.5.7)
-    nokogiri (1.11.7-arm64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.11.7-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.11.7-x86_64-linux)
+    nokogiri (1.11.7)
+      mini_portile2 (~> 2.5.0)
       racc (~> 1.4)
     public_suffix (4.0.6)
     racc (1.5.2)
