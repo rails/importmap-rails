@@ -1,14 +1,17 @@
-/* ES Module Shims 1.5.6 */
+/* ES Module Shims 1.5.8 */
 (function () {
+
+  const hasWindow = typeof window !== 'undefined';
+  const hasDocument = typeof document !== 'undefined';
 
   const noop = () => {};
 
-  const optionsScript = document.querySelector('script[type=esms-options]');
+  const optionsScript = hasDocument ? document.querySelector('script[type=esms-options]') : undefined;
 
   const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : {};
   Object.assign(esmsInitOptions, self.esmsInitOptions || {});
 
-  let shimMode = !!esmsInitOptions.shimMode;
+  let shimMode = hasDocument ? !!esmsInitOptions.shimMode : true;
 
   const importHook = globalHook(shimMode && esmsInitOptions.onimport);
   const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
@@ -17,11 +20,10 @@
 
   const skip = esmsInitOptions.skip ? new RegExp(esmsInitOptions.skip) : null;
 
-  let nonce = esmsInitOptions.nonce;
-
   const mapOverrides = esmsInitOptions.mapOverrides;
 
-  if (!nonce) {
+  let nonce = esmsInitOptions.nonce;
+  if (!nonce && hasDocument) {
     const nonceElement = document.querySelector('script[nonce]');
     if (nonceElement)
       nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
@@ -48,7 +50,11 @@
 
   const edge = !navigator.userAgentData && !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
 
-  const baseUrl = document.baseURI;
+  const baseUrl = hasDocument
+    ? document.baseURI
+    : `${location.protocol}//${location.host}${location.pathname.includes('/') 
+    ? location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) 
+    : location.pathname}`;
 
   function createBlob (source, type = 'text/javascript') {
     return URL.createObjectURL(new Blob([source], { type }));
@@ -56,7 +62,7 @@
 
   const eoop = err => setTimeout(() => { throw err });
 
-  const throwError = err => { (window.reportError || window.safari && console.error || eoop)(err), void onerror(err); };
+  const throwError = err => { (self.reportError || hasWindow && window.safari && console.error || eoop)(err), void onerror(err); };
 
   function fromParent (parent) {
     return parent ? ` imported from ${parent}` : '';
@@ -273,7 +279,7 @@
   let supportsJsonAssertions = false;
   let supportsCssAssertions = false;
 
-  let supportsImportMaps = HTMLScriptElement.supports ? HTMLScriptElement.supports('importmap') : false;
+  let supportsImportMaps = hasDocument && HTMLScriptElement.supports ? HTMLScriptElement.supports('importmap') : false;
   let supportsImportMeta = supportsImportMaps;
   let supportsDynamicImport = false;
 
@@ -284,24 +290,32 @@
 
     return Promise.all([
       supportsImportMaps || dynamicImport(createBlob('import.meta')).then(() => supportsImportMeta = true, noop),
-      cssModulesEnabled && dynamicImport(createBlob('import"data:text/css,{}"assert{type:"css"}')).then(() => supportsCssAssertions = true, noop),
-      jsonModulesEnabled && dynamicImport(createBlob('import"data:text/json,{}"assert{type:"json"}')).then(() => supportsJsonAssertions = true, noop),
-      supportsImportMaps || new Promise(resolve => {
-        self._$s = v => {
-          document.head.removeChild(iframe);
-          if (v) supportsImportMaps = true;
-          delete self._$s;
-          resolve();
-        };
+      cssModulesEnabled && dynamicImport(createBlob(`import"${createBlob('', 'text/css')}"assert{type:"css"}`)).then(() => supportsCssAssertions = true, noop),
+      jsonModulesEnabled && dynamicImport(createBlob(`import"${createBlob('{}', 'text/json')}"assert{type:"json"}`)).then(() => supportsJsonAssertions = true, noop),
+      supportsImportMaps || hasDocument && (HTMLScriptElement.supports || new Promise(resolve => {
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.setAttribute('nonce', nonce);
-        document.head.appendChild(iframe);
-        // we use document.write here because eg Weixin built-in browser doesn't support setting srcdoc
         // setting src to a blob URL results in a navigation event in webviews
         // setting srcdoc is not supported in React native webviews on iOS
-        iframe.contentWindow.document.write(`<script type=importmap nonce="${nonce}">{"imports":{"x":"data:text/javascript,"}}<${''}/script><script nonce="${nonce}">import('x').then(()=>1,()=>0).then(v=>parent._$s(v))<${''}/script>`);
-      })
+        // therefore, we need to first feature detect srcdoc support
+        iframe.srcdoc = `<!doctype html><script nonce="${nonce}"><${''}/script>`;
+        document.head.appendChild(iframe);
+        iframe.onload = () => {
+          self._$s = v => {
+            document.head.removeChild(iframe);
+            supportsImportMaps = v;
+            delete self._$s;
+            resolve();
+          };
+          const supportsSrcDoc = iframe.contentDocument.head.childNodes.length > 0;
+          const importMapTest = `<!doctype html><script type=importmap nonce="${nonce}">{"imports":{"x":"${createBlob('')}"}<${''}/script><script nonce="${nonce}">import('x').catch(() => {}).then(v=>parent._$s(!!v))<${''}/script>`;
+          if (supportsSrcDoc)
+            iframe.srcdoc = importMapTest;
+          else
+            iframe.contentDocument.write(importMapTest);
+        };
+      }))
     ]);
   });
 
@@ -338,7 +352,9 @@
     await initPromise;
     if (importHook) await importHook(id, typeof args[1] !== 'string' ? args[1] : {}, parentUrl);
     if (acceptingImportMaps || shimMode || !baselinePassthrough) {
-      processImportMaps();
+      if (hasDocument)
+        processImportMaps();
+
       if (!shimMode)
         acceptingImportMaps = false;
     }
@@ -368,6 +384,10 @@
 
   importShim.resolve = resolveSync;
   importShim.getImportMap = () => JSON.parse(JSON.stringify(importMap));
+  importShim.addImportMap = importMapIn => {
+    if (!shimMode) throw new Error('Unsupported in polyfill mode.');
+    importMap = resolveAndComposeImportMap(importMapIn, baseUrl, importMap);
+  };
 
   const registry = importShim._r = {};
 
@@ -406,44 +426,47 @@
       }
     }
     baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false;
-    if (!supportsImportMaps) {
-      const supports = HTMLScriptElement.supports || (type => type === 'classic' || type === 'module');
-      HTMLScriptElement.supports = type => type === 'importmap' || supports(type);
-    }
-    if (shimMode || !baselinePassthrough) {
-      new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-          if (mutation.type !== 'childList') continue;
-          for (const node of mutation.addedNodes) {
-            if (node.tagName === 'SCRIPT') {
-              if (node.type === (shimMode ? 'module-shim' : 'module'))
-                processScript(node);
-              if (node.type === (shimMode ? 'importmap-shim' : 'importmap'))
-                processImportMap(node);
+    if (hasDocument) {
+      if (!supportsImportMaps) {
+        const supports = HTMLScriptElement.supports || (type => type === 'classic' || type === 'module');
+        HTMLScriptElement.supports = type => type === 'importmap' || supports(type);
+      }
+
+      if (shimMode || !baselinePassthrough) {
+        new MutationObserver(mutations => {
+          for (const mutation of mutations) {
+            if (mutation.type !== 'childList') continue;
+            for (const node of mutation.addedNodes) {
+              if (node.tagName === 'SCRIPT') {
+                if (node.type === (shimMode ? 'module-shim' : 'module'))
+                  processScript(node);
+                if (node.type === (shimMode ? 'importmap-shim' : 'importmap'))
+                  processImportMap(node);
+              }
+              else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload'))
+                processPreload(node);
             }
-            else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload'))
-              processPreload(node);
           }
+        }).observe(document, {childList: true, subtree: true});
+        processImportMaps();
+        processScriptsAndPreloads();
+        if (document.readyState === 'complete') {
+          readyStateCompleteCheck();
         }
-      }).observe(document, { childList: true, subtree: true });
-      processImportMaps();
-      processScriptsAndPreloads();
-      if (document.readyState === 'complete') {
-        readyStateCompleteCheck();
-      }
-      else {
-        async function readyListener () {
-          await initPromise;
-          processImportMaps();
-          if (document.readyState === 'complete') {
-            readyStateCompleteCheck();
-            document.removeEventListener('readystatechange', readyListener);
+        else {
+          async function readyListener() {
+            await initPromise;
+            processImportMaps();
+            if (document.readyState === 'complete') {
+              readyStateCompleteCheck();
+              document.removeEventListener('readystatechange', readyListener);
+            }
           }
+          document.addEventListener('readystatechange', readyListener);
         }
-        document.addEventListener('readystatechange', readyListener);
       }
-      return undefined;
     }
+    return undefined;
   });
   let importMapPromise = initPromise;
   let firstPolyfillLoad = true;
@@ -523,7 +546,7 @@
     const source = load.S;
 
     // edge doesnt execute sibling in order, so we fix this up by ensuring all previous executions are explicit dependencies
-    let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';  
+    let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';
 
     if (!imports.length) {
       resolvedSource += source;
@@ -564,7 +587,7 @@
           resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/${urlJsString(blobUrl)}`;
 
           // circular shell execution
-          if (!cycleShell && depLoad.s) {          
+          if (!cycleShell && depLoad.s) {
             resolvedSource += `;import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
             depLoad.s = undefined;
           }
@@ -651,8 +674,8 @@
       return { r: res.url, s: `export default ${await res.text()}`, t: 'json' };
     else if (cssContentType.test(contentType)) {
       return { r: res.url, s: `var s=new CSSStyleSheet();s.replaceSync(${
-      JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes = '', relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))
-    });export default s;`, t: 'css' };
+        JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes = '', relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))
+      });export default s;`, t: 'css' };
     }
     else
       throw Error(`Unsupported Content-Type "${contentType}" loading ${url}${fromParent(parent)}. Modules must be served with a valid MIME type like application/javascript.`);
@@ -773,14 +796,16 @@
       document.dispatchEvent(new Event('DOMContentLoaded'));
   }
   // this should always trigger because we assume es-module-shims is itself a domcontentloaded requirement
-  document.addEventListener('DOMContentLoaded', async () => {
-    await initPromise;
-    domContentLoadedCheck();
-    if (shimMode || !baselinePassthrough) {
-      processImportMaps();
-      processScriptsAndPreloads();
-    }
-  });
+  if (hasDocument) {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initPromise;
+      domContentLoadedCheck();
+      if (shimMode || !baselinePassthrough) {
+        processImportMaps();
+        processScriptsAndPreloads();
+      }
+    });
+  }
 
   let readyStateCompleteCnt = 1;
   function readyStateCompleteCheck () {
