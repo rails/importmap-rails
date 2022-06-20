@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+VERSION=$1
+
+if [ -z "$VERSION" ]; then
+  echo "Usage: $0 <version>"
+  exit 1
+fi
+
+echo "Fetching version $VERSION of es-module-shims.js"
+curl "https://unpkg.com/es-module-shims@$VERSION/dist/es-module-shims.js" -s -o ./app/assets/javascripts/es-module-shims.js
+
+echo "Fetching version $VERSION of es-module-shims.min.js"
+curl "https://ga.jspm.io/npm:es-module-shims@$VERSION/dist/es-module-shims.js" -s -o ./app/assets/javascripts/es-module-shims.min.js
+
+echo "Fetching version $VERSION of es-module-shims.js.map"
+curl "https://ga.jspm.io/npm:es-module-shims@$VERSION/dist/es-module-shims.js.map" -s -o ./app/assets/javascripts/es-module-shims.js.map
