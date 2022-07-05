@@ -1,9 +1,5 @@
 require "test_helper"
 
-# Stub method
-def content_security_policy_nonce() nil end
-def content_security_policy?() false end
-
 class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
   test "javascript_importmap_tags with and without shim" do
     assert_match /shim/, javascript_importmap_tags("application")
