@@ -1,4 +1,4 @@
-/* ES Module Shims 1.5.8 */
+/* ES Module Shims 1.5.9 */
 (function () {
 
   const hasWindow = typeof window !== 'undefined';
@@ -16,7 +16,7 @@
   const importHook = globalHook(shimMode && esmsInitOptions.onimport);
   const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
   let fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
-  const metaHook = esmsInitOptions.meta ? globalHook(shimModule && esmsInitOptions.meta) : noop;
+  const metaHook = esmsInitOptions.meta ? globalHook(shimMode && esmsInitOptions.meta) : noop;
 
   const skip = esmsInitOptions.skip ? new RegExp(esmsInitOptions.skip) : null;
 
@@ -44,10 +44,6 @@
   const cssModulesEnabled = enable.includes('css-modules');
   const jsonModulesEnabled = enable.includes('json-modules');
 
-  function setShimMode () {
-    shimMode = true;
-  }
-
   const edge = !navigator.userAgentData && !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
 
   const baseUrl = hasDocument
@@ -66,6 +62,32 @@
 
   function fromParent (parent) {
     return parent ? ` imported from ${parent}` : '';
+  }
+
+  let importMapSrcOrLazy = false;
+
+  function setImportMapSrcOrLazy () {
+    importMapSrcOrLazy = true;
+  }
+
+  // shim mode is determined on initialization, no late shim mode
+  if (!shimMode) {
+    if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
+      shimMode = true;
+    }
+    else {
+      let seenScript = false;
+      for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')) {
+        if (!seenScript) {
+          if (script.type === 'module' && !script.ep)
+            seenScript = true;
+        }
+        else if (script.type === 'importmap' && seenScript) {
+          importMapSrcOrLazy = true;
+          break;
+        }
+      }
+    }
   }
 
   const backslashRegEx = /\\/g;
@@ -243,7 +265,7 @@
   function dynamicImportScript (url, { errUrl = url } = {}) {
     err = undefined;
     const src = createBlob(`import*as m from'${url}';self._esmsi=m`);
-    const s = Object.assign(document.createElement('script'), { type: 'module', src });
+    const s = Object.assign(document.createElement('script'), { type: 'module', src, ep: true });
     s.setAttribute('nonce', nonce);
     s.setAttribute('noshim', '');
     const p =  new Promise((resolve, reject) => {
@@ -402,36 +424,15 @@
   }
 
   let importMap = { imports: {}, scopes: {} };
-  let importMapSrcOrLazy = false;
   let baselinePassthrough;
 
   const initPromise = featureDetectionPromise.then(() => {
-    // shim mode is determined on initialization, no late shim mode
-    if (!shimMode) {
-      if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
-        setShimMode();
-      }
-      else {
-        let seenScript = false;
-        for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')) {
-          if (!seenScript) {
-            if (script.type === 'module')
-              seenScript = true;
-          }
-          else if (script.type === 'importmap') {
-            importMapSrcOrLazy = true;
-            break;
-          }
-        }
-      }
-    }
     baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false;
     if (hasDocument) {
       if (!supportsImportMaps) {
         const supports = HTMLScriptElement.supports || (type => type === 'classic' || type === 'module');
         HTMLScriptElement.supports = type => type === 'importmap' || supports(type);
       }
-
       if (shimMode || !baselinePassthrough) {
         new MutationObserver(mutations => {
           for (const mutation of mutations) {
@@ -476,7 +477,7 @@
     if (!shimMode)
       acceptingImportMaps = false;
     await importMapPromise;
-    if (importHook) await importHook(id, typeof args[1] !== 'string' ? args[1] : {}, parentUrl);
+    if (importHook) await importHook(url, typeof fetchOpts !== 'string' ? fetchOpts : {}, '');
     // early analysis opt-out - no need to even fetch if we have feature support
     if (!shimMode && baselinePassthrough) {
       // for polyfill case, only dynamic import needs a return value here, and dynamic import will never pass nativelyLoaded
@@ -824,7 +825,7 @@
     if (script.src) {
       if (!shimMode)
         return;
-      importMapSrcOrLazy = true;
+      setImportMapSrcOrLazy();
     }
     if (acceptingImportMaps) {
       importMapPromise = importMapPromise
