@@ -9,12 +9,36 @@ There's [native support for import maps in Chrome/Edge 89+](https://caniuse.com/
 
 ## Installation
 
-Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications:
+Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
+
+### a) Rails apps
+
+Importmap for Rails is automatically included in Rails 7+ for new applications, but you can also install it manually in existing applications: 
 
 1. Run `./bin/bundle add importmap-rails`
 2. Run `./bin/rails importmap:install`
 
-Note: In order to use JavaScript from Rails frameworks like Action Cable, Action Text, and Active Storage, you must be running Rails 7.0+. This was the first version that shipped with ESM compatible builds of these libraries.
+### b) Rails engines
+
+This gem behaves differently when it is loaded into a Rails Engine.  We assume that you wish to load the gem's behaviour into the Engine's codebase rather than loading it into the **dummy** application's codebase. You may wish to copy the changes that the installer makes into the **dummy** application. 
+
+Importmap for Rails is automatically included in Rails 7+ for new engines, but you can also install it manually in existing engines:
+
+1. In your `<engine>.gemspec` file, add the following:
+    ```ruby
+    spec.add_dependency 'importmap-rails'
+    ```
+2. Near the top of your `lib/<engine_name>/engine.rb` file, add the following:
+    ```ruby
+    require 'importmap-rails'
+    ```
+3. If you wish to load a non-standard version of this gem, such as the latest unreleased version in the **main** 
+   branch, add the following to your `Gemfile`:
+    ```ruby
+    gem 'importmap-rails'
+    ```
+4. Run `./bin/bundle install`
+5. Run `./bin/rails app:importmap:install`. Please note the addition of `app:` in this command.
 
 ## How do importmaps work?
 
@@ -57,7 +81,7 @@ import React from "react"
 
 The import map is setup through `Rails.application.importmap` via the configuration in `config/importmap.rb`. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
 
-This import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
+This import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will set up the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
 
 It's in `app/javascript/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
 
