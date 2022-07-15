@@ -20,8 +20,8 @@ module Importmap::ImportmapTagsHelper
   # Configure es-modules-shim with nonce support if the application is using a content security policy.
   def javascript_importmap_shim_nonce_configuration_tag
     if request&.content_security_policy
-      tag.script({ nonce: content_security_policy_nonce }.to_json.html_safe, 
-        type: "esms-options", nonce: content_security_policy_nonce)
+      tag.script({ nonce: request.content_security_policy_nonce }.to_json.html_safe,
+        type: "esms-options", nonce: request.content_security_policy_nonce)
     end
   end
 
