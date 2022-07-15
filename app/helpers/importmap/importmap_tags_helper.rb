@@ -14,7 +14,7 @@ module Importmap::ImportmapTagsHelper
   # By default, `Rails.application.importmap.to_json(resolver: self)` is used.
   def javascript_inline_importmap_tag(importmap_json = Rails.application.importmap.to_json(resolver: self))
     tag.script importmap_json.html_safe,
-      type: "importmap", "data-turbo-track": "reload", nonce: request&.content_security_policy
+      type: "importmap", "data-turbo-track": "reload", nonce: request&.content_security_policy_nonce
   end
 
   # Configure es-modules-shim with nonce support if the application is using a content security policy.
@@ -28,14 +28,14 @@ module Importmap::ImportmapTagsHelper
   # Include the es-modules-shim needed to make importmaps work in browsers without native support (like Firefox + Safari).
   def javascript_importmap_shim_tag(minimized: true)
     javascript_include_tag minimized ? "es-module-shims.min.js" : "es-module-shims.js",
-      async: true, "data-turbo-track": "reload", nonce: request&.content_security_policy
+      async: true, "data-turbo-track": "reload", nonce: request&.content_security_policy_nonce
   end
 
   # Import a named JavaScript module(s) using a script-module tag.
   def javascript_import_module_tag(*module_names)
     imports = Array(module_names).collect { |m| %(import "#{m}") }.join("\n")
     tag.script imports.html_safe, 
-      type: "module", nonce: request&.content_security_policy
+      type: "module", nonce: request&.content_security_policy_nonce
   end
 
   # Link tags for preloading all modules marked as preload: true in the `importmap`
@@ -48,7 +48,7 @@ module Importmap::ImportmapTagsHelper
   # Link tag(s) for preloading the JavaScript module residing in `*paths`. Will return one link tag per path element.
   def javascript_module_preload_tag(*paths)
     safe_join(Array(paths).collect { |path|
-      tag.link rel: "modulepreload", href: path, nonce: request&.content_security_policy
+      tag.link rel: "modulepreload", href: path, nonce: request&.content_security_policy_nonce
     }, "\n")
   end
 end
