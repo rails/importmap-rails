@@ -299,6 +299,12 @@ In Firefox. when opening the browser console, the asm.js module lexer build will
 
 Under certain circumstances, like running system tests using chromedriver under CI (which may be resource constrained and trigger errors in certain cases), you may want to explicitly turn off including the shim. You can do this by calling the bulk tag helper with `javascript_importmap_tags("application", shim: false)`. Thus you can pass in something like `shim: !ENV["CI"]`. If you want, and are sure you're not doing any full-page caching, you can also connect this directive to a user agent check (using a gem like `useragent`) to check whether the browser is chrome/edge 89+. But you really shouldn't have to, as the shim is designed to gracefully work with natively compatible drivers.
 
+## Checking for outdated or vulnerable packages
+
+Importmap for Rails provides two commands to check your pinned packages:
+- `./bin/importmap outdated` checks the NPM registry for new versions
+- `./bin/importmap audit` checks the NPM registry for known security issues
+
 ## License
 
 Importmap for Rails is released under the [MIT License](https://opensource.org/licenses/MIT).
