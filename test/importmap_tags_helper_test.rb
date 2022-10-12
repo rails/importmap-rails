@@ -24,10 +24,13 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     assert_no_match /shim/, javascript_importmap_tags("application", shim: false)
   end
 
-  test "javascript_inline_importmap_tag" do
+  test "javascript_inline_importmap_tag with and without shim" do
+    assert_match \
+      %r{<script type="importmap-shim" data-turbo-track="reload">{\n  \"imports\": {\n    \"md5\": \"https://cdn.skypack.dev/md5\",\n    \"not_there\": \"/nowhere.js\"\n  }\n}</script>},
+      javascript_inline_importmap_tag
     assert_match \
       %r{<script type="importmap" data-turbo-track="reload">{\n  \"imports\": {\n    \"md5\": \"https://cdn.skypack.dev/md5\",\n    \"not_there\": \"/nowhere.js\"\n  }\n}</script>},
-      javascript_inline_importmap_tag
+      javascript_inline_importmap_tag(shim: false)
   end
 
   test "javascript_importmap_module_preload_tags" do
