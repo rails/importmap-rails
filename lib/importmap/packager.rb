@@ -48,7 +48,7 @@ class Importmap::Packager
   end
 
   def packaged?(package)
-    importmap.match(/^pin "#{package}".*$/)
+    importmap.match(/^pin ["']#{package}["'].*$/)
   end
 
   def download(package, url)
@@ -102,7 +102,7 @@ class Importmap::Packager
 
     def remove_package_from_importmap(package)
       all_lines = File.readlines(@importmap_path)
-      with_lines_removed = all_lines.select { |line| line !~ /pin "#{package}"/ }
+      with_lines_removed = all_lines.grep_v(/pin ["']#{package}["']/)
 
       File.open(@importmap_path, "w") do |file|
         with_lines_removed.each { |line| file.write(line) }
