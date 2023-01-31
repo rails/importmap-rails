@@ -20,15 +20,17 @@ module Importmap
     end
 
     initializer "importmap.reloader" do |app|
-      Importmap::Reloader.new.tap do |reloader|
-        reloader.execute
-        app.reloaders << reloader
-        app.reloader.to_run { reloader.execute }
+      unless app.config.cache_classes
+        Importmap::Reloader.new.tap do |reloader|
+          reloader.execute
+          app.reloaders << reloader
+          app.reloader.to_run { reloader.execute }
+        end
       end
     end
 
     initializer "importmap.cache_sweeper" do |app|
-      if app.config.importmap.sweep_cache
+      if app.config.importmap.sweep_cache && !app.config.cache_classes
         app.config.importmap.cache_sweepers << app.root.join("app/javascript")
         app.config.importmap.cache_sweepers << app.root.join("vendor/javascript")
         app.importmap.cache_sweeper(watches: app.config.importmap.cache_sweepers)

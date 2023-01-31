@@ -69,7 +69,7 @@ class Importmap::Map
     Digest::SHA1.hexdigest(to_json(resolver: resolver).to_s)
   end
 
-  # Returns an instance ActiveSupport::EventedFileUpdateChecker configured to clear the cache of the map
+  # Returns an instance of ActiveSupport::EventedFileUpdateChecker configured to clear the cache of the map
   # when the directories passed on initialization via `watches:` have changes. This is used in development
   # and test to ensure the map caches are reset when javascript files are changed.
   def cache_sweeper(watches: nil)
