@@ -74,7 +74,7 @@ pin_all_from 'app/javascript/src`, under: 'src', to: 'src'
 
 Allows you to
 ```js
-//app/javascript/application.js
+// app/javascript/application.js
 import { ExampleFunction } from 'src/example_function'
 ```
 Which imports the function from `app/javascript/src/example_function.js`.
