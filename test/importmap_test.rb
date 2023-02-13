@@ -56,6 +56,14 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
   end
 
+  test 'invalid importmap file results in error' do
+    file = file_fixture('invalid_import_map.rb')
+    importmap = Importmap::Map.new
+    assert_raises Importmap::Map::InvalidFile do
+      importmap.draw(file)
+    end
+  end
+
   test "preloaded modules are included in preload tags" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
     assert_match /md5/, preloading_module_paths
