@@ -64,21 +64,26 @@ It's in `app/javascript/application.js` you setup your application by importing 
 It makes sense to use logical names that match the package names used by npm, such that if you later want to start transpiling or bundling your code, you won't have to change any module imports.
 
 ### Local modules
+
 If you want to import local js module files from `app/javascript/src` or other sub-folders of `app/javascript` (such as `channels`), you must pin these to be able to import them.
 You can use `pin_all_from` to pick all files in a specific folder, so you don't have to `pin` each module individually.
+
 ```rb
 # config/importmap.rb
 pin_all_from 'app/javascript/src`, under: 'src', to: 'src'
 ```
 
-Allows you to
+The `:to` parameter is only required if you want to change the destination logical import name. If you drop the :to option, you must place the :under option directly after the first parameter.
+
+Allows you to:
+
 ```js
 // app/javascript/application.js
 import { ExampleFunction } from 'src/example_function'
 ```
 Which imports the function from `app/javascript/src/example_function.js`.
 
-Note: Sprockets used to serve assets (albeit without filename digests) it couldn't find from the app/javascripts folder with logical relative paths, meaning pinning local files wasn't needed. Propshaft doesn't have this fallback, so when you use Propshaft you have to pin your local modules.
+Note: Sprockets used to serve assets (albeit without filename digests) it couldn't find from the `app/javascripts` folder with logical relative paths, meaning pinning local files wasn't needed. Propshaft doesn't have this fallback, so when you use Propshaft you have to pin your local modules.
 
 ## Using npm packages via JavaScript CDNs
 
