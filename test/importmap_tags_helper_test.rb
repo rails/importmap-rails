@@ -55,4 +55,28 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
   ensure
     @request = nil
   end
+
+  test "separate caches for inline importmap" do
+    set_one = javascript_importmap_tags(inline_importmap_cache_key: 'inline-1')
+    ActionController::Base.asset_host = "http://assets.example.com"
+
+    set_two = javascript_importmap_tags(inline_importmap_cache_key: 'inline-2')
+
+    assert_not_equal set_one, set_two
+    assert_match /assets\.example\.com/, javascript_importmap_tags(set_one)
+  ensure
+    ActionController::Base.asset_host = nil
+  end
+
+  test "separate caches for preloaded modules" do
+    set_one = javascript_importmap_tags(module_preload_tags_cache_key: 'preload-1')
+    ActionController::Base.asset_host = "http://assets.example.com"
+
+    set_two = javascript_importmap_tags(module_preload_tags_cache_key: 'preload-2')
+
+    assert_not_equal set_one, set_two
+    assert_match /assets\.example\.com/, javascript_importmap_tags(set_one)
+  ensure
+    ActionController::Base.asset_host = nil
+  end
 end
