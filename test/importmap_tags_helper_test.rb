@@ -63,7 +63,7 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     set_two = javascript_importmap_tags(inline_importmap_cache_key: 'inline-2')
 
     assert_not_equal set_one, set_two
-    assert_match /assets\.example\.com/, javascript_importmap_tags(set_one)
+    assert_match /assets\.example\.com/, set_two
   ensure
     ActionController::Base.asset_host = nil
   end
@@ -75,7 +75,7 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     set_two = javascript_importmap_tags(module_preload_tags_cache_key: 'preload-2')
 
     assert_not_equal set_one, set_two
-    assert_match /assets\.example\.com/, javascript_importmap_tags(set_one)
+    assert_match /assets\.example\.com/, set_two
   ensure
     ActionController::Base.asset_host = nil
   end
