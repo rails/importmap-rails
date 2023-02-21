@@ -44,17 +44,19 @@ class Importmap::Npm
     end.sort_by { |p| [p.name, p.severity] }
   end
 
+  def packages_with_versions
+    # We cannot use the name after "pin" because some dependencies are loaded from inside packages
+    # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
+
+    importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s"]*)).*$/) |
+      importmap.scan(/^pin "([^"]*)".* #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
+  end
+
   private
     OutdatedPackage   = Struct.new(:name, :current_version, :latest_version, :error, keyword_init: true)
     VulnerablePackage = Struct.new(:name, :severity, :vulnerable_versions, :vulnerability, keyword_init: true)
 
-    def packages_with_versions
-      # We cannot use the name after "pin" because some dependencies are loaded from inside packages
-      # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
 
-      importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s"]*)).*$/) |
-        importmap.scan(/^pin "([^"]*)".* #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
-    end
 
     def importmap
       @importmap ||= File.read(@importmap_path)
