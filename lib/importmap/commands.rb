@@ -28,7 +28,7 @@ class Importmap::Commands < Thor
         if packager.packaged?(package)
           gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin, verbose: false)
         else
-          append_to_file("config/importmap.rb", "#{pin}\n", verbose: false)
+          append_to_file("config/importmap.rb", "\n#{pin}\n", verbose: false)
         end
       end
     else
