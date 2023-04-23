@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    importmap-rails (1.1.5)
+    importmap-rails (1.1.6)
       actionpack (>= 6.0.0)
       railties (>= 6.0.0)
 
@@ -181,6 +181,7 @@ GEM
 PLATFORMS
   arm64-darwin-20
   arm64-darwin-21
+  arm64-darwin-22
   x86_64-darwin-20
   x86_64-darwin-21
   x86_64-darwin-22
