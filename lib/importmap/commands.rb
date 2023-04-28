@@ -8,7 +8,7 @@ class Importmap::Commands < Thor
   def self.exit_on_failure?
     false
   end
-  
+
   desc "pin [*PACKAGES]", "Pin new packages"
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
@@ -101,6 +101,11 @@ class Importmap::Commands < Thor
     else
       puts "No outdated packages found"
     end
+  end
+
+  desc "packages", "Print out packages with version numbers"
+  def packages
+    puts npm.packages_with_versions.map { |x| x.join(' ') }
   end
 
   private
