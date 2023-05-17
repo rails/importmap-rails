@@ -25,9 +25,9 @@ class Importmap::Map
     self
   end
 
-  def pin(name, to: nil, preload: false)
+  def pin(name, to: nil, preload: false, integrity: false)
     clear_cache
-    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
+    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload, integrity: integrity)
   end
 
   def pin_all_from(dir, under: nil, to: nil, preload: false)
@@ -83,9 +83,21 @@ class Importmap::Map
     end
   end
 
+  def integrities(resolver:)
+    expanded_packages_and_directories.values.inject({}) do |map, file|
+      integrity = file.integrity || Rails.application.assets[file.path]&.integrity
+      if integrity
+        resolved_path = resolver.path_to_asset(file.path)
+        map.merge resolved_path => integrity
+      else
+        map
+      end
+    end
+  end
+
   private
     MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
-    MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
+    MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
 
     def cache_as(name)
       if result = @cache[name.to_s]

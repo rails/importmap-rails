@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class ImportmapTest < ActiveSupport::TestCase
   def setup
@@ -8,6 +9,7 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "editor", to: "rich_text.js"
         pin "not_there", to: "nowhere.js"
         pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
+        pin "ciphers", to: "https://cdn.skypack.dev/ciphers", integrity: "sha384-/ZZpnm1H4nw1IuQda2fzk2EBThQwZz5aV3x84D3SqZMUCou2TU6WHhIjX0eSBK6S"
 
         pin_all_from "app/javascript/controllers", under: "controllers", preload: true
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", preload: true
@@ -32,6 +34,12 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "remote pin is not digest stamped" do
     assert_equal "https://cdn.skypack.dev/md5", generate_importmap_json["imports"]["md5"]
+  end
+
+  test "remote with integrity is propagated" do
+    resolver = Minitest::Mock.new
+    def resolver.path_to_asset(a); a; end
+    assert_equal "sha384-/ZZpnm1H4nw1IuQda2fzk2EBThQwZz5aV3x84D3SqZMUCou2TU6WHhIjX0eSBK6S", @importmap.integrities(resolver: resolver)["https://cdn.skypack.dev/ciphers"]
   end
 
   test "directory pin mounted under matching subdir maps all files" do
