@@ -55,4 +55,18 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
   ensure
     @request = nil
   end
+
+  test "using a custom importmap" do
+    importmap = Importmap::Map.new
+    importmap.pin "foo", preload: true
+    importmap.pin "bar", preload: false
+    importmap_html = javascript_importmap_tags("foo", importmap: importmap)
+
+    assert_includes importmap_html, %{<script type="importmap" data-turbo-track="reload">}
+    assert_includes importmap_html, %{"foo": "/foo.js"}
+    assert_includes importmap_html, %{"bar": "/bar.js"}
+    assert_includes importmap_html, %{<link rel="modulepreload" href="/foo.js">}
+    refute_includes importmap_html, %{<link rel="modulepreload" href="/bar.js">}
+    assert_includes importmap_html, %{<script type="module">import "foo"</script>}
+  end
 end
