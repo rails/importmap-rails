@@ -110,8 +110,6 @@ class Importmap::Packager
     end
 
     def download_package_file(package, url)
-      return `curl -s '#{url}' > #{vendored_package_path(package)}` if url =~ /jspm.io/
-
       response = Net::HTTP.get_response(URI(url))
 
       if response.code == "200"
