@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    importmap-rails (1.2.0)
+    importmap-rails (1.2.1)
       actionpack (>= 6.0.0)
       railties (>= 6.0.0)
 
