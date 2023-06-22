@@ -74,10 +74,8 @@ class Importmap::Map
   # and test to ensure the map caches are reset when javascript files are changed.
   def cache_sweeper(watches: nil)
     if watches
-      @cache_sweeper =
-        Rails.application.config.file_watcher.new([], Array(watches).collect { |dir| [ dir.to_s, "js"] }.to_h) do
-          clear_cache
-        end
+      watches = Array(watches).collect { |dir| [ dir.to_s, accepted_extensions] }.to_h
+      @cache_sweeper = Rails.application.config.file_watcher.new([], watches) { clear_cache }
     else
       @cache_sweeper
     end
@@ -129,7 +127,7 @@ class Importmap::Map
     def expand_directories_into(paths)
       @directories.values.each do |mapping|
         if (absolute_path = absolute_root_of(mapping.dir)).exist?
-          find_javascript_files_in_tree(absolute_path).each do |filename|
+          find_accepted_files_in_tree(absolute_path).each do |filename|
             module_filename = filename.relative_path_from(absolute_path)
             module_name     = module_name_from(module_filename, mapping)
             module_path     = module_path_from(module_filename, mapping)
@@ -141,18 +139,26 @@ class Importmap::Map
     end
 
     def module_name_from(filename, mapping)
-      [ mapping.under, filename.to_s.remove(filename.extname).remove(/\/?index$/).presence ].compact.join("/")
+      [ mapping.under, remove_accepted_extensions(filename).remove(/\/?index$/).presence ].compact.join("/")
     end
 
     def module_path_from(filename, mapping)
-      [ mapping.path || mapping.under, filename.to_s ].compact.join("/")
+      [ mapping.path || mapping.under, "#{remove_accepted_extensions(filename)}.js" ].compact.join("/")
     end
 
-    def find_javascript_files_in_tree(path)
-      Dir[path.join("**/*.js{,m}")].collect { |file| Pathname.new(file) }.select(&:file?)
+    def find_accepted_files_in_tree(path)
+      Dir[path.join("**/*.{#{accepted_extensions.join(',')}}")].map(&Pathname.method(:new)).select(&:file?)
     end
 
     def absolute_root_of(path)
       (pathname = Pathname.new(path)).absolute? ? pathname : Rails.root.join(path)
+    end
+
+    def accepted_extensions
+      Rails.application.config.importmap.accept
+    end
+
+    def remove_accepted_extensions(filename)
+      filename.to_s.remove(/\.(#{accepted_extensions.map(&Regexp.method(:escape)).join('|')})\z/)
     end
 end
