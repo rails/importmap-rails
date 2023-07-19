@@ -145,7 +145,7 @@ class Importmap::Map
     end
 
     def module_path_from(filename, mapping)
-      [ mapping.path || mapping.under, filename.to_s ].compact.join("/")
+      [ mapping.path || mapping.under, filename.to_s ].compact.reject(&:empty?).join("/")
     end
 
     def find_javascript_files_in_tree(path)
