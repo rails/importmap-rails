@@ -48,8 +48,8 @@ class Importmap::Npm
     # We cannot use the name after "pin" because some dependencies are loaded from inside packages
     # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
 
-    importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s"]*)).*$/) |
-      importmap.scan(/^pin "([^"]*)".* #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
+    importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s["|']]*)).*$/) |
+      importmap.scan(/^pin ["|']([^["|']]*)["|'].* #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
   end
 
   private
