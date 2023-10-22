@@ -32,18 +32,23 @@ class Importmap::Packager
     end
   end
 
-  def pin_for(package, url)
-    %(pin "#{package}", to: "#{url}")
+  def pin_for(package, url, integrity: false)
+    if integrity
+      %(pin "#{package}", to: "#{url}", integrity: "#{integrity}")
+    else
+      %(pin "#{package}", to: "#{url}")
+    end
   end
 
-  def vendored_pin_for(package, url)
+  def vendored_pin_for(package, url, integrity: false)
     filename = package_filename(package)
     version  = extract_package_version_from(url)
+    integrity_suffix = %(, integrity: "#{integrity}") if integrity
 
     if "#{package}.js" == filename
-      %(pin "#{package}" # #{version})
+      %(pin "#{package}"#{integrity_suffix} # #{version})
     else
-      %(pin "#{package}", to: "#{filename}" # #{version})
+      %(pin "#{package}", to: "#{filename}"#{integrity_suffix} # #{version})
     end
   end
 
@@ -60,6 +65,13 @@ class Importmap::Packager
   def remove(package)
     remove_existing_package_file(package)
     remove_package_from_importmap(package)
+  end
+
+  def calculate_integrity(package: nil, url: nil)
+    contents = File.read(vendored_package_path(package)) if package
+    contents = Net::HTTP.get_response(URI(url)).body if url
+    integrity = Digest::SHA384.base64digest(contents)
+    "sha384-#{integrity}"
   end
 
   private

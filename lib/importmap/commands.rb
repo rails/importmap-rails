@@ -13,16 +13,19 @@ class Importmap::Commands < Thor
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
   option :download, type: :boolean, aliases: :d, default: false
+  option :integrity, type: :boolean, aliases: :i, default: false
   def pin(*packages)
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
       imports.each do |package, url|
         if options[:download]
           puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
           packager.download(package, url)
-          pin = packager.vendored_pin_for(package, url)
+          integrity = packager.calculate_integrity(package: package) if options[:integrity]
+          pin = packager.vendored_pin_for(package, url, integrity: integrity)
         else
           puts %(Pinning "#{package}" to #{url})
-          pin = packager.pin_for(package, url)
+          integrity = packager.calculate_integrity(url: url) if options[:integrity]
+          pin = packager.pin_for(package, url, integrity: integrity)
         end
 
         if packager.packaged?(package)
