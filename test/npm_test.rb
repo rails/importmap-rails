@@ -18,6 +18,34 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
+  test "successful outdated packages using single-quotes with mock" do
+    npm = Importmap::Npm.new(file_fixture("single_quote_outdated_import_map.rb"))
+    response = { "dist-tags" => { "latest" => '2.3.0' } }.to_json
+
+    npm.stub(:get_json, response) do
+      outdated_packages = npm.outdated_packages
+
+      assert_equal(1, outdated_packages.size)
+      assert_equal('md5', outdated_packages[0].name)
+      assert_equal('2.2.0', outdated_packages[0].current_version)
+      assert_equal('2.3.0', outdated_packages[0].latest_version)
+    end
+  end
+
+  test "successful outdated packages using single-quotes and without CDN with mock" do
+    npm = Importmap::Npm.new(file_fixture("single_quote_outdated_import_map_without_cdn.rb"))
+    response = { "dist-tags" => { "latest" => '2.3.0' } }.to_json
+
+    npm.stub(:get_json, response) do
+      outdated_packages = npm.outdated_packages
+
+      assert_equal(1, outdated_packages.size)
+      assert_equal('md5', outdated_packages[0].name)
+      assert_equal('2.2.0', outdated_packages[0].current_version)
+      assert_equal('2.3.0', outdated_packages[0].latest_version)
+    end
+  end
+
   test "missing outdated packages with mock" do
     response = { "error" => "Not found" }.to_json
 
