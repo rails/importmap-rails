@@ -1,3 +1,6 @@
+require "active_support"
+require "active_support/core_ext/module/delegation"
+
 class Importmap::Reloader
   delegate :execute_if_updated, :execute, :updated?, to: :updater
 
