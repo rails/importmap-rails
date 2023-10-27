@@ -14,6 +14,7 @@ class ImportmapTest < ActiveSupport::TestCase
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", to: "spina/controllers", preload: true
         pin_all_from "app/javascript/helpers", under: "helpers", preload: true
         pin_all_from "lib/assets/javascripts", preload: true
+        pin_all_from "app/components", under: "controllers", to: "", preload: true
       end
     end
   end
@@ -50,6 +51,11 @@ class ImportmapTest < ActiveSupport::TestCase
   test "directory pin under custom asset path" do
     assert_match %r|assets/spina/controllers/another_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/another_controller"]
     assert_match %r|assets/spina/controllers/deeper/again_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/deeper/again_controller"]
+  end
+
+  test "directory pin under custom asset path with empty to" do
+    assert_match %r|assets/spina/component_controller-.*\.js|, generate_importmap_json["imports"]["controllers/spina/component_controller"]
+    assert_match %r|assets/another_component_controller-.*\.js|, generate_importmap_json["imports"]["controllers/another_component_controller"]
   end
 
   test "directory pin without path or under" do
