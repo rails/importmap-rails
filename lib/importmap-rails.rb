@@ -3,4 +3,4 @@ end
 
 require "importmap/version"
 require "importmap/reloader"
-require "importmap/engine"
+require "importmap/engine" if defined?(Rails::Railtie)
