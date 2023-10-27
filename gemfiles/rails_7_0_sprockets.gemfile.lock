@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    importmap-rails (1.2.1)
+    importmap-rails (1.2.2)
       actionpack (>= 6.0.0)
       railties (>= 6.0.0)
 
@@ -73,15 +73,15 @@ GEM
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-    addressable (2.8.0)
-      public_suffix (>= 2.0.2, < 5.0)
-    appraisal (2.4.1)
+    addressable (2.8.5)
+      public_suffix (>= 2.0.2, < 6.0)
+    appraisal (2.5.0)
       bundler
       rake
       thor (>= 0.14.0)
     builder (3.2.4)
     byebug (11.1.3)
-    capybara (3.37.1)
+    capybara (3.39.2)
       addressable
       matrix
       mini_mime (>= 0.1.3)
@@ -90,55 +90,43 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
-    childprocess (4.1.0)
-    concurrent-ruby (1.1.10)
+    concurrent-ruby (1.2.2)
     crass (1.0.6)
-    digest (3.1.0)
-    erubi (1.10.0)
-    globalid (1.0.0)
-      activesupport (>= 5.0)
-    i18n (1.10.0)
+    date (3.3.3)
+    erubi (1.12.0)
+    globalid (1.2.1)
+      activesupport (>= 6.1)
+    i18n (1.14.1)
       concurrent-ruby (~> 1.0)
-    loofah (2.18.0)
+    loofah (2.21.4)
       crass (~> 1.0.2)
-      nokogiri (>= 1.5.9)
-    mail (2.7.1)
+      nokogiri (>= 1.12.0)
+    mail (2.8.1)
       mini_mime (>= 0.1.1)
+      net-imap
+      net-pop
+      net-smtp
     marcel (1.0.2)
     matrix (0.4.2)
     method_source (1.0.0)
-    mini_mime (1.1.2)
-    minitest (5.16.2)
-    net-imap (0.2.3)
-      digest
+    mini_mime (1.1.5)
+    minitest (5.20.0)
+    net-imap (0.4.2)
+      date
       net-protocol
-      strscan
-    net-pop (0.1.1)
-      digest
+    net-pop (0.1.2)
       net-protocol
+    net-protocol (0.2.1)
       timeout
-    net-protocol (0.1.3)
-      timeout
-    net-smtp (0.3.1)
-      digest
+    net-smtp (0.4.0)
       net-protocol
-      timeout
-    nio4r (2.5.8)
-    nokogiri (1.14.0-arm64-darwin)
+    nio4r (2.5.9)
+    nokogiri (1.15.4-aarch64-linux)
       racc (~> 1.4)
-    nokogiri (1.14.0-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.14.0-x86_64-linux)
-      racc (~> 1.4)
-    propshaft (0.6.4)
-      actionpack (>= 7.0.0)
-      activesupport (>= 7.0.0)
-      rack
-      railties (>= 7.0.0)
-    public_suffix (4.0.7)
-    racc (1.6.2)
+    public_suffix (5.0.3)
+    racc (1.7.1)
     rack (2.2.4)
-    rack-test (2.0.2)
+    rack-test (2.1.0)
       rack (>= 1.3)
     rails (7.0.3)
       actioncable (= 7.0.3)
@@ -154,11 +142,13 @@ GEM
       activesupport (= 7.0.3)
       bundler (>= 1.15.0)
       railties (= 7.0.3)
-    rails-dom-testing (2.0.3)
-      activesupport (>= 4.2.0)
+    rails-dom-testing (2.2.0)
+      activesupport (>= 5.0.0)
+      minitest
       nokogiri (>= 1.6)
-    rails-html-sanitizer (1.4.3)
-      loofah (~> 2.3)
+    rails-html-sanitizer (1.6.0)
+      loofah (~> 2.21)
+      nokogiri (~> 1.14)
     railties (7.0.3)
       actionpack (= 7.0.3)
       activesupport (= 7.0.3)
@@ -167,54 +157,55 @@ GEM
       thor (~> 1.0)
       zeitwerk (~> 2.5)
     rake (13.0.6)
-    regexp_parser (2.5.0)
-    rexml (3.2.5)
+    regexp_parser (2.8.2)
+    rexml (3.2.6)
     rubyzip (2.3.2)
-    selenium-webdriver (4.3.0)
-      childprocess (>= 0.5, < 5.0)
+    selenium-webdriver (4.10.0)
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
-    sqlite3 (1.4.4)
-    stimulus-rails (1.0.4)
+    sprockets (4.2.1)
+      concurrent-ruby (~> 1.0)
+      rack (>= 2.2.4, < 4)
+    sprockets-rails (3.4.2)
+      actionpack (>= 5.2)
+      activesupport (>= 5.2)
+      sprockets (>= 3.0.0)
+    sqlite3 (1.6.7-aarch64-linux)
+    stimulus-rails (1.3.0)
       railties (>= 6.0.0)
-    strscan (3.0.3)
-    thor (1.2.1)
-    timeout (0.3.0)
-    turbo-rails (1.1.1)
+    thor (1.3.0)
+    timeout (0.4.0)
+    turbo-rails (1.5.0)
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
       railties (>= 6.0.0)
-    tzinfo (2.0.4)
+    tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    webdrivers (5.0.0)
+    webdrivers (5.3.1)
       nokogiri (~> 1.6)
       rubyzip (>= 1.3.0)
-      selenium-webdriver (~> 4.0)
-    websocket (1.2.9)
-    websocket-driver (0.7.5)
+      selenium-webdriver (~> 4.0, < 4.11)
+    websocket (1.2.10)
+    websocket-driver (0.7.6)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
     xpath (3.2.0)
       nokogiri (~> 1.8)
-    zeitwerk (2.6.0)
+    zeitwerk (2.6.12)
 
 PLATFORMS
-  arm64-darwin-21
-  arm64-darwin-22
-  x86_64-darwin-21
-  x86_64-darwin-22
-  x86_64-linux
+  aarch64-linux
 
 DEPENDENCIES
   appraisal
   byebug
   capybara
   importmap-rails!
-  propshaft
   rails (~> 7.0.0)
   rexml
   selenium-webdriver
+  sprockets-rails
   sqlite3
   stimulus-rails
   turbo-rails
