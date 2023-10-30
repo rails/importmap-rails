@@ -70,7 +70,7 @@ You can use `pin_all_from` to pick all files in a specific folder, so you don't 
 
 ```rb
 # config/importmap.rb
-pin_all_from 'app/javascript/src`, under: 'src', to: 'src'
+pin_all_from 'app/javascript/src', under: 'src', to: 'src'
 ```
 
 The `:to` parameter is only required if you want to change the destination logical import name. If you drop the :to option, you must place the :under option directly after the first parameter.
