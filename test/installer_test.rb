@@ -46,6 +46,10 @@ class InstallerTest < ActiveSupport::TestCase
           gemfile = File.read("Gemfile")
           gemfile.gsub!(/^gem "importmap-rails".*/, "")
           gemfile << %(gem "importmap-rails", path: #{File.expand_path("..", __dir__).inspect}\n)
+          if Rails::VERSION::PRE == "alpha"
+            gemfile.gsub!(/^gem "rails".*/, "")
+            gemfile << %(gem "rails", path: #{Gem.loaded_specs["rails"].full_gem_path.inspect}\n)
+          end
           File.write("Gemfile", gemfile)
 
           run_command("bundle", "install")
