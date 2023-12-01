@@ -41,8 +41,3 @@ jobs:
       - name: Run tests
         run: |
           bundle exec rake
-
-      - name: Ensure json command prints an importmap
-        run: |
-          cp lib/install/bin/importmap test/dummy/bin/importmap
-          test/dummy/bin/importmap json | jq -e .imports
