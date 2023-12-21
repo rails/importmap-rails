@@ -10,6 +10,7 @@ module Importmap
     config.importmap.sweep_cache = Rails.env.development? || Rails.env.test?
     config.importmap.cache_sweepers = []
     config.importmap.rescuable_asset_errors = []
+    config.importmap.preload_by_default = false
 
     config.autoload_once_paths = %W( #{root}/app/helpers )
 

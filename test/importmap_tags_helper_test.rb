@@ -69,4 +69,41 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     refute_includes importmap_html, %{<link rel="modulepreload" href="/bar.js">}
     assert_includes importmap_html, %{<script type="module">import "foo"</script>}
   end
+
+  test "with preload by default disabled" do
+    with_preload_by_default(false) do
+      importmap = Importmap::Map.new
+      importmap.pin "foo"
+      importmap.pin_all_from "app/javascript/controllers"
+      importmap_html = javascript_importmap_tags("foo", importmap: importmap)
+
+      refute_includes importmap_html, %{<link rel="modulepreload" href="/foo.js">}
+      refute_includes importmap_html, %{<link rel="modulepreload" href="/goodbye_controller.js">}
+    end
+  end
+
+  test "with preload by default enabled" do
+    with_preload_by_default(true) do
+      importmap = Importmap::Map.new
+      importmap.pin "foo"
+      importmap.pin_all_from "app/javascript/controllers"
+      importmap_html = javascript_importmap_tags("foo", importmap: importmap)
+
+      assert_includes importmap_html, %{<link rel="modulepreload" href="/foo.js">}
+      assert_includes importmap_html, %{<link rel="modulepreload" href="/goodbye_controller.js">}
+    end
+  end
+
+  private
+
+  def with_preload_by_default(bool)
+    old_preload_setting = Rails.application.config.importmap.preload_by_default
+
+    begin
+      Rails.application.config.importmap.preload_by_default = bool
+      yield
+    ensure
+      Rails.application.config.importmap.preload_by_default = old_preload_setting
+    end
+  end
 end

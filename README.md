@@ -215,6 +215,8 @@ pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js"
 ...
 ```
 
+You can preload all your pins by default by setting `config.importmap.preload_by_default` in any environment file to `true`.
+
 ## Composing import maps
 
 By default, Rails loads import map definition from the application's `config/importmap.rb` to the `Importmap::Map` object available at `Rails.application.importmap`.
