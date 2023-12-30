@@ -18,4 +18,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "railties", ">= 6.0.0"
   spec.add_dependency "activesupport", ">= 6.0.0"
   spec.add_dependency "actionpack", ">= 6.0.0"
+  spec.add_dependency "thor", ">= 1.3.0"
 end
