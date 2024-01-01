@@ -108,7 +108,7 @@ The packages are downloaded to `vendor/javascript`, which you can check into you
 If you later wish to remove a downloaded pin:
 
 ```bash
-./bin/importmap unpin react --download
+./bin/importmap unpin react
 Unpinning and removing "react"
 Unpinning and removing "object-assign"
 ```
