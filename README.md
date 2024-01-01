@@ -57,7 +57,7 @@ import React from "react"
 
 The import map is setup through `Rails.application.importmap` via the configuration in `config/importmap.rb`. This file is automatically reloaded in development upon changes, but note that you must restart the server if you remove pins and need them gone from the rendered importmap or list of preloads.
 
-This import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. After that, the [es-module-shim](https://github.com/guybedford/es-module-shims) is loaded, and then finally the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
+This import map is inlined in the `<head>` of your application layout using `<%= javascript_importmap_tags %>`, which will setup the JSON configuration inside a `<script type="importmap">` tag. Then the application entrypoint is imported via `<script type="module">import "application"</script>`. That logical entrypoint, `application`, is mapped in the importmap script tag to the file `app/javascript/application.js`.
 
 It's in `app/javascript/application.js` you setup your application by importing any of the modules that have been defined in the import map. You can use the full ESM functionality of importing any particular export of the modules or everything.
 
@@ -309,16 +309,6 @@ module MyEngine
   end
 end
 ```
-
-## Expected errors from using the es-module-shim
-
-While import maps are native in Chrome, Edge, and Firefox, they need a shim in other browsers that'll produce a JavaScript console error like `TypeError: Module specifier, 'application' does not start with "/", "./", or "../".`. This error is normal and does not have any user-facing consequences.
-
-In Firefox. when opening the browser console, the asm.js module lexer build will run in unoptimized mode due to the debugger attaching. This gives a warning message `"asm.js type error: Disabled because no suitable wasm compiler is available"` which is as expected. When the console is closed again, the asm.js optimizations are fully applied, and this can even be verified with the console open by disabling the debugger in `about:config` and reloading the page.
-
-## Turning off the shim
-
-Under certain circumstances, like running system tests using chromedriver under CI (which may be resource constrained and trigger errors in certain cases), you may want to explicitly turn off including the shim. You can do this by calling the bulk tag helper with `javascript_importmap_tags("application", shim: false)`. Thus you can pass in something like `shim: !ENV["CI"]`. If you want, and are sure you're not doing any full-page caching, you can also connect this directive to a user agent check (using a gem like `useragent`) to check whether the browser is chrome/edge 89+/firefox 108+. But you really shouldn't have to, as the shim is designed to gracefully work with natively compatible drivers.
 
 ## Checking for outdated or vulnerable packages
 
