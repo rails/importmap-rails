@@ -149,7 +149,7 @@ class Importmap::Map
     end
 
     def find_javascript_files_in_tree(path)
-      Dir[path.join("**/*.js{,m}")].collect { |file| Pathname.new(file) }.select(&:file?)
+      Dir[path.join("**/*.js{,m}")].sort.collect { |file| Pathname.new(file) }.select(&:file?)
     end
 
     def absolute_root_of(path)
