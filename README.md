@@ -86,91 +86,12 @@ Note: Sprockets used to serve assets (albeit without filename digests) it couldn
 
 ## Using npm packages via JavaScript CDNs
 
-Importmap for Rails is designed to be used with JavaScript CDNs for your npm package dependencies. The CDNs provide pre-compiled distribution versions ready to use, and offer a fast, efficient way of serving them.
+Importmap for Rails downloads and vendors your npm package dependencies via JavaScript CDNs that provide pre-compiled distribution versions.
 
 You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update npm packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com) and [jsdelivr.com](https://www.jsdelivr.com).
 
-It works like so:
-
 ```bash
-./bin/importmap pin react react-dom
-Pinning "react" to https://ga.jspm.io/npm:react@17.0.2/index.js
-Pinning "react-dom" to https://ga.jspm.io/npm:react-dom@17.0.2/index.js
-Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
-Pinning "scheduler" to https://ga.jspm.io/npm:scheduler@0.20.2/index.js
-
-./bin/importmap json
-
-{
-  "imports": {
-    "application": "/assets/application-37f365cbecf1fa2810a8303f4b6571676fa1f9c56c248528bc14ddb857531b95.js",
-    "react": "https://ga.jspm.io/npm:react@17.0.2/index.js",
-    "react-dom": "https://ga.jspm.io/npm:react-dom@17.0.2/index.js",
-    "object-assign": "https://ga.jspm.io/npm:object-assign@4.1.1/index.js",
-    "scheduler": "https://ga.jspm.io/npm:scheduler@0.20.2/index.js"
-  }
-}
-```
-
-As you can see, the two packages react and react-dom resolve to a total of four dependencies, when resolved via the jspm default.
-
-Now you can use these in your application.js entrypoint like you would any other module:
-
-```js
-import React from "react"
-import ReactDOM from "react-dom"
-```
-
-You can also designate a specific version to pin:
-
-```bash
-./bin/importmap pin react@17.0.1
-Pinning "react" to https://ga.jspm.io/npm:react@17.0.1/index.js
-Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
-```
-
-Or even remove pins:
-
-```bash
-./bin/importmap unpin react
-Unpinning "react"
-Unpinning "object-assign"
-```
-
-If you pin a package that has already been pinned, it'll be updated inline, along with its dependencies.
-
-You can control the environment of the package for packages with separate "production" (the default) and "development" builds:
-
-```bash
-./bin/importmap pin react --env development
-Pinning "react" to https://ga.jspm.io/npm:react@17.0.2/dev.index.js
-Pinning "object-assign" to https://ga.jspm.io/npm:object-assign@4.1.1/index.js
-```
-
-You can also pick an alternative, supported CDN provider when pinning, like `unpkg` or `jsdelivr` (`jspm` is the default):
-
-```bash
-./bin/importmap pin react --from jsdelivr
-Pinning "react" to https://cdn.jsdelivr.net/npm/react@17.0.2/index.js
-```
-
-Remember, though, that if you switch a pin from one provider to another, you may have to clean up dependencies added by the first provider that isn't used by the second provider.
-
-Run `./bin/importmap` to see all options.
-
-Note that this command is merely a convenience wrapper to resolving logical package names to CDN URLs. You can also just lookup the CDN URLs yourself, and then pin those. For example, if you wanted to use Skypack for React, you could just add the following to `config/importmap.rb`:
-
-```ruby
-pin "react", to: "https://cdn.skypack.dev/react"
-```
-
-
-## Downloading vendor files from the JavaScript CDN
-
-If you don't want to use a JavaScript CDN in production, you can also download vendored files from the CDN when you're setting up your pins:
-
-```bash
-./bin/importmap pin react --download
+./bin/importmap pin react
 Pinning "react" to vendor/react.js via download from https://ga.jspm.io/npm:react@17.0.2/index.js
 Pinning "object-assign" to vendor/object-assign.js via download from https://ga.jspm.io/npm:object-assign@4.1.1/index.js
 ```
@@ -184,16 +105,13 @@ pin "object-assign" # https://ga.jspm.io/npm:object-assign@4.1.1/index.js
 
 The packages are downloaded to `vendor/javascript`, which you can check into your source control, and they'll be available through your application's own asset pipeline serving.
 
-If you later wish to remove a downloaded pin, you again pass `--download`:
+If you later wish to remove a downloaded pin:
 
 ```bash
 ./bin/importmap unpin react --download
 Unpinning and removing "react"
 Unpinning and removing "object-assign"
 ```
-
-Just like with a normal pin, you can also update a pin by running the `pin --download` command again.
-
 
 ## Preloading pinned modules
 
