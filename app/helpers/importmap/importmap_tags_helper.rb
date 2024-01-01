@@ -34,8 +34,7 @@ module Importmap::ImportmapTagsHelper
   # Import a named JavaScript module(s) using a script-module tag.
   def javascript_import_module_tag(*module_names)
     imports = Array(module_names).collect { |m| %(import "#{m}") }.join("\n")
-    tag.script imports.html_safe,
-      type: "module", nonce: request&.content_security_policy_nonce
+    tag.script imports.html_safe, type: "module", nonce: request&.content_security_policy_nonce
   end
 
   # Link tags for preloading all modules marked as preload: true in the `importmap`
