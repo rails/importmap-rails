@@ -65,8 +65,7 @@ It makes sense to use logical names that match the package names used by npm, su
 
 ### Local modules
 
-If you want to import local js module files from `app/javascript/src` or other sub-folders of `app/javascript` (such as `channels`), you must pin these to be able to import them.
-You can use `pin_all_from` to pick all files in a specific folder, so you don't have to `pin` each module individually.
+If you want to import local js module files from `app/javascript/src` or other sub-folders of `app/javascript` (such as `channels`), you must pin these to be able to import them. You can use `pin_all_from` to pick all files in a specific folder, so you don't have to `pin` each module individually.
 
 ```rb
 # config/importmap.rb
