@@ -19,11 +19,6 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     end
   end
 
-  test "javascript_importmap_tags with and without shim" do
-    assert_match /shim/, javascript_importmap_tags("application")
-    assert_no_match /shim/, javascript_importmap_tags("application", shim: false)
-  end
-
   test "javascript_inline_importmap_tag" do
     assert_match \
       %r{<script type="importmap" data-turbo-track="reload">{\n  \"imports\": {\n    \"md5\": \"https://cdn.skypack.dev/md5\",\n    \"not_there\": \"/nowhere.js\"\n  }\n}</script>},
@@ -48,8 +43,6 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     @request = FakeRequest.new("iyhD0Yc0W+c=")
 
     assert_match /nonce="iyhD0Yc0W\+c="/, javascript_inline_importmap_tag
-    assert_match /nonce="iyhD0Yc0W\+c="/, javascript_importmap_shim_nonce_configuration_tag
-    assert_match /nonce="iyhD0Yc0W\+c="/, javascript_importmap_shim_tag
     assert_match /nonce="iyhD0Yc0W\+c="/, javascript_import_module_tag("application")
     assert_match /nonce="iyhD0Yc0W\+c="/, javascript_importmap_module_preload_tags
   ensure

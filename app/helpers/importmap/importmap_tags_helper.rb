@@ -1,13 +1,11 @@
 module Importmap::ImportmapTagsHelper
   # Setup all script tags needed to use an importmap-powered entrypoint (which defaults to application.js)
-  def javascript_importmap_tags(entry_point = "application", shim: true, importmap: Rails.application.importmap)
+  def javascript_importmap_tags(entry_point = "application", importmap: Rails.application.importmap)
     safe_join [
       javascript_inline_importmap_tag(importmap.to_json(resolver: self)),
       javascript_importmap_module_preload_tags(importmap),
-      (javascript_importmap_shim_nonce_configuration_tag if shim),
-      (javascript_importmap_shim_tag if shim),
       javascript_import_module_tag(entry_point)
-    ].compact, "\n"
+    ], "\n"
   end
 
   # Generate an inline importmap tag using the passed `importmap_json` JSON string.
@@ -15,20 +13,6 @@ module Importmap::ImportmapTagsHelper
   def javascript_inline_importmap_tag(importmap_json = Rails.application.importmap.to_json(resolver: self))
     tag.script importmap_json.html_safe,
       type: "importmap", "data-turbo-track": "reload", nonce: request&.content_security_policy_nonce
-  end
-
-  # Configure es-modules-shim with nonce support if the application is using a content security policy.
-  def javascript_importmap_shim_nonce_configuration_tag
-    if request&.content_security_policy
-      tag.script({ nonce: request.content_security_policy_nonce }.to_json.html_safe,
-        type: "esms-options", nonce: request.content_security_policy_nonce)
-    end
-  end
-
-  # Include the es-modules-shim needed to make importmaps work in browsers without native support (like Firefox + Safari).
-  def javascript_importmap_shim_tag(minimized: true)
-    javascript_include_tag minimized ? "es-module-shims.min.js" : "es-module-shims.js",
-      async: true, "data-turbo-track": "reload", nonce: request&.content_security_policy_nonce
   end
 
   # Import a named JavaScript module(s) using a script-module tag.

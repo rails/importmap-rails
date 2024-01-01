@@ -4,7 +4,7 @@
 
 With this approach you'll ship many small JavaScript files instead of one big JavaScript file. Thanks to HTTP/2 that no longer carries a material performance penalty during the initial transport, and in fact offers substantial benefits over the long run due to better caching dynamics. Whereas before any change to any JavaScript file included in your big bundle would invalidate the cache for the whole bundle, now only the cache for that single file is invalidated.
 
-There's [native support for import maps in Chrome/Edge 89+/Firefox 108+](https://caniuse.com/?search=importmap), and [a shim available](https://github.com/guybedford/es-module-shims) for any browser with basic ESM support. So your app will be able to work with all the evergreen browsers.
+[Import maps are supported natively in all major, modern browsers](https://caniuse.com/?search=importmap). If you need to work with legacy browsers without native support, you can explore using [the shim available](https://github.com/guybedford/es-module-shims).
 
 
 ## Installation
