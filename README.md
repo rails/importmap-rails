@@ -115,20 +115,20 @@ Unpinning and removing "object-assign"
 
 ## Preloading pinned modules
 
-To avoid the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, importmap-rails supports [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload). Pinned modules can be preloaded by appending `preload: true` to the pin.
+To avoid the waterfall effect where the browser has to load one file after another before it can get to the deepest nested import, importmap-rails uses [modulepreload links](https://developers.google.com/web/updates/2017/12/modulepreload) by default. If you don't want to preload a dependencies, because it'you want to load it on-demand for efficiency, pinned modules can prevent preloading by appending `preload: false` to the pin.
 
 Example:
 
 ```ruby
 # config/importmap.rb
-pin "@github/hotkey", to: "https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js", preload: true
-pin "md5", to: "https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js"
+pin "@github/hotkey", to: "vendor/javascript/@github--hotkey.js"
+pin "md5", to: "vendor/javascript/md5.js", preload: false
 
 # app/views/layouts/application.html.erb
 <%= javascript_importmap_tags %>
 
 # will include the following link before the importmap is setup:
-<link rel="modulepreload" href="https://ga.jspm.io/npm:@github/hotkey@1.4.4/dist/index.js">
+<link rel="modulepreload" href="/assets/javascripts/@github--hotkey.js">
 ...
 ```
 
@@ -177,7 +177,7 @@ Pin your js file:
 ```rb
 # config/importmap.rb
 # ... other pins...
-pin "checkout"
+pin "checkout", preload: false
 ```
 
 Import your module on the specific page. Note: you'll likely want to use a `content_for` block on the specifc page/partial, then yield it in your layout.
