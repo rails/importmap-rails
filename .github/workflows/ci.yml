@@ -14,8 +14,10 @@ jobs:
           - Gemfile
           - gemfiles/rails_7_0_propshaft.gemfile
           - gemfiles/rails_7_1_propshaft.gemfile
+          - gemfiles/rails_main_propshaft.gemfile
           - gemfiles/rails_7_0_sprockets.gemfile
           - gemfiles/rails_7_1_sprockets.gemfile
+          - gemfiles/rails_main_sprockets.gemfile
         continue-on-error: [ false ]
 
     name: ${{ format('Tests (Ruby {0}, {1})', matrix.ruby-version, matrix.gemfile) }}
@@ -30,7 +32,7 @@ jobs:
 
       - name: Remove Gemfile lock
         run: |
-          rm $BUNDLE_GEMFILE.lock
+          rm -f $BUNDLE_GEMFILE.lock
 
       - name: Install Ruby
         uses: ruby/setup-ruby@v1
