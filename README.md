@@ -160,6 +160,21 @@ And pinning JavaScript modules from the engine:
 pin_all_from File.expand_path("../app/assets/javascripts", __dir__)
 ```
 
+## Pinning modules from engines
+
+To pin a vendored module from a gem, such as `@rails/ujs` from Rails ActionView, we can import the ESM module:
+
+```ruby
+# config/importmap.rb
+pin "@rails/ujs", to: "rails-ujs.esm.js"
+```
+
+Then update the `app/assets/config/manifest.js` file to link it:
+
+```js
+# ...
+//= link rails-ujs.esm.js
+```
 
 ## Selectively importing modules
 
