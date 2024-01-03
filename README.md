@@ -130,14 +130,14 @@ Example:
 
 ```ruby
 # config/importmap.rb
-pin "@github/hotkey", to: "vendor/javascript/@github--hotkey.js"
-pin "md5", to: "vendor/javascript/md5.js", preload: false
+pin "@github/hotkey", to: "@github--hotkey.js" # file lives in vendor/javascript/@github--hotkey.js
+pin "md5", preload: false # file lives in vendor/javascript/md5.js
 
 # app/views/layouts/application.html.erb
 <%= javascript_importmap_tags %>
 
 # will include the following link before the importmap is setup:
-<link rel="modulepreload" href="/assets/javascripts/@github--hotkey.js">
+<link rel="modulepreload" href="/assets/javascript/@github--hotkey.js">
 ...
 ```
 
