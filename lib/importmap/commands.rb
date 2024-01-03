@@ -91,6 +91,11 @@ class Importmap::Commands < Thor
     end
   end
 
+  desc "update", "Update outdated package pins"
+  def update
+    pin npm.outdated_packages.map(&:name)
+  end
+
   desc "packages", "Print out packages with version numbers"
   def packages
     puts npm.packages_with_versions.map { |x| x.join(' ') }
