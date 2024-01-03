@@ -75,9 +75,7 @@ class Importmap::Commands < Thor
 
   desc "outdated", "Check for outdated packages"
   def outdated
-    outdated_packages = npm.outdated_packages
-
-    if outdated_packages.any?
+    if (outdated_packages = npm.outdated_packages).any?
       table = [["Package", "Current", "Latest"]]
       outdated_packages.each { |p| table << [p.name, p.current_version, p.latest_version || p.error] }
 
@@ -93,7 +91,11 @@ class Importmap::Commands < Thor
 
   desc "update", "Update outdated package pins"
   def update
-    pin npm.outdated_packages.map(&:name)
+    if (outdated_packages = npm.outdated_packages).any?
+      pin outdated_packages.map(&:name)
+    else
+      puts "No outdated packages found"
+    end
   end
 
   desc "packages", "Print out packages with version numbers"
