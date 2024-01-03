@@ -121,14 +121,13 @@ class Importmap::Commands < Thor
         row.each_with_index.map{ |iterand, index| [lengths[index] || 0, iterand.to_s.length].max }
       end
 
-      puts head = "+" + (column_sizes.map { |s| "-" * (s + 2) }.join('+')) + '+'
+      divider = "|" + (column_sizes.map { |s| "-" * (s + 2) }.join('|')) + '|'
       array.each_with_index do |row, row_number|
         row = row.fill(nil, row.size..(column_sizes.size - 1))
         row = row.each_with_index.map { |v, i| v.to_s + " " * (column_sizes[i] - v.to_s.length) }
         puts "| " + row.join(" | ") + " |"
-        puts head if row_number == 0
+        puts divider if row_number == 0
       end
-      puts head
     end
 end
 
