@@ -46,6 +46,13 @@ class Importmap::Commands < Thor
     end
   end
 
+  desc "redownload", "Force download every package, even if the required versions are already downloaded"
+  def redownload
+    packages = npm.packages_with_versions.map { |package| package.join("@") }
+
+    pin packages
+  end
+
   desc "json", "Show the full importmap in json"
   def json
     require Rails.root.join("config/environment")
