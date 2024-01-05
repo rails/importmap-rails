@@ -113,14 +113,16 @@ class Importmap::Packager
       response = Net::HTTP.get_response(URI(url))
 
       if response.code == "200"
-        save_vendored_package(package, response.body)
+        save_vendored_package(package, url, response.body)
       else
         handle_failure_response(response)
       end
     end
 
-    def save_vendored_package(package, source)
+    def save_vendored_package(package, url, source)
       File.open(vendored_package_path(package), "w+") do |vendored_package|
+        vendored_package.write "// #{package}#{extract_package_version_from(url)} downloaded from #{url}\n\n"
+
         vendored_package.write remove_sourcemap_comment_from(source).force_encoding("UTF-8")
       end
     end
