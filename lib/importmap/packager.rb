@@ -19,10 +19,10 @@ class Importmap::Packager
 
   def import(*packages, env: "production", from: "jspm")
     response = post_json({
-      "install"      => Array(packages), 
+      "install"      => Array(packages),
       "flattenScope" => true,
       "env"          => [ "browser", "module", env ],
-      "provider"     => from.to_s,
+      "provider"     => normalize_provider(from)
     })
 
     case response.code
@@ -69,6 +69,10 @@ class Importmap::Packager
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
     end
 
+    def normalize_provider(name)
+      name.to_s == "jspm" ? "jspm.io" : name.to_s
+    end
+
     def extract_parsed_imports(response)
       JSON.parse(response.body).dig("map", "imports")
     end
@@ -80,7 +84,7 @@ class Importmap::Packager
         raise HTTPError, "Unexpected response code (#{response.code})"
       end
     end
-  
+
     def parse_service_error(response)
       JSON.parse(response.body.to_s)["error"]
     rescue JSON::ParserError
