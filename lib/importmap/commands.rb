@@ -14,16 +14,9 @@ class Importmap::Commands < Thor
   option :from, type: :string, aliases: :f, default: "jspm"
   def pin(*packages)
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
-      imports.each do |package, url|
-        puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
-        packager.download(package, url)
-        pin = packager.vendored_pin_for(package, url)
-
-        if packager.packaged?(package)
-          gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin, verbose: false)
-        else
-          append_to_file("config/importmap.rb", "#{pin}\n", verbose: false)
-        end
+      imports.each do |package|
+        puts %(Pinning "#{package.package_name}" to #{packager.vendor_path}/#{package.vendored_package_folder} via download from #{package.base_url})
+        package.download
       end
     else
       puts "Couldn't find any packages in #{packages.inspect} on #{options[:from]}"
@@ -35,10 +28,10 @@ class Importmap::Commands < Thor
   option :from, type: :string, aliases: :f, default: "jspm"
   def unpin(*packages)
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
-      imports.each do |package, url|
-        if packager.packaged?(package)
-          puts %(Unpinning and removing "#{package}")
-          packager.remove(package)
+      imports.each do |package|
+        if packager.packaged?(package.package_name)
+          puts %(Unpinning and removing "#{package.package_name}")
+          package.remove
         end
       end
     else

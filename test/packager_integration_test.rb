@@ -5,7 +5,13 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
   setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
 
   test "successful import against live service" do
-    assert_equal "https://ga.jspm.io/npm:react@17.0.2/index.js", @packager.import("react@17.0.2")["react"]
+    results = @packager.import("react@17.0.2")
+
+    react_result = results.find { _1.package_name == "react" }
+    object_assign_result = results.find { _1.package_name == "object-assign" }
+
+    assert_equal("https://ga.jspm.io/npm:react@17.0.2/index.js", react_result.main_url)
+    assert_equal("https://ga.jspm.io/npm:object-assign@4.1.1/index.js", object_assign_result.main_url)
   end
 
   test "missing import against live service" do
@@ -25,24 +31,84 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
 
   test "successful downloads from live service" do
     Dir.mktmpdir do |vendor_dir|
-      @packager = Importmap::Packager.new \
-        Rails.root.join("config/importmap.rb"),
-        vendor_path: Pathname.new(vendor_dir)
+      importmap_path = Pathname.new(vendor_dir).join("importmap.rb")
 
-      package_url = "https://ga.jspm.io/npm:@github/webauthn-json@0.5.7/dist/main/webauthn-json.js"
-      @packager.download("@github/webauthn-json", package_url)
-      vendored_package_file = Pathname.new(vendor_dir).join("@github--webauthn-json.js")
-      assert File.exist?(vendored_package_file)
-      assert_equal "// @github/webauthn-json@0.5.7 downloaded from #{package_url}", File.readlines(vendored_package_file).first.strip
+      File.new(importmap_path, "w").close
 
-      package_url = "https://ga.jspm.io/npm:react@17.0.2/index.js"
-      vendored_package_file = Pathname.new(vendor_dir).join("react.js")
-      @packager.download("react", package_url)
-      assert File.exist?(vendored_package_file)
-      assert_equal "// react@17.0.2 downloaded from #{package_url}", File.readlines(vendored_package_file).first.strip
-      
-      @packager.remove("react")
-      assert_not File.exist?(Pathname.new(vendor_dir).join("react.js"))
+      @packager = Importmap::Packager.new(
+        importmap_path,
+        vendor_path: Pathname.new(vendor_dir),
+      )
+
+      packages  = @packager.import("react@17.0.2")
+      packages.each(&:download)
+
+      vendored_file = Pathname.new(vendor_dir).join("react/cjs/react.production.min.js")
+      assert_equal "// react@17.0.2/cjs/react.production.min.js downloaded from https://ga.jspm.io/npm:react@17.0.2/cjs/react.production.min.js",
+        File.readlines(vendored_file).first.strip
+      vendored_file = Pathname.new(vendor_dir).join("react/index.js")
+      assert_equal "// react@17.0.2/index.js downloaded from https://ga.jspm.io/npm:react@17.0.2/index.js",
+        File.readlines(vendored_file).first.strip
+      vendored_file = Pathname.new(vendor_dir).join("object-assign/index.js")
+      assert_equal "// object-assign@4.1.1/index.js downloaded from https://ga.jspm.io/npm:object-assign@4.1.1/index.js",
+        File.readlines(vendored_file).first.strip
+
+      packages.each(&:remove)
+
+      assert_not File.exist?(Pathname.new(vendor_dir).join("react/cjs/react.production.min.js"))
+      assert_not File.exist?(Pathname.new(vendor_dir).join("react/index.js"))
+      assert_not File.exist?(Pathname.new(vendor_dir).join("object-assign/index.js"))
+
+      packages  = @packager.import("@github/webauthn-json@0.5.7")
+      packages.each(&:download)
+
+      vendored_file = Pathname.new(vendor_dir).join("@github--webauthn-json/dist/main/webauthn-json.js")
+      assert_equal "// @github/webauthn-json@0.5.7/dist/main/webauthn-json.js downloaded from https://ga.jspm.io/npm:@github/webauthn-json@0.5.7/dist/main/webauthn-json.js",
+        File.readlines(vendored_file).first.strip
+
+      packages.each(&:remove)
+
+      assert_not File.exist?(Pathname.new(vendor_dir).join("webauthn-json/dist/main/webauthn-json.js"))
+
+      packages  = @packager.import("tippy.js@6.3.7")
+      packages.each(&:download)
+
+      assert File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/dom-utils/getWindow.js"))
+      assert File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/index.js"))
+      assert File.exist?(Pathname.new(vendor_dir).join("tippy.js/dist/tippy.esm.js"))
+
+      packages.each(&:remove)
+
+      assert_not File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/dom-utils/getWindow.js"))
+      assert_not File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/index.js"))
+      assert_not File.exist?(Pathname.new(vendor_dir).join("tippy.js/dist/tippy.esm.js"))
+    end
+  end
+
+  test "successful importmap.rb updates from live service" do
+    Dir.mktmpdir do |vendor_dir|
+      importmap_path = Pathname.new(vendor_dir).join("importmap.rb")
+
+      File.new(importmap_path, "w").close
+
+      @packager = Importmap::Packager.new(
+        importmap_path,
+        vendor_path: Pathname.new(vendor_dir),
+      )
+
+      packages  = @packager.import("react@17.0.2")
+      packages.each(&:download)
+
+      importmap = <<~RB
+        pin "react", to: "#{vendor_dir}/react/index.js" # @17.0.2
+        pin "object-assign", to: "#{vendor_dir}/object-assign/index.js" # @4.1.1
+      RB
+
+      assert_equal importmap, importmap_path.read
+
+      packages.each(&:remove)
+
+      assert_equal "", importmap_path.read
     end
   end
 end

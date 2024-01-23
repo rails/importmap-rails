@@ -1,6 +1,7 @@
 require "net/http"
 require "uri"
 require "json"
+require "importmap/package"
 
 class Importmap::Packager
   Error        = Class.new(StandardError)
@@ -10,7 +11,7 @@ class Importmap::Packager
   singleton_class.attr_accessor :endpoint
   self.endpoint = URI("https://api.jspm.io/generate")
 
-  attr_reader :vendor_path
+  attr_reader :vendor_path, :importmap_path
 
   def initialize(importmap_path = "config/importmap.rb", vendor_path: "vendor/javascript")
     @importmap_path = Pathname.new(importmap_path)
@@ -32,34 +33,29 @@ class Importmap::Packager
     end
   end
 
-  def pin_for(package, url)
-    %(pin "#{package}", to: "#{url}")
+  def packaged?(package_name)
+    importmap.match(/^pin ["']#{package_name}["'].*$/)
   end
 
-  def vendored_pin_for(package, url)
-    filename = package_filename(package)
-    version  = extract_package_version_from(url)
+  def remove_package_from_importmap(package_name)
+    all_lines = File.readlines(@importmap_path)
+    with_lines_removed = all_lines.grep_v(/pin ["']#{package_name}["']/)
 
-    if "#{package}.js" == filename
-      %(pin "#{package}" # #{version})
-    else
-      %(pin "#{package}", to: "#{filename}" # #{version})
+    File.open(@importmap_path, "w") do |file|
+      with_lines_removed.each { |line| file.write(line) }
     end
   end
 
-  def packaged?(package)
-    importmap.match(/^pin ["']#{package}["'].*$/)
+  def pin_package_in_importmap(package_name, pin)
+    if packaged?(package_name)
+      gsub_file(@importmap_path, /^pin "#{package_name}".*$/, pin, verbose: false)
+    else
+      File.write(@importmap_path, "#{pin}\n", mode: 'a+')
+    end
   end
 
-  def download(package, url)
-    ensure_vendor_directory_exists
-    remove_existing_package_file(package)
-    download_package_file(package, url)
-  end
-
-  def remove(package)
-    remove_existing_package_file(package)
-    remove_package_from_importmap(package)
+  def ensure_vendor_directory_exists
+    FileUtils.mkdir_p @vendor_path
   end
 
   private
@@ -74,7 +70,22 @@ class Importmap::Packager
     end
 
     def extract_parsed_imports(response)
-      JSON.parse(response.body).dig("map", "imports")
+      parsed_response = JSON.parse(response.body)
+
+      imports = parsed_response.dig("map", "imports")
+      static_dependencies = parsed_response["staticDeps"] || []
+      dynamic_dependencies = parsed_response["dynamicDeps"] || []
+
+      dependencies = static_dependencies + dynamic_dependencies
+
+      imports.map do |package, url|
+        Importmap::Package.new(
+          unfiltered_dependencies: dependencies,
+          package_name: package,
+          main_url: url,
+          packager: self
+        )
+      end
     end
 
     def handle_failure_response(response)
@@ -93,57 +104,5 @@ class Importmap::Packager
 
     def importmap
       @importmap ||= File.read(@importmap_path)
-    end
-
-
-    def ensure_vendor_directory_exists
-      FileUtils.mkdir_p @vendor_path
-    end
-
-    def remove_existing_package_file(package)
-      FileUtils.rm_rf vendored_package_path(package)
-    end
-
-    def remove_package_from_importmap(package)
-      all_lines = File.readlines(@importmap_path)
-      with_lines_removed = all_lines.grep_v(/pin ["']#{package}["']/)
-
-      File.open(@importmap_path, "w") do |file|
-        with_lines_removed.each { |line| file.write(line) }
-      end
-    end
-
-    def download_package_file(package, url)
-      response = Net::HTTP.get_response(URI(url))
-
-      if response.code == "200"
-        save_vendored_package(package, url, response.body)
-      else
-        handle_failure_response(response)
-      end
-    end
-
-    def save_vendored_package(package, url, source)
-      File.open(vendored_package_path(package), "w+") do |vendored_package|
-        vendored_package.write "// #{package}#{extract_package_version_from(url)} downloaded from #{url}\n\n"
-
-        vendored_package.write remove_sourcemap_comment_from(source).force_encoding("UTF-8")
-      end
-    end
-
-    def remove_sourcemap_comment_from(source)
-      source.gsub(/^\/\/# sourceMappingURL=.*/, "")
-    end
-
-    def vendored_package_path(package)
-      @vendor_path.join(package_filename(package))
-    end
-
-    def package_filename(package)
-      package.gsub("/", "--") + ".js"
-    end
-
-    def extract_package_version_from(url)
-      url.match(/@\d+\.\d+\.\d+/)&.to_a&.first
     end
 end
