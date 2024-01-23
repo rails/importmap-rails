@@ -29,12 +29,17 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
         Rails.root.join("config/importmap.rb"),
         vendor_path: Pathname.new(vendor_dir)
 
-      @packager.download("@github/webauthn-json",
-        "https://ga.jspm.io/npm:@github/webauthn-json@0.5.7/dist/main/webauthn-json.js")
-      assert File.exist?(Pathname.new(vendor_dir).join("@github--webauthn-json.js"))
+      package_url = "https://ga.jspm.io/npm:@github/webauthn-json@0.5.7/dist/main/webauthn-json.js"
+      @packager.download("@github/webauthn-json", package_url)
+      vendored_package_file = Pathname.new(vendor_dir).join("@github--webauthn-json.js")
+      assert File.exist?(vendored_package_file)
+      assert_equal "// @github/webauthn-json@0.5.7 downloaded from #{package_url}", File.readlines(vendored_package_file).first.strip
 
-      @packager.download("react", "https://ga.jspm.io/npm:react@17.0.2/index.js")
-      assert File.exist?(Pathname.new(vendor_dir).join("react.js"))
+      package_url = "https://ga.jspm.io/npm:react@17.0.2/index.js"
+      vendored_package_file = Pathname.new(vendor_dir).join("react.js")
+      @packager.download("react", package_url)
+      assert File.exist?(vendored_package_file)
+      assert_equal "// react@17.0.2 downloaded from #{package_url}", File.readlines(vendored_package_file).first.strip
       
       @packager.remove("react")
       assert_not File.exist?(Pathname.new(vendor_dir).join("react.js"))
