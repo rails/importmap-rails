@@ -109,6 +109,20 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
       packages.each(&:remove)
 
       assert_equal "", importmap_path.read
+
+      packages  = @packager.import("tippy.js@6.3.7")
+      packages.each(&:download)
+
+      importmap = <<~RB
+        pin "tippy.js", to: "tippy.js/dist/tippy.esm.js" # @6.3.7
+        pin "@popperjs/core", to: "@popperjs--core/lib/index.js" # @2.11.8
+      RB
+
+      assert_equal importmap, importmap_path.read
+
+      packages.each(&:remove)
+
+      assert_equal "", importmap_path.read
     end
   end
 end

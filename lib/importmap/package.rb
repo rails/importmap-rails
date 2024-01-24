@@ -46,7 +46,7 @@ class Importmap::Package
 
   private
     def vendored_pin
-      filename = "#{package_name}/#{@main_file}"
+      filename = "#{folder_name}/#{@main_file}"
       version  = extract_package_version_from(@main_url)
 
       %(pin "#{package_name}", to: "#{filename}" # #{version})
