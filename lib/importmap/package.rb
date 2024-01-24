@@ -1,4 +1,8 @@
 class Importmap::Package
+  Error        = Class.new(StandardError)
+  HTTPError    = Class.new(Error)
+  ServiceError = Error.new(Error)
+
   attr_reader :base_url, :main_url, :package_name
 
   def initialize(
