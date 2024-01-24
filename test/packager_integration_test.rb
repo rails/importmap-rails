@@ -100,8 +100,8 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
       packages.each(&:download)
 
       importmap = <<~RB
-        pin "react", to: "#{vendor_dir}/react/index.js" # @17.0.2
-        pin "object-assign", to: "#{vendor_dir}/object-assign/index.js" # @4.1.1
+        pin "react", to: "react/index.js" # @17.0.2
+        pin "object-assign", to: "object-assign/index.js" # @4.1.1
       RB
 
       assert_equal importmap, importmap_path.read

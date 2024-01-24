@@ -36,18 +36,18 @@ class Importmap::Package
     @packager.remove_package_from_importmap(@package_name)
   end
 
-  def vendored_pin
-    filename = vendored_package_path_for_file(@main_file)
-    version  = extract_package_version_from(@main_url)
-
-    %(pin "#{package_name}", to: "#{filename}" # #{version})
-  end
-
   def vendored_package_folder
     @packager.vendor_path.join(folder_name)
   end
 
   private
+    def vendored_pin
+      filename = "#{package_name}/#{@main_file}"
+      version  = extract_package_version_from(@main_url)
+
+      %(pin "#{package_name}", to: "#{filename}" # #{version})
+    end
+
     def download_file(file)
       response = Net::HTTP.get_response(URI("#{base_url}/#{file}"))
 
