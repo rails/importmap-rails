@@ -26,19 +26,7 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
       def code() "200" end
     end.new
 
-    @packager.stub(:post_json, response) do
-      expected_return = [
-        {
-          package_name: "react",
-          main_url: "https://ga.jspm.io/npm:react@17.0.2/index.js",
-          dependency_urls: ["https://ga.jspm.io/npm:react@17.0.2/index.js"]
-        },
-        {
-          package_name: "object-assign",
-          main_url: "https://ga.jspm.io/npm:object-assign@4.1.1/index.js",
-          dependency_urls: ["https://ga.jspm.io/npm:object-assign@4.1.1/index.js"]
-        }
-      ]
+    Net::HTTP.stub(:post, response) do
       results = @packager.import("react@17.0.2")
 
       react_result = results.find { _1.package_name == "react" }
@@ -52,14 +40,14 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   test "missing import with mock" do
     response = Class.new { def code() "404" end }.new
 
-    @packager.stub(:post_json, response) do
+    Net::HTTP.stub(:post, response) do
       assert_nil @packager.import("missing-package-that-doesnt-exist@17.0.2")
     end
   end
 
   test "failed request with mock" do
     Net::HTTP.stub(:post, proc { raise "Unexpected Error" }) do
-      assert_raises(Importmap::Packager::HTTPError) do
+      assert_raises(Importmap::JspmApi::HTTPError) do
         @packager.import("missing-package-that-doesnt-exist@17.0.2")
       end
     end
