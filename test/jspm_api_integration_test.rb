@@ -40,4 +40,54 @@ class Importmap::JspmApiIntegrationTest < ActiveSupport::TestCase
   ensure
     Importmap::JspmApi.download_endpoint = original_endpoint
   end
+
+  test "#generate when given valid input" do
+    response = @jspm_api.generate(
+      install: "tippy.js",
+      flatten_scope: true,
+      env: nil,
+      provider: "jspm.io"
+    )
+
+    expected_response = {
+      "staticDeps" => [
+        "https://ga.jspm.io/npm:@popperjs/core@2.11.8/dist/cjs/popper.js",
+        "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.cjs.js"
+      ],
+      "dynamicDeps" => [],
+      "map" => { "imports" => {
+        "tippy.js" => "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.cjs.js",
+        "@popperjs/core" => "https://ga.jspm.io/npm:@popperjs/core@2.11.8/dist/cjs/popper.js"
+      }}
+    }
+
+    assert_equal response, expected_response
+  end
+
+  test "#generate when given non existent package" do
+    response = @jspm_api.generate(
+      install: "tippy.jsbutnotreallyalibrary",
+      flatten_scope: true,
+      env: nil,
+      provider: "jspm.io"
+    )
+
+    assert_equal response, {}
+  end
+
+  test "#generate when endpoint is incorrect" do
+    original_endpoint = Importmap::JspmApi.generate_endpoint
+    Importmap::JspmApi.generate_endpoint = URI("https://invalid./error")
+
+    assert_raises(Importmap::JspmApi::HTTPError) do
+      @jspm_api.generate(
+      install: "tippy.jsbutnotreallyalibrary",
+      flatten_scope: true,
+      env: nil,
+      provider: "jspm.io"
+    )
+    end
+  ensure
+    Importmap::JspmApi.generate_endpoint = original_endpoint
+  end
 end
