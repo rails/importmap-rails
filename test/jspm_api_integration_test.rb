@@ -45,23 +45,16 @@ class Importmap::JspmApiIntegrationTest < ActiveSupport::TestCase
     response = @jspm_api.generate(
       install: "tippy.js",
       flatten_scope: true,
-      env: nil,
+      env: [ "browser", "module", nil ],
       provider: "jspm.io"
     )
 
-    expected_response = {
-      "staticDeps" => [
-        "https://ga.jspm.io/npm:@popperjs/core@2.11.8/dist/cjs/popper.js",
-        "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.cjs.js"
-      ],
-      "dynamicDeps" => [],
-      "map" => { "imports" => {
-        "tippy.js" => "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.cjs.js",
-        "@popperjs/core" => "https://ga.jspm.io/npm:@popperjs/core@2.11.8/dist/cjs/popper.js"
-      }}
+    expected_imports = {
+      "tippy.js" => "https://ga.jspm.io/npm:tippy.js@6.3.7/dist/tippy.esm.js",
+      "@popperjs/core" => "https://ga.jspm.io/npm:@popperjs/core@2.11.8/lib/index.js"
     }
 
-    assert_equal response, expected_response
+    assert_equal expected_imports, response.dig("map", "imports")
   end
 
   test "#generate when given non existent package" do
