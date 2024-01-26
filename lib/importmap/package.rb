@@ -1,4 +1,4 @@
-require "importmap/jspmApi"
+require "importmap/jspm_api"
 
 class Importmap::Package
   attr_reader :base_url, :main_url, :package_name

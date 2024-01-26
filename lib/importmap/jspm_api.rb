@@ -25,21 +25,25 @@ class Importmap::JspmApi
 
     json = response_json(response)
 
+    return {} if json.blank?
+
     files = json.dig(versioned_package_name, "files")
-    package_url = json.dig(versioned_package_name, "pkgUrl")
+    package_uri = URI(json.dig(versioned_package_name, "pkgUrl"))
 
     output_files = {}
 
-    files.each do |file|
-      output_files[file] = fetch_file(package_url, file)
+    Net::HTTP.start(package_uri.hostname, { use_ssl: true }) do |http|
+      files.each do |file|
+        output_files[file] = fetch_file(http, "#{package_uri.path}/#{file}")
+      end
     end
 
     output_files
   end
 
   private
-    def fetch_file(url, file)
-      response = Net::HTTP.get_response(URI("#{url}#{file}"))
+    def fetch_file(http, path)
+      response = http.get(path)
 
       if response.code == "200"
         response.body

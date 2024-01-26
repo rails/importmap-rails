@@ -69,6 +69,19 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
       packages.each(&:remove)
 
       assert_not File.exist?(Pathname.new(vendor_dir).join("webauthn-json/dist/main/webauthn-json.js"))
+
+      packages  = @packager.import("tippy.js@6.3.7")
+      packages.each(&:download)
+
+      assert File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/dom-utils/getWindow.js"))
+      assert File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/index.js"))
+      assert File.exist?(Pathname.new(vendor_dir).join("tippy.js/dist/tippy.esm.js"))
+
+      packages.each(&:remove)
+
+      assert_not File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/dom-utils/getWindow.js"))
+      assert_not File.exist?(Pathname.new(vendor_dir).join("@popperjs--core/lib/index.js"))
+      assert_not File.exist?(Pathname.new(vendor_dir).join("tippy.js/dist/tippy.esm.js"))
     end
   end
 

@@ -2,7 +2,7 @@ require "net/http"
 require "uri"
 require "json"
 require "importmap/package"
-require "importmap/jspmApi"
+require "importmap/jspm_api"
 
 class Importmap::Packager
   attr_reader :vendor_path, :importmap_path
@@ -16,10 +16,10 @@ class Importmap::Packager
     jspm_api = Importmap::JspmApi.new
 
     response = jspm_api.generate(
-      install:      Array(packages),
+      install:       Array(packages),
       flatten_scope: true,
-      env:          [ "browser", "module", env ],
-      provider:     from
+      env:           [ "browser", "module", env ],
+      provider:      from
     )
 
     extract_parsed_imports(response, from)
