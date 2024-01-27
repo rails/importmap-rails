@@ -57,4 +57,51 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
     assert @packager.packaged?("md5")
     assert_not @packager.packaged?("md5-extension")
   end
+
+  test "pin_package_in_importmap" do
+    Dir.mktmpdir do |vendor_dir|
+      importmap_path = Pathname.new(vendor_dir).join("importmap.rb")
+
+      File.new(importmap_path, "w").close
+
+      packager = Importmap::Packager.new(
+        importmap_path,
+        vendor_path: Pathname.new(vendor_dir),
+      )
+
+      assert_not packager.packaged?("md5")
+
+      packager.pin_package_in_importmap("md5", %(pin "md5", to: "md5/md5.js" # @2.3.0))
+
+      assert_equal %(pin "md5", to: "md5/md5.js" # @2.3.0), importmap_path.readlines(chomp: true).first
+
+      packager.pin_package_in_importmap("md5", %(pin "md5", to: "md5/md5.js" # @2.3.5))
+
+      assert_equal %(pin "md5", to: "md5/md5.js" # @2.3.5), importmap_path.readlines(chomp: true).first
+    end
+  end
+
+
+  test "remove_package_from_importmap" do
+    Dir.mktmpdir do |vendor_dir|
+      importmap_path = Pathname.new(vendor_dir).join("importmap.rb")
+
+      File.new(importmap_path, "w").close
+
+      packager = Importmap::Packager.new(
+        importmap_path,
+        vendor_path: Pathname.new(vendor_dir),
+      )
+
+      assert_not packager.packaged?("md5")
+
+      packager.pin_package_in_importmap("md5", %(pin "md5", to: "md5/md5.js" # @2.3.0))
+
+      assert_equal %(pin "md5", to: "md5/md5.js" # @2.3.0), importmap_path.readlines(chomp: true).first
+
+      packager.remove_package_from_importmap("md5")
+
+      assert_nil importmap_path.readlines(chomp: true).first
+    end
+  end
 end

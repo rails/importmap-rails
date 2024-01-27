@@ -26,6 +26,7 @@ class Importmap::Packager
   end
 
   def packaged?(package_name)
+    importmap = File.read(@importmap_path)
     importmap.match(/^pin ["']#{package_name}["'].*$/)
   end
 
@@ -40,7 +41,9 @@ class Importmap::Packager
 
   def pin_package_in_importmap(package_name, pin)
     if packaged?(package_name)
-      gsub_file(@importmap_path, /^pin "#{package_name}".*$/, pin, verbose: false)
+      importmap = File.read(@importmap_path)
+      modified_importmap = importmap.gsub(/^pin "#{package_name}".*$/, pin)
+      File.open(@importmap_path, "w") { _1.puts modified_importmap }
     else
       File.write(@importmap_path, "#{pin}\n", mode: "a+")
     end
@@ -62,9 +65,5 @@ class Importmap::Packager
           provider:
         )
       end
-    end
-
-    def importmap
-      @importmap ||= File.read(@importmap_path)
     end
 end
