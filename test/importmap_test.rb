@@ -44,8 +44,16 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match %r|assets/controllers/index.*\.js|, generate_importmap_json["imports"]["controllers"]
   end
 
+  test "directory pin mounted under matching subdir doesn't map *_index as root" do
+    assert_match %r|assets/controllers/special_index.*\.js|, generate_importmap_json["imports"]["controllers/special_index"]
+  end
+
   test "directory pin mounted under matching subdir maps index as root at second depth" do
     assert_match %r|assets/helpers/requests/index.*\.js|, generate_importmap_json["imports"]["helpers/requests"]
+  end
+
+  test "directory pin mounted under matching subdir doesn't map *_index as root at second depth" do
+    assert_match %r|assets/helpers/requests/special_index.*\.js|, generate_importmap_json["imports"]["helpers/requests/special_index"]
   end
 
   test "directory pin under custom asset path" do
