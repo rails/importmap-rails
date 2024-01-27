@@ -31,6 +31,18 @@ class InstallerTest < ActiveSupport::TestCase
     end
   end
 
+  test "doesn't load rakefile twice" do
+    with_new_rails_app do |app_dir|
+      rakefile = File.read("#{app_dir}/Rakefile")
+      rakefile = "puts \"I've been logged twice!\" \n" + rakefile
+      File.write("#{app_dir}/Rakefile", rakefile)
+
+      out, err = run_command("bin/rails", "importmap:install")
+
+      assert_equal 1, out.scan(/I've been logged twice!/).size
+    end
+  end
+
   private
     def with_new_rails_app
       # Unset testing dummy app so app generator doesn't get confused in Rails 6.1 and 7.0.
@@ -54,7 +66,7 @@ class InstallerTest < ActiveSupport::TestCase
 
           run_command("bundle", "install")
 
-          yield
+          yield(app_dir)
         end
       end
     end
