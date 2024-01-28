@@ -18,8 +18,9 @@ class Importmap::JspmApi
     response_json(response)
   end
 
-  def download(versioned_package_name:, provider:, exclude:)
-    response = post_json("#{self.class.download_endpoint}/#{versioned_package_name}", {
+  def download(versioned_package_names:, provider:, exclude:)
+    response = post_json("#{self.class.download_endpoint}", {
+      packages: versioned_package_names,
       provider: normalize_provider(provider),
       exclude:
     })
@@ -28,18 +29,19 @@ class Importmap::JspmApi
 
     return {} if json.blank?
 
-    files = json.dig(versioned_package_name, "files")
-    package_uri = URI(json.dig(versioned_package_name, "pkgUrl"))
+    json.transform_values do |package_download_details|
+      files = package_download_details["files"]
+      package_uri = URI(package_download_details["pkgUrl"])
 
-    output_files = {}
-
-    Net::HTTP.start(package_uri.hostname, { use_ssl: true }) do |http|
-      files.each do |file|
-        output_files[file] = fetch_file(http, "#{package_uri.path}/#{file}")
+      Net::HTTP.start(package_uri.hostname, { use_ssl: true }) do |http|
+        files.map do |file|
+          [
+            file,
+            fetch_file(http, "#{package_uri.path}/#{file}")
+          ]
+        end.to_h
       end
     end
-
-    output_files
   end
 
   private

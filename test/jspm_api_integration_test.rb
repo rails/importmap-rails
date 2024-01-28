@@ -7,25 +7,25 @@ class Importmap::JspmApiIntegrationTest < ActiveSupport::TestCase
   end
 
   test "#download when given a valid input" do
-    result = @jspm_api.download(versioned_package_name: "@popperjs/core@2.11.8", provider: "jspm.io", exclude: [])
+    result = @jspm_api.download(versioned_package_names: ["@popperjs/core@2.11.8"], provider: "jspm.io", exclude: [])
 
-    assert result.keys.include?("lib/dom-utils/getWindow.js")
-    assert result.keys.include?("lib/index.js")
+    assert result["@popperjs/core@2.11.8"].keys.include?("lib/dom-utils/getWindow.js")
+    assert result["@popperjs/core@2.11.8"].keys.include?("lib/index.js")
 
-    result = @jspm_api.download(versioned_package_name: "@popperjs/core@2.11.8", provider: "jspm", exclude: [])
+    result = @jspm_api.download(versioned_package_names: ["@popperjs/core@2.11.8"], provider: "jspm", exclude: [])
 
-    assert result.keys.include?("lib/dom-utils/getWindow.js")
-    assert result.keys.include?("lib/index.js")
+    assert result["@popperjs/core@2.11.8"].keys.include?("lib/dom-utils/getWindow.js")
+    assert result["@popperjs/core@2.11.8"].keys.include?("lib/index.js")
   end
 
   test "#download when given a bad package" do
-    result = @jspm_api.download(versioned_package_name: "@popperjs/corenoversion", provider: "jspm.io", exclude: [])
+    result = @jspm_api.download(versioned_package_names: ["@popperjs/corenoversion"], provider: "jspm.io", exclude: [])
 
     assert_equal result, {}
   end
 
   test "#download when given a bad provider" do
-    result = @jspm_api.download(versioned_package_name: "@popperjs/corenoversion", provider: "jspmfoobarbaz", exclude: [])
+    result = @jspm_api.download(versioned_package_names: ["@popperjs/corenoversion"], provider: "jspmfoobarbaz", exclude: [])
 
     assert_equal result, {}
   end
@@ -35,7 +35,7 @@ class Importmap::JspmApiIntegrationTest < ActiveSupport::TestCase
     Importmap::JspmApi.download_endpoint = URI("https://invalid./error")
 
     assert_raises(Importmap::JspmApi::HTTPError) do
-      @jspm_api.download(versioned_package_name: "@popperjs/core@2.11.8", provider: "jspm.io", exclude: [])
+      @jspm_api.download(versioned_package_names: ["@popperjs/core@2.11.8"], provider: "jspm.io", exclude: [])
     end
   ensure
     Importmap::JspmApi.download_endpoint = original_endpoint
