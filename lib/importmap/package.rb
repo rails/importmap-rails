@@ -26,7 +26,11 @@ class Importmap::Package
 
     jspm_api = Importmap::JspmApi.new
 
-    files = jspm_api.download(versioned_package_name: "#{@package_name}#{@version}", provider: @provider)
+    files = jspm_api.download(
+      versioned_package_name: "#{@package_name}#{@version}",
+      provider: @provider,
+      exclude: ["unused", "readme", "types"]
+    )
 
     files.each do |file, downloaded_file|
       save_vendored_file(file, downloaded_file)

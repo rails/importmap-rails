@@ -18,9 +18,10 @@ class Importmap::JspmApi
     response_json(response)
   end
 
-  def download(versioned_package_name:, provider:)
+  def download(versioned_package_name:, provider:, exclude:)
     response = post_json("#{self.class.download_endpoint}/#{versioned_package_name}", {
-      provider: normalize_provider(provider)
+      provider: normalize_provider(provider),
+      exclude:
     })
 
     json = response_json(response)
