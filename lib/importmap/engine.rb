@@ -1,7 +1,7 @@
 require "importmap/map"
 
-# Use Rails.application.importmap to access the map
-Rails::Application.send(:attr_accessor, :importmap)
+# Use Rails.application.importmaps to access the maps
+Rails::Application.send(:attr_accessor, :importmaps)
 
 module Importmap
   class Engine < ::Rails::Engine
@@ -14,9 +14,20 @@ module Importmap
     config.autoload_once_paths = %W( #{root}/app/helpers )
 
     initializer "importmap" do |app|
-      app.importmap = Importmap::Map.new
+      importmap = Importmap::Map.new
+      app.importmaps = {
+        "application" => importmap
+      }
       app.config.importmap.paths << app.root.join("config/importmap.rb")
-      app.config.importmap.paths.each { |path| app.importmap.draw(path) }
+      app.config.importmap.paths.each { |path| importmap.draw(path) }
+
+      Dir[app.root.join("config/importmaps/*.rb")].each do |path|
+        namespace = File.basename(path).delete_suffix(".rb")
+        importmap = Importmap::Map.new
+        app.config.importmap.paths.each { |path| importmap.draw(path) }
+        importmap.draw(path)
+        app.importmaps[namespace] = importmap
+      end
     end
 
     initializer "importmap.reloader" do |app|
@@ -33,10 +44,17 @@ module Importmap
       if app.config.importmap.sweep_cache && !app.config.cache_classes
         app.config.importmap.cache_sweepers << app.root.join("app/javascript")
         app.config.importmap.cache_sweepers << app.root.join("vendor/javascript")
-        app.importmap.cache_sweeper(watches: app.config.importmap.cache_sweepers)
+
+        app.importmaps.values.each do |importmap|
+          importmap.cache_sweeper(watches: app.config.importmap.cache_sweepers)
+        end
 
         ActiveSupport.on_load(:action_controller_base) do
-          before_action { Rails.application.importmap.cache_sweeper.execute_if_updated }
+          before_action do
+            Rails.application.importmaps.values.each do |importmap|
+              importmap.cache_sweeper.execute_if_updated
+            end
+          end
         end
       end
     end
