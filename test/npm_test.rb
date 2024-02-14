@@ -95,7 +95,7 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
-  test "return response is a String type" do
+  test "return latest version response is a String type" do
     response = "version not found".to_json
 
     @npm.stub(:get_json, response) do
