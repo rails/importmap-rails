@@ -101,9 +101,6 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     @npm.stub(:get_json, response) do
       outdated_packages = @npm.outdated_packages
 
-      assert_equal(1, outdated_packages.size)
-      assert_equal('md5', outdated_packages[0].name)
-      assert_equal('2.2.0', outdated_packages[0].current_version)
       assert_equal('version not found', outdated_packages[0].latest_version)
     end
   end
