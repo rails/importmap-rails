@@ -242,6 +242,15 @@ Importmap for Rails provides two commands to check your pinned packages:
 - `./bin/importmap outdated` checks the NPM registry for new versions
 - `./bin/importmap audit` checks the NPM registry for known security issues
 
+## Supporting legacy browsers such as Safari on iOS 15
+
+If you want to support [legacy browsers that do not support import maps](https://caniuse.com/import-maps) such as [iOS 15.8.1 released on 22 Jan 2024](https://support.apple.com/en-us/HT201222), insert [`es-module-shims`](https://github.com/guybedford/es-module-shims) before `javascript_importmap_tags` as below.
+
+```erb
+<script async src="https://ga.jspm.io/npm:es-module-shims@1.8.2/dist/es-module-shims.js" data-turbo-track="reload"></script>
+<%= javascript_importmap_tags %>
+```
+
 ## License
 
 Importmap for Rails is released under the [MIT License](https://opensource.org/licenses/MIT).
