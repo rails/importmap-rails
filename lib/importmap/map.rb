@@ -141,7 +141,17 @@ class Importmap::Map
     end
 
     def module_name_from(filename, mapping)
-      [ mapping.under, filename.to_s.remove(filename.extname).remove(/\/?index$/).presence ].compact.join("/")
+      # Regex explanation:
+      # (?:\/|^) # Matches either / OR the start of the string
+      # index   # Matches the word index
+      # $       # Matches the end of the string
+      #
+      # Sample matches
+      # index
+      # folder/index
+      index_regex = /(?:\/|^)index$/
+
+      [ mapping.under, filename.to_s.remove(filename.extname).remove(index_regex).presence ].compact.join("/")
     end
 
     def module_path_from(filename, mapping)
