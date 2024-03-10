@@ -4,6 +4,7 @@ require "json"
 
 class Importmap::Packager
   Error        = Class.new(StandardError)
+  VerifyError  = Class.new(Error)
   HTTPError    = Class.new(Error)
   ServiceError = Error.new(Error)
 
@@ -51,6 +52,14 @@ class Importmap::Packager
     importmap.match(/^pin ["']#{package}["'].*$/)
   end
 
+  def verify(package, url)
+    ensure_vendor_directory_exists
+
+    if vendored_package_path(package).file?
+      verify_vendored_package(package, url)
+    end
+  end
+
   def download(package, url)
     ensure_vendor_directory_exists
     remove_existing_package_file(package)
@@ -95,7 +104,6 @@ class Importmap::Packager
       @importmap ||= File.read(@importmap_path)
     end
 
-
     def ensure_vendor_directory_exists
       FileUtils.mkdir_p @vendor_path
     end
@@ -114,25 +122,43 @@ class Importmap::Packager
     end
 
     def download_package_file(package, url)
+      body = load_package_file(package, url)
+      save_vendored_package(package, url, body)
+    end
+
+    def load_package_file(package, url)
       response = Net::HTTP.get_response(URI(url))
 
       if response.code == "200"
-        save_vendored_package(package, url, response.body)
+        format_vendored_package(package, url, response.body)
       else
         handle_failure_response(response)
       end
     end
 
+    def format_vendored_package(package, url, source)
+      formatted = "// #{package}#{extract_package_version_from(url)} downloaded from #{url}\n\n"
+      formatted.concat remove_sourcemap_comment_from(source).force_encoding("UTF-8")
+      formatted
+    end
+
     def save_vendored_package(package, url, source)
       File.open(vendored_package_path(package), "w+") do |vendored_package|
-        vendored_package.write "// #{package}#{extract_package_version_from(url)} downloaded from #{url}\n\n"
-
-        vendored_package.write remove_sourcemap_comment_from(source).force_encoding("UTF-8")
+        vendored_package.write source
       end
     end
 
     def remove_sourcemap_comment_from(source)
       source.gsub(/^\/\/# sourceMappingURL=.*/, "")
+    end
+
+    def verify_vendored_package(package, url)
+      vendored_body = vendored_package_path(package).read.strip
+      remote_body = load_package_file(package, url).strip
+
+      return true if vendored_body == remote_body
+
+      raise VerifyError.new("Vendored #{package}#{extract_package_version_from(url)} does not match remote #{url}")
     end
 
     def vendored_package_path(package)
