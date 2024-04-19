@@ -86,7 +86,7 @@ class Importmap::Npm
     end
 
     def find_latest_version(response)
-      latest_version = response.dig('dist-tags', 'latest')
+      latest_version = response.is_a?(String) ? response : response.dig('dist-tags', 'latest')
       return latest_version if latest_version
 
       return unless response['versions']
