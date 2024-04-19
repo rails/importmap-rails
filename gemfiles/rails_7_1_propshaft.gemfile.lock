@@ -241,7 +241,7 @@ DEPENDENCIES
   rails (~> 7.1.0)
   rexml
   selenium-webdriver
-  sqlite3
+  sqlite3 (~> 1.4)
   stimulus-rails
   turbo-rails
   webdrivers

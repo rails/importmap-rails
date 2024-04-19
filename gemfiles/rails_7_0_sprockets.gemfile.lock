@@ -211,7 +211,7 @@ DEPENDENCIES
   rexml
   selenium-webdriver
   sprockets-rails
-  sqlite3
+  sqlite3 (~> 1.4)
   stimulus-rails
   turbo-rails
   webdrivers
