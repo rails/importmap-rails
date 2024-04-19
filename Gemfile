@@ -6,7 +6,7 @@ gemspec
 
 gem "rails", "~> 6.1.0"
 
-gem "sqlite3"
+gem "sqlite3", "~> 1.4"
 
 group :development do
   gem "appraisal"
