@@ -24,7 +24,7 @@ module Importmap::ImportmapTagsHelper
   # Link tags for preloading all modules marked as preload: true in the `importmap`
   # (defaults to Rails.application.importmap), such that they'll be fetched
   # in advance by browsers supporting this link type (https://caniuse.com/?search=modulepreload).
-  def javascript_importmap_module_preload_tags(importmap = Rails.application.importmap, entry_point:)
+  def javascript_importmap_module_preload_tags(importmap = Rails.application.importmap, entry_point: "application")
     javascript_module_preload_tag(*importmap.preloaded_module_paths(resolver: self, entry_point:))
   end
 
