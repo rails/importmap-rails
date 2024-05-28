@@ -8,6 +8,9 @@ class ImportmapTest < ActiveSupport::TestCase
         pin "editor", to: "rich_text.js", preload: false
         pin "not_there", to: "nowhere.js", preload: false
         pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
+        pin "leaflet", to: "https://cdn.skypack.dev/leaflet", preload: 'application'
+        pin "chartkick", to: "https://cdn.skypack.dev/chartkick", preload: ['application', 'alternate']
+        pin "tinyMCE", to: "https://cdn.skypack.dev/tinymce", preload: 'alternate'
 
         pin_all_from "app/javascript/controllers", under: "controllers", preload: true
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", preload: true
@@ -78,8 +81,30 @@ class ImportmapTest < ActiveSupport::TestCase
     end
   end
 
-  test "preloaded modules are included in preload tags" do
+  test "preloaded modules are included in preload tags when no entry_point specified" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
+    assert_match /md5/, preloading_module_paths
+    assert_match /goodbye_controller/, preloading_module_paths
+    assert_match /leaflet/, preloading_module_paths
+    assert_no_match /application/, preloading_module_paths
+    assert_no_match /tinymce/, preloading_module_paths
+  end
+
+  test "preloaded modules are included in preload tags based on single entry_point provided" do
+    preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: "alternate").to_s
+    assert_no_match /leaflet/, preloading_module_paths
+    assert_match /tinymce/, preloading_module_paths
+    assert_match /chartkick/, preloading_module_paths
+    assert_match /md5/, preloading_module_paths
+    assert_match /goodbye_controller/, preloading_module_paths
+    assert_no_match /application/, preloading_module_paths
+  end
+
+  test "preloaded modules are included in preload tags based on multiple entry_points provided" do
+    preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: ["application", "alternate"]).to_s
+    assert_match /leaflet/, preloading_module_paths
+    assert_match /tinymce/, preloading_module_paths
+    assert_match /chartkick/, preloading_module_paths
     assert_match /md5/, preloading_module_paths
     assert_match /goodbye_controller/, preloading_module_paths
     assert_no_match /application/, preloading_module_paths
