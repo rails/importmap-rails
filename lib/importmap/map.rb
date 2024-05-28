@@ -40,9 +40,9 @@ class Importmap::Map
   # resolver that has been configured for the `asset_host` you want these resolved paths to use. In case you need to
   # resolve for different asset hosts, you can pass in a custom `cache_key` to vary the cache used by this method for
   # the different cases.
-  def preloaded_module_paths(resolver:, cache_key: :preloaded_module_paths)
+  def preloaded_module_paths(resolver:, entry_point:, cache_key: :preloaded_module_paths)
     cache_as(cache_key) do
-      resolve_asset_paths(expanded_preloading_packages_and_directories, resolver: resolver).values
+      resolve_asset_paths(expanded_preloading_packages_and_directories(entry_point:), resolver:).values
     end
   end
 
@@ -118,8 +118,8 @@ class Importmap::Map
       end.compact
     end
 
-    def expanded_preloading_packages_and_directories
-      expanded_packages_and_directories.select { |name, mapping| mapping.preload }
+    def expanded_preloading_packages_and_directories(entry_point:)
+      expanded_packages_and_directories.select { |name, mapping| mapping.preload == true || (mapping.preload & Array(entry_point)).any? }
     end
 
     def expanded_packages_and_directories
