@@ -46,6 +46,30 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
+  test "successful outdated packages using multiple lines" do
+    npm = Importmap::Npm.new(file_fixture("multiline_outdated_import_map.rb"))
+    response = { "dist-tags" => { "latest" => '23.5.0' } }.to_json
+
+    npm.stub(:get_json, response) do
+      outdated_packages = npm.outdated_packages
+
+      assert_equal(1, outdated_packages.size)
+      assert_equal('intl-tel-input/build/js/utils.js', outdated_packages[0].name)
+      assert_equal('23.3.2', outdated_packages[0].current_version)
+      assert_equal('23.5.0', outdated_packages[0].latest_version)
+    end
+  end
+
+  test "successful updarted packages using multiple lines" do
+    npm = Importmap::Npm.new(file_fixture("multiline_updated_import_map.rb"))
+    response = { "dist-tags" => { "latest" => '23.5.0' } }.to_json
+
+    npm.stub(:get_json, response) do
+      outdated_packages = npm.outdated_packages
+      assert_equal(0, outdated_packages.size)
+    end
+  end
+
   test "missing outdated packages with mock" do
     response = { "error" => "Not found" }.to_json
 
