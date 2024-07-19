@@ -4,6 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 gemspec
 
+gem "propshaft"
 gem "rails"
 gem "sqlite3", "~> 1.4"
 
