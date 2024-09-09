@@ -12,17 +12,20 @@ class Importmap::Commands < Thor
   desc "pin [*PACKAGES]", "Pin new packages"
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
+  option :importmap, type: :string, aliases: :i, default: "application"
   def pin(*packages)
+    packager = Importmap::Packager.new(options[:importmap])
+
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
       imports.each do |package, url|
-        puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
+        puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url} in importmap "#{options[:importmap]}")
         packager.download(package, url)
         pin = packager.vendored_pin_for(package, url)
 
         if packager.packaged?(package)
-          gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin, verbose: false)
+          gsub_file(packager.importmap_path, /^pin "#{package}".*$/, pin, verbose: false)
         else
-          append_to_file("config/importmap.rb", "#{pin}\n", verbose: false)
+          append_to_file(packager.importmap_path, "#{pin}\n", verbose: false)
         end
       end
     else
@@ -33,7 +36,10 @@ class Importmap::Commands < Thor
   desc "unpin [*PACKAGES]", "Unpin existing packages"
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
+  option :importmap, type: :string, aliases: :i, default: "application"
   def unpin(*packages)
+    packager = Importmap::Packager.new(options[:importmap])
+
     if imports = packager.import(*packages, env: options[:env], from: options[:from])
       imports.each do |package, url|
         if packager.packaged?(package)
@@ -47,9 +53,10 @@ class Importmap::Commands < Thor
   end
 
   desc "json", "Show the full importmap in json"
+  option :importmap, type: :string, aliases: :i, default: "application"
   def json
     require Rails.root.join("config/environment")
-    puts Rails.application.importmap.to_json(resolver: ActionController::Base.helpers)
+    puts Rails.application.importmaps[options[:importmap]].to_json(resolver: ActionController::Base.helpers)
   end
 
   desc "audit", "Run a security audit"
@@ -104,10 +111,6 @@ class Importmap::Commands < Thor
   end
 
   private
-    def packager
-      @packager ||= Importmap::Packager.new
-    end
-
     def npm
       @npm ||= Importmap::Npm.new
     end

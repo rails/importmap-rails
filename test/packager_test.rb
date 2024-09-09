@@ -3,7 +3,10 @@ require "importmap/packager"
 require "minitest/mock"
 
 class Importmap::PackagerTest < ActiveSupport::TestCase
-  setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
+  setup do
+    Dir.chdir(Rails.root)
+    @packager = Importmap::Packager.new
+  end
 
   test "successful import with mock" do
     response = Class.new do

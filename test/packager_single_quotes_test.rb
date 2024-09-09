@@ -3,9 +3,11 @@ require "importmap/packager"
 
 class Importmap::PackagerSingleQuotesTest < ActiveSupport::TestCase
   setup do
-    @single_quote_config_name = Rails.root.join("config/importmap_with_single_quotes.rb")
+    @single_quote_config_name = Rails.root.join("config/importmaps/single_quotes.rb")
+    FileUtils.mkdir_p @single_quote_config_name.dirname
     File.write(@single_quote_config_name, File.read(Rails.root.join("config/importmap.rb")).tr('"', "'"))
-    @packager = Importmap::Packager.new(@single_quote_config_name)
+    Dir.chdir(Rails.root)
+    @packager = Importmap::Packager.new("single_quotes")
   end
 
   teardown { File.delete(@single_quote_config_name) }

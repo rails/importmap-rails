@@ -50,10 +50,12 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
   end
 
   test "using a custom importmap" do
-    importmap = Importmap::Map.new
-    importmap.pin "foo", preload: true
-    importmap.pin "bar", preload: false
-    importmap_html = javascript_importmap_tags("foo", importmap: importmap)
+    Rails.application.importmaps["custom"] = Importmap::Map.new.tap do |importmap|
+      importmap.pin "foo", preload: true
+      importmap.pin "bar", preload: false
+    end
+
+    importmap_html = javascript_importmap_tags("foo", "custom")
 
     assert_includes importmap_html, %{<script type="importmap" data-turbo-track="reload">}
     assert_includes importmap_html, %{"foo": "/foo.js"}

@@ -2,7 +2,10 @@ require "test_helper"
 require "importmap/packager"
 
 class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
-  setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
+  setup do
+    Dir.chdir(Rails.root)
+    @packager = Importmap::Packager.new
+  end
 
   test "successful import against live service" do
     assert_equal "https://ga.jspm.io/npm:react@17.0.2/index.js", @packager.import("react@17.0.2")["react"]
@@ -26,7 +29,7 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
   test "successful downloads from live service" do
     Dir.mktmpdir do |vendor_dir|
       @packager = Importmap::Packager.new \
-        Rails.root.join("config/importmap.rb"),
+        "application",
         vendor_path: Pathname.new(vendor_dir)
 
       package_url = "https://ga.jspm.io/npm:@github/webauthn-json@0.5.7/dist/main/webauthn-json.js"
@@ -40,7 +43,7 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
       @packager.download("react", package_url)
       assert File.exist?(vendored_package_file)
       assert_equal "// react@17.0.2 downloaded from #{package_url}", File.readlines(vendored_package_file).first.strip
-      
+
       @packager.remove("react")
       assert_not File.exist?(Pathname.new(vendor_dir).join("react.js"))
     end

@@ -10,10 +10,11 @@ class Importmap::Packager
   singleton_class.attr_accessor :endpoint
   self.endpoint = URI("https://api.jspm.io/generate")
 
+  attr_reader :importmap_path
   attr_reader :vendor_path
 
-  def initialize(importmap_path = "config/importmap.rb", vendor_path: "vendor/javascript")
-    @importmap_path = Pathname.new(importmap_path)
+  def initialize(importmap_name = "application", vendor_path: "vendor/javascript")
+    @importmap_path = Pathname.new(importmap_name == "application" ? "config/importmap.rb" : "config/importmaps/#{importmap_name}.rb")
     @vendor_path    = Pathname.new(vendor_path)
   end
 
