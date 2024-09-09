@@ -1,22 +1,17 @@
 module Importmap::ImportmapTagsHelper
   # Setup all script tags needed to use an importmap-powered entrypoint (which defaults to application.js)
-  def javascript_importmap_tags(entry_point = "application")
-    importmap = Rails.application.importmaps.fetch(entry_point.to_s)
-
-    unless importmap
-      raise "No importmap found for entry point '#{entry_point}'."
-    end
-
+  def javascript_importmap_tags(entry_point = "application", importmap_name = "application")
     safe_join [
-      javascript_inline_importmap_tag(importmap),
-      javascript_importmap_module_preload_tags(importmap),
+      javascript_inline_importmap_tag(importmap_name),
+      javascript_importmap_module_preload_tags(importmap_name),
       javascript_import_module_tag(entry_point)
     ], "\n"
   end
 
   # Generate an inline importmap tag using the passed `importmap_json` JSON string.
   # By default, `Rails.application.importmap.to_json(resolver: self)` is used.
-  def javascript_inline_importmap_tag(importmap)
+  def javascript_inline_importmap_tag(importmap_name = "application")
+    importmap = Rails.application.importmaps.fetch(importmap_name.to_s)
     importmap_json = importmap.to_json(resolver: self)
     tag.script importmap_json.html_safe,
       type: "importmap", "data-turbo-track": "reload", nonce: request&.content_security_policy_nonce
@@ -31,7 +26,8 @@ module Importmap::ImportmapTagsHelper
   # Link tags for preloading all modules marked as preload: true in the `importmap`
   # (defaults to Rails.application.importmap), such that they'll be fetched
   # in advance by browsers supporting this link type (https://caniuse.com/?search=modulepreload).
-  def javascript_importmap_module_preload_tags(importmap)
+  def javascript_importmap_module_preload_tags(importmap_name = "application")
+    importmap = Rails.application.importmaps.fetch(importmap_name.to_s)
     javascript_module_preload_tag(*importmap.preloaded_module_paths(resolver: self))
   end
 
