@@ -71,7 +71,7 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
   end
 
-  test "directory pin respects remove_extname option" do
+  test "directory pin respects preserve_extname option" do
     assert_nil generate_importmap_json["imports"]["shoelace/shoelace-autoloader"]
     assert_match %r|shoelace/shoelace-autoloader-.*\.js|, generate_importmap_json["imports"]["shoelace/shoelace-autoloader.js"]
     assert_match %r|shoelace/chunks/chunk.2L6GHXIJ-.*\.js|, generate_importmap_json["imports"]["shoelace/chunks/chunk.2L6GHXIJ.js"]
