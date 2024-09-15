@@ -141,6 +141,25 @@ pin "md5", preload: false # file lives in vendor/javascript/md5.js
 ...
 ```
 
+You can also specify which entry points to preload a particular dependency in by providing `preload:` a string or array of strings.
+
+Example:
+
+```ruby
+# config/importmap.rb
+pin "@github/hotkey", to: "@github--hotkey.js", preload: 'application'
+pin "md5", preload: ['application', 'alternate']
+
+# app/views/layouts/application.html.erb
+<%= javascript_importmap_tags 'alternate' %>
+
+# will include the following link before the importmap is setup:
+<link rel="modulepreload" href="/assets/javascript/md5.js">
+...
+```
+
+
+
 ## Composing import maps
 
 By default, Rails loads import map definition from the application's `config/importmap.rb` to the `Importmap::Map` object available at `Rails.application.importmap`.
