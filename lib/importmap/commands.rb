@@ -92,7 +92,7 @@ class Importmap::Commands < Thor
   desc "update", "Update outdated package pins"
   def update
     if (outdated_packages = npm.outdated_packages).any?
-      pin outdated_packages.map(&:name)
+      pin(*outdated_packages.map(&:name))
     else
       puts "No outdated packages found"
     end
