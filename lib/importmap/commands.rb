@@ -46,6 +46,24 @@ class Importmap::Commands < Thor
     end
   end
 
+  desc "pristine [*PACKAGES]", "Redownload all pinned packages"
+  option :env, type: :string, aliases: :e, default: "production"
+  option :from, type: :string, aliases: :f, default: "jspm"
+  def pristine(*packages)
+    packages = npm.packages_with_versions.map do |p, v|
+      v.blank? ? p : [p, v].join("@")
+    end
+
+    if imports = packager.import(*packages, env: options[:env], from: options[:from])
+      imports.each do |package, url|
+        puts %(Downloading "#{package}" to #{packager.vendor_path}/#{package}.js from #{url})
+        packager.download(package, url)
+      end
+    else
+      puts "Couldn't find any packages in #{packages.inspect} on #{options[:from]}"
+    end
+  end
+
   desc "json", "Show the full importmap in json"
   def json
     require Rails.root.join("config/environment")
