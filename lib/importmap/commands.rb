@@ -73,6 +73,30 @@ class Importmap::Commands < Thor
     end
   end
 
+  desc "verify", "Verify that vendored files are identical to the pinned remote"
+  desc "pin [*PACKAGES]", "Pin new packages"
+  option :env, type: :string, aliases: :e, default: "production"
+  option :from, type: :string, aliases: :f, default: "jspm"
+  def verify(*packages)
+    if packages.empty?
+      packages = npm.packages_with_versions.map do |p, v|
+        v.blank? ? p : [p, v].join("@")
+      end
+    end
+
+    if imports = packager.import(*packages, env: options[:env], from: options[:from])
+      imports.each do |package, url|
+        puts %(Verifying "#{package}" download from #{url})
+        packager.verify(package, url)
+      end
+    else
+      puts "No packages found"
+    end
+  rescue Importmap::Packager::VerifyError => error
+    puts error.message
+    exit 1
+  end
+
   desc "outdated", "Check for outdated packages"
   def outdated
     if (outdated_packages = npm.outdated_packages).any?
