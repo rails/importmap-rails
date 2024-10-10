@@ -42,7 +42,7 @@ class Importmap::Map
   # the different cases.
   def preloaded_module_paths(resolver:, entry_point: "application", cache_key: :preloaded_module_paths)
     cache_as(cache_key) do
-      resolve_asset_paths(expanded_preloading_packages_and_directories(entry_point:), resolver:).values
+      resolve_asset_paths(expanded_preloading_packages_and_directories(entry_point: entry_point), resolver: resolver).values
     end
   end
 
