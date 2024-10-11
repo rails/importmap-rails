@@ -46,10 +46,10 @@ class Importmap::Commands < Thor
     end
   end
 
-  desc "pristine [*PACKAGES]", "Redownload all pinned packages"
+  desc "pristine", "Redownload all pinned packages"
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
-  def pristine(*packages)
+  def pristine
     packages = npm.packages_with_versions.map do |p, v|
       v.blank? ? p : [p, v].join("@")
     end
