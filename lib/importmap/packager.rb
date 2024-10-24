@@ -48,7 +48,7 @@ class Importmap::Packager
   end
 
   def packaged?(package)
-    importmap.match(/^pin ["']#{package}["'].*$/)
+    importmap.match(/^pin ["']#{package}["'].*$/).present?
   end
 
   def download(package, url)
