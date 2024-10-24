@@ -39,12 +39,14 @@ class Importmap::Packager
   def vendored_pin_for(package, url)
     filename = package_filename(package)
     version  = extract_package_version_from(url)
+    line_formatted_pin_options = pin_options_for_package(package).except("to").map { |option, value| %(#{option}: #{value.is_a?(String) ? %("#{value}") : value}) }
+    pin_components = [
+      %(pin "#{package}"),
+      (%(to: "#{filename}") unless "#{package}.js" == filename),
+      *line_formatted_pin_options
+    ].compact
 
-    if "#{package}.js" == filename
-      %(pin "#{package}" # #{version})
-    else
-      %(pin "#{package}", to: "#{filename}" # #{version})
-    end
+    %(#{pin_components.join(", ")} # #{version})
   end
 
   def packaged?(package)

@@ -54,6 +54,7 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   test "vendored_pin_for" do
     assert_equal %(pin "react" # @17.0.2), @packager.vendored_pin_for("react", "https://cdn/react@17.0.2")
     assert_equal %(pin "javascript/react", to: "javascript--react.js" # @17.0.2), @packager.vendored_pin_for("javascript/react", "https://cdn/react@17.0.2")
+    assert_equal %(pin "md5", preload: true # @2.1.3), @packager.vendored_pin_for("md5", "https://cdn/md5@2.1.3")
   end
 
   test "pin_options_for_package" do
