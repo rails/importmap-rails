@@ -3,7 +3,7 @@ require "importmap/packager"
 require "minitest/mock"
 
 class Importmap::PackagerTest < ActiveSupport::TestCase
-  setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
+  setup { @packager = Importmap::Packager.new(Rails.root.join("../fixtures/files/pins_with_various_options_importmap.rb")) }
 
   test "successful import with mock" do
     response = Class.new do
@@ -54,5 +54,12 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   test "vendored_pin_for" do
     assert_equal %(pin "react" # @17.0.2), @packager.vendored_pin_for("react", "https://cdn/react@17.0.2")
     assert_equal %(pin "javascript/react", to: "javascript--react.js" # @17.0.2), @packager.vendored_pin_for("javascript/react", "https://cdn/react@17.0.2")
+  end
+
+  test "pin_options_for_package" do
+    assert_equal ({ "to" => "https://cdn.skypack.dev/md5", "preload" => true }), @packager.pin_options_for_package('md5')
+    assert_equal ({ "to" => "nowhere.js", "preload" => false }), @packager.pin_options_for_package('not_there')
+    assert_equal ({ }), @packager.pin_options_for_package('some_file')
+    assert_equal ({ "to" => "another_file.js" }), @packager.pin_options_for_package('another_file')
   end
 end

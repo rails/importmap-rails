@@ -48,7 +48,7 @@ class Importmap::Packager
   end
 
   def packaged?(package)
-    importmap.match(/^pin ["']#{package}["'].*$/).present?
+    package_line_in_importmap(package).present?
   end
 
   def download(package, url)
@@ -60,6 +60,21 @@ class Importmap::Packager
   def remove(package)
     remove_existing_package_file(package)
     remove_package_from_importmap(package)
+  end
+
+  def pin_options_for_package(package)
+    line = package_line_in_importmap(package) || ""
+    raw_options = line.match(/^#{base_package_line_regex(package)}?,[\s+]?(?<pin_options>.*) #.*$/)
+
+    return {} if raw_options.blank?
+
+    normalized_delimiter_raw_options = raw_options[:pin_options].gsub(/,\s/, ',').split(',')
+
+    normalized_delimiter_raw_options.each_with_object({}) do |option, hash|
+      match_data = option.match(/^(?<option_name>[^:]*):[\s+]?["']?(?<option_value>.*[^"'])["']?$/)
+
+      hash[match_data[:option_name]] = cast_option_value(match_data[:option_value])
+    end
   end
 
   private
@@ -145,5 +160,20 @@ class Importmap::Packager
 
     def extract_package_version_from(url)
       url.match(/@\d+\.\d+\.\d+/)&.to_a&.first
+    end
+
+    def package_line_in_importmap(package)
+      importmap.match(/^#{base_package_line_regex(package)}.*$/).try(:[], 0)
+    end
+
+    def base_package_line_regex(package)
+      /pin ["']#{package}["']/
+    end
+
+    def cast_option_value(object)
+      return true if object == "true"
+      return false if object == "false"
+
+      object
     end
 end
