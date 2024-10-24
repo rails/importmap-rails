@@ -55,7 +55,7 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
     assert_equal %(pin "react" # @17.0.2), @packager.vendored_pin_for("react", "https://cdn/react@17.0.2")
     assert_equal %(pin "javascript/react", to: "javascript--react.js" # @17.0.2), @packager.vendored_pin_for("javascript/react", "https://cdn/react@17.0.2")
     assert_equal %(pin "md5", preload: true # @2.1.3), @packager.vendored_pin_for("md5", "https://cdn/md5@2.1.3")
-    assert_equal %(pin "random", random_option: "foobar" # @8.8.8), @packager.vendored_pin_for("random", "https://cdn/random@8.8.8")
+    assert_equal %(pin "random", random_option: "foobar", hello: "world" # @8.8.8), @packager.vendored_pin_for("random", "https://cdn/random@8.8.8")
   end
 
   test "pin_options_for_package" do
