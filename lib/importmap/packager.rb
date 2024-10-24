@@ -70,7 +70,7 @@ class Importmap::Packager
 
     return {} if raw_options.blank?
 
-    raw_options[:pin_options].split(/,\s|,/).each_with_object({}) do |option, hash|
+    raw_options[:pin_options].split(/,\s?/).each_with_object({}) do |option, hash|
       match_data = option.match(/^(?<option_name>[^:]*):[\s+]?["']?(?<option_value>.*[^"'])["']?$/)
 
       hash[match_data[:option_name]] = cast_option_value(match_data[:option_value])
