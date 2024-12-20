@@ -48,6 +48,13 @@ module Importmap
       end
     end
 
+    initializer "importmap.concerns" do
+      ActiveSupport.on_load(:action_controller_base) do
+        require_relative "../../app/controllers/concerns/importmap/freshness"
+        extend Importmap::Freshness
+      end
+    end
+
     initializer "importmap.helpers" do
       ActiveSupport.on_load(:action_controller_base) do
         helper Importmap::ImportmapTagsHelper
