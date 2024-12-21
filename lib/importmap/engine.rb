@@ -11,7 +11,7 @@ module Importmap
     config.importmap.cache_sweepers = []
     config.importmap.rescuable_asset_errors = []
 
-    config.autoload_once_paths = %W( #{root}/app/helpers )
+    config.autoload_once_paths = %W( #{root}/app/helpers #{root}/app/controllers )
 
     initializer "importmap" do |app|
       app.importmap = Importmap::Map.new
@@ -45,6 +45,12 @@ module Importmap
       if app.config.respond_to?(:assets)
         app.config.assets.paths << Rails.root.join("app/javascript")
         app.config.assets.paths << Rails.root.join("vendor/javascript")
+      end
+    end
+
+    initializer "importmap.concerns" do
+      ActiveSupport.on_load(:action_controller_base) do
+        extend Importmap::Freshness
       end
     end
 
