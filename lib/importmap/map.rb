@@ -30,9 +30,9 @@ class Importmap::Map
     @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
   end
 
-  def pin_all_from(dir, under: nil, to: nil, preload: true)
+  def pin_all_from(dir, under: nil, to: nil, preserve_extname: false, preload: true)
     clear_cache
-    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
+    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preserve_extname: preserve_extname, preload: preload)
   end
 
   # Returns an array of all the resolved module paths of the pinned packages. The `resolver` must respond to
@@ -84,7 +84,7 @@ class Importmap::Map
   end
 
   private
-    MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
+    MappedDir  = Struct.new(:dir, :path, :under, :preserve_extname, :preload, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
 
     def cache_as(name)
@@ -151,7 +151,9 @@ class Importmap::Map
       # folder/index
       index_regex = /(?:\/|^)index$/
 
-      [ mapping.under, filename.to_s.remove(filename.extname).remove(index_regex).presence ].compact.join("/")
+      [ mapping.under, filename.to_s.remove(filename.extname).remove(index_regex).presence ].compact.join("/").tap do |module_name|
+        module_name << filename.extname if mapping.preserve_extname
+      end
     end
 
     def module_path_from(filename, mapping)
