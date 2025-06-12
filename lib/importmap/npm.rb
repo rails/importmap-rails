@@ -80,6 +80,10 @@ class Importmap::Npm
         http.request(request)
       }
 
+      unless response.kind_of? Net::HTTPSuccess
+        raise HTTPError, "Unexpected error response #{response.code}: #{response.body}"
+      end
+
       response.body
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
@@ -111,6 +115,9 @@ class Importmap::Npm
       return {} if body.empty?
 
       response = post_json(uri, body)
+      unless response.kind_of? Net::HTTPSuccess
+        raise HTTPError, "Unexpected error response #{response.code}: #{response.body}"
+      end
       JSON.parse(response.body)
     end
 
