@@ -59,11 +59,49 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
-  test "failed outdated packages request with mock" do
+  test "failed outdated packages request with exception" do
     Net::HTTP.stub(:start, proc { raise "Unexpected Error" }) do
       assert_raises(Importmap::Npm::HTTPError) do
         @npm.outdated_packages
       end
+    end
+  end
+
+  test "failed outdated packages request with error response" do
+    client = Minitest::Mock.new
+    response = Class.new do
+      def body
+        { "message" => "Service unavailable" }.to_json
+      end
+
+      def code() "500" end
+    end.new
+
+    client.expect(:request, nil, [Net::HTTP::Get])
+
+    Net::HTTP.stub(:start, response, client) do
+      e = assert_raises(Importmap::Npm::HTTPError) do
+        @npm.outdated_packages
+      end
+
+      assert_equal "Unexpected error response 500: {\"message\":\"Service unavailable\"}", e.message
+    end
+  end
+
+  test "failed vulnerable packages with mock" do
+    response = Class.new do
+      def body
+        { "message" => "Service unavailable" }.to_json
+      end
+
+      def code() "500" end
+    end.new
+
+    @npm.stub(:post_json, response) do
+      e = assert_raises(Importmap::Npm::HTTPError) do
+        @npm.vulnerable_packages
+      end
+      assert_equal "Unexpected error response 500: {\"message\":\"Service unavailable\"}", e.message
     end
   end
 
