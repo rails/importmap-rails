@@ -97,19 +97,29 @@ Note: Sprockets used to serve assets (albeit without filename digests) it couldn
 
 Importmap for Rails downloads and vendors your npm package dependencies via JavaScript CDNs that provide pre-compiled distribution versions.
 
-You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update npm packages in your import map. This command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file. It can resolve these dependencies from JSPM itself, but also from other CDNs, like [unpkg.com](https://unpkg.com) and [jsdelivr.com](https://www.jsdelivr.com).
+You can use the `./bin/importmap` command that's added as part of the install to pin, unpin, or update npm packages in your import map. By default this command uses an API from [JSPM.org](https://jspm.org) to resolve your package dependencies efficiently, and then add the pins to your `config/importmap.rb` file.
 
 ```bash
 ./bin/importmap pin react
-Pinning "react" to vendor/react.js via download from https://ga.jspm.io/npm:react@17.0.2/index.js
-Pinning "object-assign" to vendor/object-assign.js via download from https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+Pinning "react" to vendor/javascript/react.js via download from https://ga.jspm.io/npm:react@19.1.0/index.js
 ```
 
-This will produce pins in your `config/importmap.rb` like so:
+This will produce a pin in your `config/importmap.rb` like so:
 
 ```ruby
-pin "react" # https://ga.jspm.io/npm:react@17.0.2/index.js
-pin "object-assign" # https://ga.jspm.io/npm:object-assign@4.1.1/index.js
+pin "react" # @19.1.0
+```
+
+Other CDNs like [unpkg.com](https://unpkg.com) and [jsdelivr.com](https://www.jsdelivr.com) can be specified with `--from`:
+
+```bash
+./bin/importmap pin react --from unpkg
+Pinning "react" to vendor/javascript/react.js via download from https://unpkg.com/react@19.1.0/index.js
+```
+
+```bash
+./bin/importmap pin react --from jsdelivr
+Pinning "react" to vendor/javascript/react.js via download from https://cdn.jsdelivr.net/npm/react@19.1.0/index.js
 ```
 
 The packages are downloaded to `vendor/javascript`, which you can check into your source control, and they'll be available through your application's own asset pipeline serving.
@@ -119,7 +129,6 @@ If you later wish to remove a downloaded pin:
 ```bash
 ./bin/importmap unpin react
 Unpinning and removing "react"
-Unpinning and removing "object-assign"
 ```
 
 ## Preloading pinned modules
