@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gem "rails", branch: "main", git: "https://github.com/rails/rails.git"
+gem "rails", "~> 7.1.0"
 gem "propshaft"
 gem "sqlite3"
 

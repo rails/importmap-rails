@@ -2,9 +2,9 @@
 
 source "https://rubygems.org"
 
-gem "rails", "~> 7.2.0"
-gem "sqlite3", "~> 1.4"
+gem "rails", branch: "7-0-stable", git: "https://github.com/rails/rails.git"
 gem "propshaft"
+gem "sqlite3", "~> 1.4"
 
 group :development do
   gem "appraisal"

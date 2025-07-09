@@ -6,33 +6,37 @@ jobs:
       fail-fast: false
       matrix:
         ruby-version:
+          - "3.1"
           - "3.2"
           - "3.3"
-        gemfile:
-          - Gemfile
-          - gemfiles/rails_7_0_propshaft.gemfile
-          - gemfiles/rails_7_1_propshaft.gemfile
-          - gemfiles/rails_7_2_propshaft.gemfile
-          - gemfiles/rails_main_propshaft.gemfile
-          - gemfiles/rails_7_0_sprockets.gemfile
-          - gemfiles/rails_7_1_sprockets.gemfile
-          - gemfiles/rails_7_2_sprockets.gemfile
-          - gemfiles/rails_main_sprockets.gemfile
-        include:
+          - "3.4"
+        rails-version:
+          - "6.1"
+          - "7.0"
+          - "7.1"
+          - "7.2"
+          - "8.0"
+          - "main"
+        assets-pipeline:
+          - sprockets
+          - propshaft
+        exclude:
+          - rails-version: "6.1"
+            assets-pipeline: "propshaft"
           - ruby-version: "3.1"
-            gemfile: gemfiles/rails_7_0_propshaft.gemfile
+            rails-version: "8.0"
           - ruby-version: "3.1"
-            gemfile: gemfiles/rails_7_1_propshaft.gemfile
-          - ruby-version: "3.1"
-            gemfile: gemfiles/rails_7_0_sprockets.gemfile
-          - ruby-version: "3.1"
-            gemfile: gemfiles/rails_7_1_sprockets.gemfile
+            rails-version: "main"
+          - rails-version: "8.0"
+            assets-pipeline: "sprockets"
+          - rails-version: "main"
+            assets-pipeline: "sprockets"
 
-    name: ${{ format('Tests (Ruby {0}, {1})', matrix.ruby-version, matrix.gemfile) }}
+    name: ${{ format('Tests (Ruby {0}, Rails {1}, {2})', matrix.ruby-version, matrix.rails-version, matrix.assets-pipeline) }}
     runs-on: ubuntu-latest
 
     env:
-      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+      BUNDLE_GEMFILE: gemfiles/rails_${{ matrix.rails-version }}_${{ matrix.assets-pipeline }}.gemfile
 
     steps:
       - uses: actions/checkout@v4

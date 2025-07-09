@@ -2,9 +2,12 @@
 
 source "https://rubygems.org"
 
-gem "rails", "~> 7.0.0"
+gem "rails", "~> 6.1.0"
 gem "sqlite3", "~> 1.4"
-gem "propshaft"
+gem "logger"
+gem "bigdecimal"
+gem "mutex_m"
+gem "drb"
 
 group :development do
   gem "appraisal"
