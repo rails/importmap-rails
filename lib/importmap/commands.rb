@@ -9,6 +9,8 @@ class Importmap::Commands < Thor
     false
   end
 
+  class_option :importmap, type: :string, aliases: :i, default: ""
+
   desc "pin [*PACKAGES]", "Pin new packages"
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
@@ -21,9 +23,9 @@ class Importmap::Commands < Thor
         pin = packager.vendored_pin_for(package, url, options[:preload])
 
         if packager.packaged?(package)
-          gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin, verbose: false)
+          gsub_file(importmap_path, /^pin "#{package}".*$/, pin, verbose: false)
         else
-          append_to_file("config/importmap.rb", "#{pin}\n", verbose: false)
+          append_to_file(importmap_path, "#{pin}\n", verbose: false)
         end
       end
     else
@@ -68,7 +70,12 @@ class Importmap::Commands < Thor
   desc "json", "Show the full importmap in json"
   def json
     require Rails.root.join("config/environment")
-    puts Rails.application.importmap.to_json(resolver: ActionController::Base.helpers)
+
+    if options[:importmap].blank?
+      puts Rails.application.importmap.to_json(resolver: ActionController::Base.helpers)
+    else
+      puts Rails.application.importmaps[options[:importmap]].to_json(resolver: ActionController::Base.helpers)
+    end
   end
 
   desc "audit", "Run a security audit"
@@ -124,11 +131,11 @@ class Importmap::Commands < Thor
 
   private
     def packager
-      @packager ||= Importmap::Packager.new
+      @packager ||= Importmap::Packager.new(importmap_path)
     end
 
     def npm
-      @npm ||= Importmap::Npm.new
+      @npm ||= Importmap::Npm.new(importmap_path)
     end
 
     def remove_line_from_file(path, pattern)
@@ -153,6 +160,14 @@ class Importmap::Commands < Thor
         row = row.each_with_index.map { |v, i| v.to_s + " " * (column_sizes[i] - v.to_s.length) }
         puts "| " + row.join(" | ") + " |"
         puts divider if row_number == 0
+      end
+    end
+
+    def importmap_path
+      if options[:importmap].blank?
+        "config/importmap.rb" 
+      else
+        "config/importmaps/#{options[:importmap]}.rb"
       end
     end
 end
