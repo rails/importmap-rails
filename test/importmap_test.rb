@@ -99,35 +99,35 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "preloaded modules are included in preload tags when no entry_point specified" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers).to_s
-    assert_match /md5/, preloading_module_paths
-    assert_match /goodbye_controller/, preloading_module_paths
-    assert_match /leaflet/, preloading_module_paths
-    assert_no_match /application/, preloading_module_paths
-    assert_no_match /tinymce/, preloading_module_paths
+    assert_match(/md5/, preloading_module_paths)
+    assert_match(/goodbye_controller/, preloading_module_paths)
+    assert_match(/leaflet/, preloading_module_paths)
+    assert_no_match(/application/, preloading_module_paths)
+    assert_no_match(/tinymce/, preloading_module_paths)
   end
 
   test "preloaded modules are included in preload tags based on single entry_point provided" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: "alternate").to_s
-    assert_no_match /leaflet/, preloading_module_paths
-    assert_match /tinymce/, preloading_module_paths
-    assert_match /chartkick/, preloading_module_paths
-    assert_match /md5/, preloading_module_paths
-    assert_match /goodbye_controller/, preloading_module_paths
-    assert_no_match /application/, preloading_module_paths
+    assert_no_match(/leaflet/, preloading_module_paths)
+    assert_match(/tinymce/, preloading_module_paths)
+    assert_match(/chartkick/, preloading_module_paths)
+    assert_match(/md5/, preloading_module_paths)
+    assert_match(/goodbye_controller/, preloading_module_paths)
+    assert_no_match(/application/, preloading_module_paths)
   end
 
   test "preloaded modules are included in preload tags based on multiple entry_points provided" do
     preloading_module_paths = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: ["application", "alternate"]).to_s
-    assert_match /leaflet/, preloading_module_paths
-    assert_match /tinymce/, preloading_module_paths
-    assert_match /chartkick/, preloading_module_paths
-    assert_match /md5/, preloading_module_paths
-    assert_match /goodbye_controller/, preloading_module_paths
-    assert_no_match /application/, preloading_module_paths
+    assert_match(/leaflet/, preloading_module_paths)
+    assert_match(/tinymce/, preloading_module_paths)
+    assert_match(/chartkick/, preloading_module_paths)
+    assert_match(/md5/, preloading_module_paths)
+    assert_match(/goodbye_controller/, preloading_module_paths)
+    assert_no_match(/application/, preloading_module_paths)
   end
 
   test "digest" do
-    assert_match /^\w{40}$/, @importmap.digest(resolver: ApplicationController.helpers)
+    assert_match(/^\w{40}$/, @importmap.digest(resolver: ApplicationController.helpers))
   end
 
   test "separate caches" do
