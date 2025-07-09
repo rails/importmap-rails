@@ -27,10 +27,10 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
           "imports": {
             "md5": "https://cdn.skypack.dev/md5",
             "not_there": "/nowhere.js",
-            "rick_text": "/rick_text.js"
+            "rich_text": "/rich_text.js"
           },
           "integrity": {
-            "/rick_text.js": "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+            "/rich_text.js": "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
           }
         }
       </script>
@@ -43,7 +43,7 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     assert_dom_equal(
       %(
         <link rel="modulepreload" href="https://cdn.skypack.dev/md5">
-        <link rel="modulepreload" href="/rick_text.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb">
+        <link rel="modulepreload" href="/rich_text.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb">
       ),
       javascript_importmap_module_preload_tags
     )
