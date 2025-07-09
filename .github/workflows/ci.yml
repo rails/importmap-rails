@@ -13,11 +13,13 @@ jobs:
           - gemfiles/rails_7_0_propshaft.gemfile
           - gemfiles/rails_7_1_propshaft.gemfile
           - gemfiles/rails_7_2_propshaft.gemfile
+          - gemfiles/rails_8_0_propshaft.gemfile
           - gemfiles/rails_main_propshaft.gemfile
           - gemfiles/rails_6_1_sprockets.gemfile
           - gemfiles/rails_7_0_sprockets.gemfile
           - gemfiles/rails_7_1_sprockets.gemfile
           - gemfiles/rails_7_2_sprockets.gemfile
+          - gemfiles/rails_8_0_sprockets.gemfile
           - gemfiles/rails_main_sprockets.gemfile
         include:
           - ruby-version: "3.1"
