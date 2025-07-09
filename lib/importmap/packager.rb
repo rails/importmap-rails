@@ -36,14 +36,14 @@ class Importmap::Packager
     %(pin "#{package}", to: "#{url}")
   end
 
-  def vendored_pin_for(package, url)
+  def vendored_pin_for(package, url, preloads = nil)
     filename = package_filename(package)
     version  = extract_package_version_from(url)
 
     if "#{package}.js" == filename
-      %(pin "#{package}" # #{version})
+      %(pin "#{package}"#{preload(preloads)} # #{version})
     else
-      %(pin "#{package}", to: "#{filename}" # #{version})
+      %(pin "#{package}", to: "#{filename}"#{preload(preloads)} # #{version})
     end
   end
 
@@ -63,6 +63,21 @@ class Importmap::Packager
   end
 
   private
+    def preload(preloads)
+      case Array(preloads)
+      in []
+        ""
+      in ["true"]
+        %(, preload: true)
+      in ["false"]
+        %(, preload: false)
+      in [string]
+        %(, preload: "#{string}")
+      else
+        %(, preload: #{preloads})
+      end
+    end
+
     def post_json(body)
       Net::HTTP.post(self.class.endpoint, body.to_json, "Content-Type" => "application/json")
     rescue => error
