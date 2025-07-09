@@ -22,4 +22,4 @@
 *.gem
 
 # Ignore Gemfile.lock files for Rails main branch.
-/gemfiles/rails_main*.gemfile.lock
+/gemfiles/*.lock

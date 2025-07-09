@@ -62,9 +62,20 @@ class InstallerTest < ActiveSupport::TestCase
             gemfile.gsub!(/^gem "rails".*/, "")
             gemfile << %(gem "rails", path: #{Gem.loaded_specs["rails"].full_gem_path.inspect}\n)
           end
+          if Rails.version < "7.1"
+            gemfile << %(gem "bigdecimal"\n)
+            gemfile << %(gem "mutex_m"\n)
+          end
           File.write("Gemfile", gemfile)
 
           run_command("bundle", "install")
+
+          if Rails.version < "7.1"
+            boot = File.read("config/boot.rb")
+            boot.prepend("require 'logger'\n")
+
+            File.write("config/boot.rb", boot)
+          end
 
           yield(app_dir)
         end
