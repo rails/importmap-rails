@@ -106,11 +106,7 @@ class Importmap::Map
   def to_json(resolver:, cache_key: :json)
     cache_as(cache_key) do
       packages = expanded_packages_and_directories
-      map = { "imports" => resolve_asset_paths(packages, resolver: resolver) }
-      integrity = packages.to_h do |name, mapping|
-        [resolve_asset_path(mapping.path, resolver: resolver), mapping.integrity]
-      end.compact
-      map["integrity"] = integrity unless integrity.empty?
+      map = build_import_map(packages, resolver: resolver)
       JSON.pretty_generate(map)
     end
   end
@@ -178,6 +174,24 @@ class Importmap::Map
           raise e
         end
       end
+    end
+
+    def build_import_map(packages, resolver:)
+      map = { "imports" => resolve_asset_paths(packages, resolver: resolver) }
+      integrity = build_integrity_hash(packages, resolver: resolver)
+      map["integrity"] = integrity unless integrity.empty?
+      map
+    end
+
+    def build_integrity_hash(packages, resolver:)
+      packages.filter_map do |name, mapping|
+        next unless mapping.integrity
+
+        resolved_path = resolve_asset_path(mapping.path, resolver: resolver)
+        next unless resolved_path
+
+        [resolved_path, mapping.integrity]
+      end.to_h
     end
 
     def expanded_preloading_packages_and_directories(entry_point:)
