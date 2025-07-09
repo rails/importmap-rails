@@ -25,13 +25,23 @@ module Importmap::ImportmapTagsHelper
   # (defaults to Rails.application.importmap), such that they'll be fetched
   # in advance by browsers supporting this link type (https://caniuse.com/?search=modulepreload).
   def javascript_importmap_module_preload_tags(importmap = Rails.application.importmap, entry_point: "application")
-    javascript_module_preload_tag(*importmap.preloaded_module_paths(resolver: self, entry_point:, cache_key: entry_point))
+    packages = importmap.preloaded_module_packages(resolver: self, entry_point:, cache_key: entry_point)
+
+    _generate_preload_tags(packages) { |path, package| [path, { integrity: package.integrity }] }
   end
 
   # Link tag(s) for preloading the JavaScript module residing in `*paths`. Will return one link tag per path element.
   def javascript_module_preload_tag(*paths)
-    safe_join(Array(paths).collect { |path|
-      tag.link rel: "modulepreload", href: path, nonce: request&.content_security_policy_nonce
-    }, "\n")
+    _generate_preload_tags(paths) { |path| [path, {}] }
   end
+
+  private
+    def _generate_preload_tags(items)
+      content_security_policy_nonce = request&.content_security_policy_nonce
+
+      safe_join(Array(items).collect { |item|
+        path, options = yield(item)
+        tag.link rel: "modulepreload", href: path, nonce: content_security_policy_nonce, **options
+      }, "\n")
+    end
 end
