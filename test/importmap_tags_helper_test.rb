@@ -43,7 +43,7 @@ class Importmap::ImportmapTagsHelperTest < ActionView::TestCase
     assert_dom_equal(
       %(
         <link rel="modulepreload" href="https://cdn.skypack.dev/md5">
-        <link rel="modulepreload" href="/rich_text.js">
+        <link rel="modulepreload" href="/rich_text.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb">
       ),
       javascript_importmap_module_preload_tags
     )

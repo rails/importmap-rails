@@ -41,8 +41,60 @@ class Importmap::Map
   # resolve for different asset hosts, you can pass in a custom `cache_key` to vary the cache used by this method for
   # the different cases.
   def preloaded_module_paths(resolver:, entry_point: "application", cache_key: :preloaded_module_paths)
+    preloaded_module_packages(resolver: resolver, entry_point: entry_point, cache_key: cache_key).keys
+  end
+
+  # Returns a hash of resolved module paths to their corresponding package objects for all pinned packages
+  # that are marked for preloading. The hash keys are the resolved asset paths, and the values are the
+  # +MappedFile+ objects containing package metadata including name, path, preload setting, and integrity.
+  #
+  # The +resolver+ must respond to +path_to_asset+, such as +ActionController::Base.helpers+ or
+  # +ApplicationController.helpers+. You'll want to use the resolver that has been configured for the
+  # +asset_host+ you want these resolved paths to use.
+  #
+  # ==== Parameters
+  #
+  # [+resolver+]
+  #   An object that responds to +path_to_asset+ for resolving asset paths.
+  #
+  # [+entry_point+]
+  #   The entry point name or array of entry point names to determine which packages should be preloaded.
+  #   Defaults to +"application"+. Packages with +preload: true+ are always included regardless of entry point.
+  #   Packages with specific entry point names (e.g., +preload: "admin"+) are only included when that entry
+  #   point is specified.
+  #
+  # [+cache_key+]
+  #   A custom cache key to vary the cache used by this method for different cases, such as resolving
+  #   for different asset hosts. Defaults to +:preloaded_module_packages+.
+  #
+  # ==== Returns
+  #
+  # A hash where:
+  # * Keys are resolved asset paths (strings)
+  # * Values are +MappedFile+ objects with +name+, +path+, +preload+, and +integrity+ attributes
+  #
+  # Missing assets are gracefully handled and excluded from the returned hash.
+  #
+  # ==== Examples
+  #
+  #   # Get all preloaded packages for the default "application" entry point
+  #   packages = importmap.preloaded_module_packages(resolver: ApplicationController.helpers)
+  #   # => { "/assets/application-abc123.js" => #<struct name="application", path="application.js", preload=true, integrity=nil>,
+  #   #      "https://cdn.skypack.dev/react" => #<struct name="react", path="https://cdn.skypack.dev/react", preload=true, integrity="sha384-..."> }
+  #
+  #   # Get preloaded packages for a specific entry point
+  #   packages = importmap.preloaded_module_packages(resolver: helpers, entry_point: "admin")
+  #
+  #   # Get preloaded packages for multiple entry points
+  #   packages = importmap.preloaded_module_packages(resolver: helpers, entry_point: ["application", "admin"])
+  #
+  #   # Use a custom cache key for different asset hosts
+  #   packages = importmap.preloaded_module_packages(resolver: helpers, cache_key: "cdn_host")
+  def preloaded_module_packages(resolver:, entry_point: "application", cache_key: :preloaded_module_packages)
     cache_as(cache_key) do
-      resolve_asset_paths(expanded_preloading_packages_and_directories(entry_point:), resolver:).values
+      expanded_preloading_packages_and_directories(entry_point:).to_h do |_, package|
+        [resolve_asset_path(package.path, resolver: resolver), package]
+      end.delete_if { |key| key.nil? }
     end
   end
 
