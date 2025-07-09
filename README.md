@@ -44,7 +44,7 @@ import React from "./node_modules/react"
 import React from "https://ga.jspm.io/npm:react@17.0.1/index.js"
 ```
 
-Importmap-rails provides a clean API for mapping "bare module specifiers" like `"react"` 
+Importmap-rails provides a clean API for mapping "bare module specifiers" like `"react"`
 to 1 of the 3 viable ways of loading ES Module javascript packages.
 
 For example:
@@ -54,11 +54,11 @@ For example:
 pin "react", to: "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
-means "everytime you see `import React from "react"` 
+means "everytime you see `import React from "react"`
 change it to `import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"`"
 
 ```js
-import React from "react" 
+import React from "react"
 // => import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
@@ -129,6 +129,91 @@ If you later wish to remove a downloaded pin:
 ```bash
 ./bin/importmap unpin react
 Unpinning and removing "react"
+```
+
+## Subresource Integrity (SRI)
+
+For enhanced security, importmap-rails automatically includes [Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hashes by default when pinning packages. This ensures that JavaScript files loaded from CDNs haven't been tampered with.
+
+### Default behavior with integrity
+
+When you pin a package, integrity hashes are automatically included:
+
+```bash
+./bin/importmap pin lodash
+Pinning "lodash" to vendor/javascript/lodash.js via download from https://ga.jspm.io/npm:lodash@4.17.21/lodash.js
+  Using integrity: sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF
+```
+
+This generates a pin in your `config/importmap.rb` with the integrity hash:
+
+```ruby
+pin "lodash", integrity: "sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF" # @4.17.21
+```
+
+### Opting out of integrity
+
+If you need to disable integrity checking (not recommended for security reasons), you can use the `--no-integrity` flag:
+
+```bash
+./bin/importmap pin lodash --no-integrity
+Pinning "lodash" to vendor/javascript/lodash.js via download from https://ga.jspm.io/npm:lodash@4.17.21/lodash.js
+```
+
+This generates a pin without integrity:
+
+```ruby
+pin "lodash" # @4.17.21
+```
+
+### Adding integrity to existing pins
+
+If you have existing pins without integrity hashes, you can add them using the `integrity` command:
+
+```bash
+# Add integrity to specific packages
+./bin/importmap integrity lodash react
+
+# Add integrity to all pinned packages
+./bin/importmap integrity
+
+# Update your importmap.rb file with integrity hashes
+./bin/importmap integrity --update
+```
+
+### How integrity works
+
+The integrity hashes are automatically included in your import map and module preload tags:
+
+**Import map JSON:**
+```json
+{
+  "imports": {
+    "lodash": "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js"
+  },
+  "integrity": {
+    "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js": "sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF"
+  }
+}
+```
+
+**Module preload tags:**
+```html
+<link rel="modulepreload" href="https://ga.jspm.io/npm:lodash@4.17.21/lodash.js" integrity="sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF">
+```
+
+Modern browsers will automatically validate these integrity hashes when loading the JavaScript modules, ensuring the files haven't been modified.
+
+### Redownloading packages with integrity
+
+The `pristine` command also includes integrity by default:
+
+```bash
+# Redownload all packages with integrity (default)
+./bin/importmap pristine
+
+# Redownload packages without integrity
+./bin/importmap pristine --no-integrity
 ```
 
 ## Preloading pinned modules

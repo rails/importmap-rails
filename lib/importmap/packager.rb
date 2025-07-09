@@ -17,34 +17,39 @@ class Importmap::Packager
     @vendor_path    = Pathname.new(vendor_path)
   end
 
-  def import(*packages, env: "production", from: "jspm")
+  def import(*packages, env: "production", from: "jspm", integrity: false)
     response = post_json({
       "install"      => Array(packages),
       "flattenScope" => true,
       "env"          => [ "browser", "module", env ],
-      "provider"     => normalize_provider(from)
+      "provider"     => normalize_provider(from),
+      "integrity"    => integrity
     })
 
     case response.code
-    when "200"        then extract_parsed_imports(response)
-    when "404", "401" then nil
-    else                   handle_failure_response(response)
+    when "200"
+      extract_parsed_response(response)
+    when "404", "401"
+      nil
+    else
+      handle_failure_response(response)
     end
   end
 
-  def pin_for(package, url)
-    %(pin "#{package}", to: "#{url}")
+  def pin_for(package, url = nil, preloads: nil, integrity: nil)
+    to = url ? %(, to: "#{url}") : ""
+    preload_param = preload(preloads)
+    integrity_param = integrity ? %(, integrity: "#{integrity}") : ""
+
+     %(pin "#{package}") + to + preload_param + integrity_param
   end
 
-  def vendored_pin_for(package, url, preloads = nil)
+  def vendored_pin_for(package, url, preloads = nil, integrity: nil)
     filename = package_filename(package)
     version  = extract_package_version_from(url)
+    to = "#{package}.js" != filename ? filename : nil
 
-    if "#{package}.js" == filename
-      %(pin "#{package}"#{preload(preloads)} # #{version})
-    else
-      %(pin "#{package}", to: "#{filename}"#{preload(preloads)} # #{version})
-    end
+    pin_for(package, to, preloads: preloads, integrity: integrity) + %( # #{version})
   end
 
   def packaged?(package)
@@ -88,8 +93,15 @@ class Importmap::Packager
       name.to_s == "jspm" ? "jspm.io" : name.to_s
     end
 
-    def extract_parsed_imports(response)
-      JSON.parse(response.body).dig("map", "imports")
+    def extract_parsed_response(response)
+      parsed = JSON.parse(response.body)
+      imports = parsed.dig("map", "imports")
+      integrity = parsed.dig("map", "integrity") || {}
+
+      {
+        imports: imports,
+        integrity: integrity
+      }
     end
 
     def handle_failure_response(response)
