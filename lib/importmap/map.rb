@@ -25,9 +25,9 @@ class Importmap::Map
     self
   end
 
-  def pin(name, to: nil, preload: true)
+  def pin(name, to: nil, preload: true, integrity: nil)
     clear_cache
-    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
+    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload, integrity: integrity)
   end
 
   def pin_all_from(dir, under: nil, to: nil, preload: true)
@@ -53,7 +53,9 @@ class Importmap::Map
   # `cache_key` to vary the cache used by this method for the different cases.
   def to_json(resolver:, cache_key: :json)
     cache_as(cache_key) do
-      JSON.pretty_generate({ "imports" => resolve_asset_paths(expanded_packages_and_directories, resolver: resolver) })
+      packages = expanded_packages_and_directories
+      map = build_import_map(packages, resolver: resolver)
+      JSON.pretty_generate(map)
     end
   end
 
@@ -85,7 +87,7 @@ class Importmap::Map
 
   private
     MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
-    MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
+    MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
 
     def cache_as(name)
       if result = @cache[name.to_s]
@@ -105,17 +107,39 @@ class Importmap::Map
 
     def resolve_asset_paths(paths, resolver:)
       paths.transform_values do |mapping|
-        begin
-          resolver.path_to_asset(mapping.path)
-        rescue => e
-          if rescuable_asset_error?(e)
-            Rails.logger.warn "Importmap skipped missing path: #{mapping.path}"
-            nil
-          else
-            raise e
-          end
-        end
+        resolve_asset_path(mapping.path, resolver:)
       end.compact
+    end
+
+    def resolve_asset_path(path, resolver:)
+      begin
+        resolver.path_to_asset(path)
+      rescue => e
+        if rescuable_asset_error?(e)
+          Rails.logger.warn "Importmap skipped missing path: #{path}"
+          nil
+        else
+          raise e
+        end
+      end
+    end
+
+    def build_import_map(packages, resolver:)
+      map = { "imports" => resolve_asset_paths(packages, resolver: resolver) }
+      integrity = build_integrity_hash(packages, resolver: resolver)
+      map["integrity"] = integrity unless integrity.empty?
+      map
+    end
+
+    def build_integrity_hash(packages, resolver:)
+      packages.filter_map do |name, mapping|
+        next unless mapping.integrity
+
+        resolved_path = resolve_asset_path(mapping.path, resolver: resolver)
+        next unless resolved_path
+
+        [resolved_path, mapping.integrity]
+      end.to_h
     end
 
     def expanded_preloading_packages_and_directories(entry_point:)

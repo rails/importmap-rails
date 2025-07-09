@@ -5,8 +5,8 @@ class ImportmapTest < ActiveSupport::TestCase
     @importmap = Importmap::Map.new.tap do |map|
       map.draw do
         pin "application", preload: false
-        pin "editor", to: "rich_text.js", preload: false
-        pin "not_there", to: "nowhere.js", preload: false
+        pin "editor", to: "rich_text.js", preload: false, integrity: "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+        pin "not_there", to: "nowhere.js", preload: false, integrity: "sha384-somefakehash"
         pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
         pin "leaflet", to: "https://cdn.skypack.dev/leaflet", preload: 'application'
         pin "chartkick", to: "https://cdn.skypack.dev/chartkick", preload: ['application', 'alternate']
@@ -28,6 +28,22 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "local pin with explicit to" do
     assert_match %r|assets/rich_text-.*\.js|, generate_importmap_json["imports"]["editor"]
+  end
+
+  test "local pin with integrity" do
+    editor_path = generate_importmap_json["imports"]["editor"]
+    assert_match %r|assets/rich_text-.*\.js|, editor_path
+    assert_equal "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb", generate_importmap_json["integrity"][editor_path]
+    assert_nil generate_importmap_json["imports"]["not_there"]
+    assert_not_includes generate_importmap_json["integrity"].values, "sha384-somefakehash"
+  end
+
+  test "integrity is not present if there is no integrity set in the map" do
+    @importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", preload: false
+    end
+
+    assert_not generate_importmap_json.key?("integrity")
   end
 
   test "local pin missing is removed from generated importmap" do
@@ -138,6 +154,6 @@ class ImportmapTest < ActiveSupport::TestCase
 
   private
     def generate_importmap_json
-      JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
+      @generate_importmap_json ||= JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
     end
 end
