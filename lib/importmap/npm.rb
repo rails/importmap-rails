@@ -76,13 +76,19 @@ class Importmap::Npm
       request = Net::HTTP::Get.new(uri)
       request["Content-Type"] = "application/json"
 
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
-        http.request(request)
-      }
+      response = begin
+        Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+          http.request(request)
+        }
+      rescue => error
+        raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
+      end
+
+      unless response.code.to_i < 300
+        raise HTTPError, "Unexpected error response #{response.code}: #{response.body}"
+      end
 
       response.body
-    rescue => error
-      raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
     end
 
     def find_latest_version(response)
@@ -111,6 +117,11 @@ class Importmap::Npm
       return {} if body.empty?
 
       response = post_json(uri, body)
+
+      unless response.code.to_i < 300
+        raise HTTPError, "Unexpected error response #{response.code}: #{response.body}"
+      end
+
       JSON.parse(response.body)
     end
 
