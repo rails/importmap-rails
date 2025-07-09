@@ -18,6 +18,7 @@ class ImportmapTest < ActiveSupport::TestCase
         pin_all_from "app/javascript/helpers", under: "helpers", preload: true
         pin_all_from "lib/assets/javascripts", preload: true
         pin_all_from "app/components", under: "controllers", to: "", preload: true
+        pin_all_from "vendor/javascript/shoelace", under: "shoelace", preserve_extname: true, preload: true
       end
     end
   end
@@ -71,6 +72,14 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "directory pin without path or under" do
     assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
+  end
+
+  test "directory pin respects preserve_extname option" do
+    assert_nil generate_importmap_json["imports"]["shoelace/shoelace-autoloader"]
+    assert_match %r|shoelace/shoelace-autoloader-.*\.js|, generate_importmap_json["imports"]["shoelace/shoelace-autoloader.js"]
+    assert_match %r|shoelace/chunks/chunk.2L6GHXIJ-.*\.js|, generate_importmap_json["imports"]["shoelace/chunks/chunk.2L6GHXIJ.js"]
+    assert_match %r|shoelace/components/alert/alert-.*\.js|, generate_importmap_json["imports"]["shoelace/components/alert/alert.js"]
+    assert_match %r|shoelace/components/alert/alert.component-.*\.js|, generate_importmap_json["imports"]["shoelace/components/alert/alert.component.js"]
   end
 
   test 'invalid importmap file results in error' do
