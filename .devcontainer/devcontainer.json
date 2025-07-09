@@ -1,9 +1,9 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ruby
 {
-	"name": "Ruby",
+	"name": "importmaps-rails",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/ruby:1-3-bookworm",
+	"image": "ghcr.io/rails/devcontainer/images/ruby:3.4.4",
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {}
 	}
