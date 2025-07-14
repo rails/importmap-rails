@@ -54,7 +54,7 @@ For example:
 pin "react", to: "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
-means "everytime you see `import React from "react"`
+means "every time you see `import React from "react"`
 change it to `import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"`"
 
 ```js
@@ -302,7 +302,7 @@ Pin your js file:
 pin "checkout", preload: false
 ```
 
-Import your module on the specific page. Note: you'll likely want to use a `content_for` block on the specifc page/partial, then yield it in your layout.
+Import your module on the specific page. Note: you'll likely want to use a `content_for` block on the specific page/partial, then yield it in your layout.
 
 ```erb
 <% content_for :head do %>
