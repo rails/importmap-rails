@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class ImportmapTest < ActiveSupport::TestCase
   def setup
@@ -87,6 +88,52 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "directory pin without path or under" do
     assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
+  end
+
+  test "importmap json includes integrity hashes from integrity: true" do
+    importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", integrity: true
+    end
+
+    json = JSON.parse(importmap.to_json(resolver: ApplicationController.helpers))
+
+    assert json["integrity"], "Should include integrity section"
+
+    application_path = json["imports"]["application"]
+    assert application_path, "Should include application in imports"
+    if ENV["ASSETS_PIPELINE"] == "sprockets"
+      assert_equal "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=", json["integrity"][application_path]
+    else
+      assert_equal "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb", json["integrity"][application_path]
+    end
+  end
+
+  test "integrity: true with missing asset should be gracefully handled" do
+    importmap = Importmap::Map.new.tap do |map|
+      map.pin "missing", to: "nonexistent.js", preload: true, integrity: true
+    end
+
+    json = JSON.parse(importmap.to_json(resolver: ApplicationController.helpers))
+
+    assert_empty json["imports"]
+    assert_nil json["integrity"]
+  end
+
+  test "integrity: true with resolver that doesn't have asset_integrity method returns nil" do
+    mock_resolver = Minitest::Mock.new
+
+    mock_resolver.expect(:path_to_asset, "/assets/application-abc123.js", ["application.js"])
+    mock_resolver.expect(:path_to_asset, "/assets/application-abc123.js", ["application.js"])
+
+    importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", integrity: true
+    end
+
+    json = JSON.parse(importmap.to_json(resolver: mock_resolver))
+
+    assert json["imports"]["application"]
+    assert_match %r|/assets/application-.*\.js|, json["imports"]["application"]
+    assert_nil json["integrity"]
   end
 
   test 'invalid importmap file results in error' do
@@ -243,6 +290,18 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_equal "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb", packages[editor_path].integrity
   end
 
+  test "pin with integrity: true should calculate integrity dynamically" do
+    importmap = Importmap::Map.new.tap do |map|
+      map.pin "editor", to: "rich_text.js", preload: true, integrity: "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+    end
+
+    packages = importmap.preloaded_module_packages(resolver: ApplicationController.helpers)
+
+    editor_path = packages.keys.find { |path| path.include?("rich_text") }
+    assert editor_path, "Should include editor package"
+    assert_equal "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb", packages[editor_path].integrity
+  end
+
   test "preloaded_module_packages uses custom cache_key" do
     set_one = @importmap.preloaded_module_packages(resolver: ApplicationController.helpers, cache_key: "1").to_s
 
@@ -277,6 +336,23 @@ class ImportmapTest < ActiveSupport::TestCase
 
     existing_path = packages.keys.find { |path| path&.include?("application") }
     assert existing_path, "Should include existing asset"
+  end
+
+  test "pin_all_from with integrity: true should calculate integrity dynamically" do
+    importmap = Importmap::Map.new.tap do |map|
+      map.pin_all_from "app/javascript/controllers", under: "controllers", integrity: true
+    end
+
+    packages = importmap.preloaded_module_packages(resolver: ApplicationController.helpers)
+
+    controller_path = packages.keys.find { |path| path.include?("goodbye_controller") }
+    assert controller_path, "Should include goodbye_controller package"
+    if ENV["ASSETS_PIPELINE"] == "sprockets"
+      assert_equal "sha256-6yWqFiaT8vQURc/OiKuIrEv9e/y4DMV/7nh7s5o3svA=", packages[controller_path].integrity
+    else
+      assert_equal "sha384-k7HGo2DomvN21em+AypqCekIFE3quejFnjQp3NtEIMyvFNpIdKThZhxr48anSNmP", packages[controller_path].integrity
+    end
+    assert_not_includes packages.map { |_, v| v.integrity }, nil
   end
 
   private

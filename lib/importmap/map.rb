@@ -30,9 +30,9 @@ class Importmap::Map
     @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload, integrity: integrity)
   end
 
-  def pin_all_from(dir, under: nil, to: nil, preload: true)
+  def pin_all_from(dir, under: nil, to: nil, preload: true, integrity: nil)
     clear_cache
-    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
+    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload, integrity: integrity)
   end
 
   # Returns an array of all the resolved module paths of the pinned packages. The `resolver` must respond to
@@ -92,9 +92,21 @@ class Importmap::Map
   #   packages = importmap.preloaded_module_packages(resolver: helpers, cache_key: "cdn_host")
   def preloaded_module_packages(resolver:, entry_point: "application", cache_key: :preloaded_module_packages)
     cache_as(cache_key) do
-      expanded_preloading_packages_and_directories(entry_point:).to_h do |_, package|
-        [resolve_asset_path(package.path, resolver: resolver), package]
-      end.delete_if { |key| key.nil? }
+      expanded_preloading_packages_and_directories(entry_point:).filter_map do |_, package|
+        resolved_path = resolve_asset_path(package.path, resolver: resolver)
+        next unless resolved_path
+
+        resolved_integrity = resolve_integrity_value(package.integrity, package.path, resolver: resolver)
+
+        package = MappedFile.new(
+          name: package.name,
+          path: package.path,
+          preload: package.preload,
+          integrity: resolved_integrity
+        )
+
+        [resolved_path, package]
+      end.to_h
     end
   end
 
@@ -138,7 +150,7 @@ class Importmap::Map
   end
 
   private
-    MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
+    MappedDir  = Struct.new(:dir, :path, :under, :preload, :integrity, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
 
     def cache_as(name)
@@ -190,8 +202,20 @@ class Importmap::Map
         resolved_path = resolve_asset_path(mapping.path, resolver: resolver)
         next unless resolved_path
 
-        [resolved_path, mapping.integrity]
+        integrity_value = resolve_integrity_value(mapping.integrity, mapping.path, resolver: resolver)
+        next unless integrity_value
+
+        [resolved_path, integrity_value]
       end.to_h
+    end
+
+    def resolve_integrity_value(integrity, path, resolver:)
+      case integrity
+      when true
+        resolver.asset_integrity(path) if resolver.respond_to?(:asset_integrity)
+      when String
+        integrity
+      end
     end
 
     def expanded_preloading_packages_and_directories(entry_point:)
@@ -210,7 +234,12 @@ class Importmap::Map
             module_name     = module_name_from(module_filename, mapping)
             module_path     = module_path_from(module_filename, mapping)
 
-            paths[module_name] = MappedFile.new(name: module_name, path: module_path, preload: mapping.preload)
+            paths[module_name] = MappedFile.new(
+              name: module_name,
+              path: module_path,
+              preload: mapping.preload,
+              integrity: mapping.integrity
+            )
           end
         end
       end

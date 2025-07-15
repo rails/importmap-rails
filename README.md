@@ -79,9 +79,14 @@ If you want to import local js module files from `app/javascript/src` or other s
 ```rb
 # config/importmap.rb
 pin_all_from 'app/javascript/src', under: 'src', to: 'src'
+
+# With automatic integrity calculation for enhanced security
+pin_all_from 'app/javascript/controllers', under: 'controllers', integrity: true
 ```
 
 The `:to` parameter is only required if you want to change the destination logical import name. If you drop the :to option, you must place the :under option directly after the first parameter.
+
+The `integrity: true` option automatically calculates integrity hashes for all files in the directory, providing security benefits without manual hash management.
 
 Allows you to:
 
@@ -179,6 +184,52 @@ If you have existing pins without integrity hashes, you can add them using the `
 
 # Update your importmap.rb file with integrity hashes
 ./bin/importmap integrity --update
+```
+
+### Automatic integrity for local assets
+
+For local assets served by the Rails asset pipeline (like those created with `pin` or `pin_all_from`), you can use `integrity: true` to automatically calculate integrity hashes from the compiled assets:
+
+```ruby
+# config/importmap.rb
+
+# Automatically calculate integrity from asset pipeline
+pin "application", integrity: true
+pin "admin", to: "admin.js", integrity: true
+
+# Works with pin_all_from too
+pin_all_from "app/javascript/controllers", under: "controllers", integrity: true
+pin_all_from "app/javascript/lib", under: "lib", integrity: true
+
+# Mixed usage
+pin "local_module", integrity: true              # Auto-calculated
+pin "cdn_package", integrity: "sha384-abc123..." # Pre-calculated
+pin "no_integrity_package"                       # No integrity (default)
+```
+
+This is particularly useful for:
+* **Local JavaScript files** managed by your Rails asset pipeline
+* **Bulk operations** with `pin_all_from` where calculating hashes manually would be tedious
+* **Development workflow** where asset contents change frequently
+
+The `integrity: true` option:
+* Uses the Rails asset pipeline's built-in integrity calculation
+* Works with both Sprockets and Propshaft
+* Automatically updates when assets are recompiled
+* Gracefully handles missing assets (returns `nil` for non-existent files)
+
+**Example output with `integrity: true`:**
+```json
+{
+  "imports": {
+    "application": "/assets/application-abc123.js",
+    "controllers/hello_controller": "/assets/controllers/hello_controller-def456.js"
+  },
+  "integrity": {
+    "/assets/application-abc123.js": "sha256-xyz789...",
+    "/assets/controllers/hello_controller-def456.js": "sha256-uvw012..."
+  }
+}
 ```
 
 ### How integrity works
