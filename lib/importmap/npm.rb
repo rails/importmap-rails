@@ -3,14 +3,17 @@ require "uri"
 require "json"
 
 class Importmap::Npm
+  PIN_REGEX = /^pin ["']([^["']]*)["'].*/
+
   Error     = Class.new(StandardError)
   HTTPError = Class.new(Error)
 
   singleton_class.attr_accessor :base_uri
   self.base_uri = URI("https://registry.npmjs.org")
 
-  def initialize(importmap_path = "config/importmap.rb")
+  def initialize(importmap_path = "config/importmap.rb", vendor_path: "vendor/javascript")
     @importmap_path = Pathname.new(importmap_path)
+    @vendor_path    = Pathname.new(vendor_path)
   end
 
   def outdated_packages
@@ -48,15 +51,19 @@ class Importmap::Npm
     # We cannot use the name after "pin" because some dependencies are loaded from inside packages
     # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
 
-    importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s["']]*)).*$/) |
-      importmap.scan(/^pin ["']([^["']]*)["'].* #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
+    with_versions = importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s["']]*)).*$/) |
+      importmap.scan(/#{PIN_REGEX} #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
+
+    vendored_packages_without_version(with_versions).each do |package, path|
+      $stdout.puts "Ignoring #{package} (#{path}) since no version is specified in the importmap"
+    end
+
+    with_versions
   end
 
   private
     OutdatedPackage   = Struct.new(:name, :current_version, :latest_version, :error, keyword_init: true)
     VulnerablePackage = Struct.new(:name, :severity, :vulnerable_versions, :vulnerability, keyword_init: true)
-
-
 
     def importmap
       @importmap ||= File.read(@importmap_path)
@@ -129,5 +136,20 @@ class Importmap::Npm
       Net::HTTP.post(uri, body.to_json, "Content-Type" => "application/json")
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
+    end
+
+    def vendored_packages_without_version(packages_with_versions)
+      importmap
+        .lines
+        .filter_map do |line|
+          next line.match(/#{PIN_REGEX}to: ["']([^["']]*)["'].*/).captures if line.include?("to:")
+          match = line.match(PIN_REGEX)
+          [match.captures.first, "#{match.captures.first}.js"] if match
+        end
+        .filter_map do |package, filename|
+          next if packages_with_versions.map(&:first).include?(package)
+          path = File.join(@vendor_path, filename)
+          [package, path] if File.exist?(path)
+        end
     end
 end
