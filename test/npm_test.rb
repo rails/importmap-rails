@@ -48,21 +48,19 @@ class Importmap::NpmTest < ActiveSupport::TestCase
 
   test "warns (and ignores) vendored packages without version" do
     Dir.mktmpdir do |vendor_path|
-      with_vendored_package(vendor_path, "foo.js") do |foo_path|
-        with_vendored_package(vendor_path, "baz.js") do |baz_path|
-          npm = Importmap::Npm.new(file_fixture("import_map_without_cdn_and_versions.rb"), vendor_path: vendor_path)
+      foo_path = create_vendored_file(vendor_path, "foo.js")
+      baz_path = create_vendored_file(vendor_path, "baz.js")
 
-          outdated_packages = []
-          stdout, _stderr = capture_io { outdated_packages = npm.outdated_packages }
+      npm = Importmap::Npm.new(file_fixture("import_map_without_cdn_and_versions.rb"), vendor_path: vendor_path)
 
-          expected = [
-            "Ignoring foo (#{foo_path}) since no version is specified in the importmap\n",
-            "Ignoring @bar/baz (#{baz_path}) since no version is specified in the importmap\n"
-          ]
-          assert_equal(expected, stdout.lines)
-          assert_equal(0, outdated_packages.size)
-        end
-      end
+      outdated_packages = []
+      stdout, _stderr = capture_io { outdated_packages = npm.outdated_packages }
+
+      assert_equal(<<~OUTPUT, stdout)
+        Ignoring foo (#{foo_path}) since no version is specified in the importmap
+        Ignoring @bar/baz (#{baz_path}) since no version is specified in the importmap
+      OUTPUT
+      assert_equal(0, outdated_packages.size)
     end
   end
 
@@ -142,11 +140,9 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
-  def with_vendored_package(dir, name)
+  def create_vendored_file(dir, name)
     path = File.join(dir, name)
     File.write(path, "console.log(123)")
-    yield path
-  ensure
-    File.delete(path)
+    path
   end
 end
