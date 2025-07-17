@@ -3,20 +3,22 @@ require "uri"
 require "json"
 
 class Importmap::Npm
+  PIN_REGEX = /^pin ["']([^["']]*)["'].*/
+
   Error     = Class.new(StandardError)
   HTTPError = Class.new(Error)
 
   singleton_class.attr_accessor :base_uri
   self.base_uri = URI("https://registry.npmjs.org")
 
-  def initialize(importmap_path = "config/importmap.rb")
+  def initialize(importmap_path = "config/importmap.rb", vendor_path: "vendor/javascript")
     @importmap_path = Pathname.new(importmap_path)
+    @vendor_path    = Pathname.new(vendor_path)
   end
 
   def outdated_packages
     packages_with_versions.each.with_object([]) do |(package, current_version), outdated_packages|
-      outdated_package = OutdatedPackage.new(name: package,
-                                             current_version: current_version)
+      outdated_package = OutdatedPackage.new(name: package, current_version: current_version)
 
       if !(response = get_package(package))
         outdated_package.error = 'Response error'
@@ -36,10 +38,12 @@ class Importmap::Npm
   def vulnerable_packages
     get_audit.flat_map do |package, vulnerabilities|
       vulnerabilities.map do |vulnerability|
-        VulnerablePackage.new(name: package,
-                              severity: vulnerability['severity'],
-                              vulnerable_versions: vulnerability['vulnerable_versions'],
-                              vulnerability: vulnerability['title'])
+        VulnerablePackage.new(
+          name: package,
+          severity: vulnerability['severity'],
+          vulnerable_versions: vulnerability['vulnerable_versions'],
+          vulnerability: vulnerability['title']
+        )
       end
     end.sort_by { |p| [p.name, p.severity] }
   end
@@ -47,16 +51,19 @@ class Importmap::Npm
   def packages_with_versions
     # We cannot use the name after "pin" because some dependencies are loaded from inside packages
     # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
+    with_versions = importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s["']]*)).*$/) |
+      importmap.scan(/#{PIN_REGEX} #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
 
-    importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s["']]*)).*$/) |
-      importmap.scan(/^pin ["']([^["']]*)["'].* #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
+    vendored_packages_without_version(with_versions).each do |package, path|
+      $stdout.puts "Ignoring #{package} (#{path}) since no version is specified in the importmap"
+    end
+
+    with_versions
   end
 
   private
     OutdatedPackage   = Struct.new(:name, :current_version, :latest_version, :error, keyword_init: true)
     VulnerablePackage = Struct.new(:name, :severity, :vulnerable_versions, :vulnerability, keyword_init: true)
-
-
 
     def importmap
       @importmap ||= File.read(@importmap_path)
@@ -129,5 +136,28 @@ class Importmap::Npm
       Net::HTTP.post(uri, body.to_json, "Content-Type" => "application/json")
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
+    end
+
+    def vendored_packages_without_version(packages_with_versions)
+      versioned_packages = packages_with_versions.map(&:first).to_set
+
+      importmap
+        .lines
+        .filter_map { |line| find_unversioned_vendored_package(line, versioned_packages) }
+    end
+
+    def find_unversioned_vendored_package(line, versioned_packages)
+      regexp = line.include?("to:")? /#{PIN_REGEX}to: ["']([^["']]*)["'].*/ : PIN_REGEX
+      match = line.match(regexp)
+
+      return unless match
+
+      package, filename = match.captures
+      filename ||= "#{package}.js"
+
+      return if versioned_packages.include?(package)
+
+      path = File.join(@vendor_path, filename)
+      [package, path] if File.exist?(path)
     end
 end

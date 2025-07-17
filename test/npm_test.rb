@@ -46,24 +46,21 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
-  test "missing outdated packages with mock" do
-    response = { "error" => "Not found" }.to_json
+  test "warns (and ignores) vendored packages without version" do
+    Dir.mktmpdir do |vendor_path|
+      foo_path = create_vendored_file(vendor_path, "foo.js")
+      baz_path = create_vendored_file(vendor_path, "baz.js")
 
-    @npm.stub(:get_json, response) do
-      outdated_packages = @npm.outdated_packages
+      npm = Importmap::Npm.new(file_fixture("import_map_without_cdn_and_versions.rb"), vendor_path: vendor_path)
 
-      assert_equal(1, outdated_packages.size)
-      assert_equal('md5', outdated_packages[0].name)
-      assert_equal('2.2.0', outdated_packages[0].current_version)
-      assert_equal('Not found', outdated_packages[0].error)
-    end
-  end
+      outdated_packages = []
+      stdout, _stderr = capture_io { outdated_packages = npm.outdated_packages }
 
-  test "failed outdated packages request with exception" do
-    Net::HTTP.stub(:start, proc { raise "Unexpected Error" }) do
-      assert_raises(Importmap::Npm::HTTPError) do
-        @npm.outdated_packages
-      end
+      assert_equal(<<~OUTPUT, stdout)
+        Ignoring foo (#{foo_path}) since no version is specified in the importmap
+        Ignoring @bar/baz (#{baz_path}) since no version is specified in the importmap
+      OUTPUT
+      assert_equal(0, outdated_packages.size)
     end
   end
 
@@ -141,5 +138,11 @@ class Importmap::NpmTest < ActiveSupport::TestCase
 
       assert_equal('version not found', outdated_packages[0].latest_version)
     end
+  end
+
+  def create_vendored_file(dir, name)
+    path = File.join(dir, name)
+    File.write(path, "console.log(123)")
+    path
   end
 end
