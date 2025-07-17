@@ -139,17 +139,25 @@ class Importmap::Npm
     end
 
     def vendored_packages_without_version(packages_with_versions)
+      versioned_packages = packages_with_versions.map(&:first).to_set
+
       importmap
         .lines
-        .filter_map do |line|
-          next line.match(/#{PIN_REGEX}to: ["']([^["']]*)["'].*/).captures if line.include?("to:")
-          match = line.match(PIN_REGEX)
-          [match.captures.first, "#{match.captures.first}.js"] if match
-        end
-        .filter_map do |package, filename|
-          next if packages_with_versions.map(&:first).include?(package)
-          path = File.join(@vendor_path, filename)
-          [package, path] if File.exist?(path)
-        end
+        .filter_map { |line| find_unversioned_vendored_package(line, versioned_packages) }
+    end
+
+    def find_unversioned_vendored_package(line, versioned_packages)
+      regexp = line.include?("to:")? /#{PIN_REGEX}to: ["']([^["']]*)["'].*/ : PIN_REGEX
+      match = line.match(regexp)
+
+      return unless match
+
+      package, filename = match.captures
+      filename ||= "#{package}.js"
+
+      return if versioned_packages.include?(package)
+
+      path = File.join(@vendor_path, filename)
+      [package, path] if File.exist?(path)
     end
 end
