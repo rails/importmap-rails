@@ -266,11 +266,12 @@ module MyEngine
 end
 ```
 
-## Checking for outdated or vulnerable packages
+## Checking for outdated, vulnerable or altered packages
 
 Importmap for Rails provides two commands to check your pinned packages:
 - `./bin/importmap outdated` checks the NPM registry for new versions
 - `./bin/importmap audit` checks the NPM registry for known security issues
+- `./bin/importmap verify` checks the vendored files against a fresh download
 
 ## Supporting legacy browsers such as Safari on iOS 15
 
