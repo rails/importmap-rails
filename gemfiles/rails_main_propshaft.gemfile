@@ -3,7 +3,7 @@
 source "https://rubygems.org"
 
 gem "rails", branch: "main", git: "https://github.com/rails/rails.git"
-gem "propshaft"
+gem "propshaft", ">= 1.2.0"
 gem "sqlite3"
 
 group :development do

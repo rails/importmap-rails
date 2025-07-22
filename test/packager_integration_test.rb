@@ -5,7 +5,8 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
   setup { @packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb")) }
 
   test "successful import against live service" do
-    assert_equal "https://ga.jspm.io/npm:react@17.0.2/index.js", @packager.import("react@17.0.2")["react"]
+    result = @packager.import("react@17.0.2")
+    assert_equal "https://ga.jspm.io/npm:react@17.0.2/index.js", result[:imports]["react"]
   end
 
   test "missing import against live service" do
@@ -40,7 +41,6 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
       @packager.download("react", package_url)
       assert File.exist?(vendored_package_file)
       assert_equal "// react@17.0.2 downloaded from #{package_url}", File.readlines(vendored_package_file).first.strip
-      
       @packager.remove("react")
       assert_not File.exist?(Pathname.new(vendor_dir).join("react.js"))
     end

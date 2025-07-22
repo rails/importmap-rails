@@ -44,7 +44,7 @@ import React from "./node_modules/react"
 import React from "https://ga.jspm.io/npm:react@17.0.1/index.js"
 ```
 
-Importmap-rails provides a clean API for mapping "bare module specifiers" like `"react"` 
+Importmap-rails provides a clean API for mapping "bare module specifiers" like `"react"`
 to 1 of the 3 viable ways of loading ES Module javascript packages.
 
 For example:
@@ -54,11 +54,11 @@ For example:
 pin "react", to: "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
-means "everytime you see `import React from "react"` 
+means "every time you see `import React from "react"`
 change it to `import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"`"
 
 ```js
-import React from "react" 
+import React from "react"
 // => import React from "https://ga.jspm.io/npm:react@17.0.2/index.js"
 ```
 
@@ -79,9 +79,14 @@ If you want to import local js module files from `app/javascript/src` or other s
 ```rb
 # config/importmap.rb
 pin_all_from 'app/javascript/src', under: 'src', to: 'src'
+
+# With automatic integrity calculation for enhanced security
+pin_all_from 'app/javascript/controllers', under: 'controllers', integrity: true
 ```
 
 The `:to` parameter is only required if you want to change the destination logical import name. If you drop the :to option, you must place the :under option directly after the first parameter.
+
+The `integrity: true` option automatically calculates integrity hashes for all files in the directory, providing security benefits without manual hash management.
 
 Allows you to:
 
@@ -129,6 +134,137 @@ If you later wish to remove a downloaded pin:
 ```bash
 ./bin/importmap unpin react
 Unpinning and removing "react"
+```
+
+## Subresource Integrity (SRI)
+
+For enhanced security, importmap-rails automatically includes [Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hashes by default when pinning packages. This ensures that JavaScript files loaded from CDNs haven't been tampered with.
+
+### Default behavior with integrity
+
+When you pin a package, integrity hashes are automatically included:
+
+```bash
+./bin/importmap pin lodash
+Pinning "lodash" to vendor/javascript/lodash.js via download from https://ga.jspm.io/npm:lodash@4.17.21/lodash.js
+  Using integrity: sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF
+```
+
+This generates a pin in your `config/importmap.rb` with the integrity hash:
+
+```ruby
+pin "lodash", integrity: "sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF" # @4.17.21
+```
+
+### Opting out of integrity
+
+If you need to disable integrity checking (not recommended for security reasons), you can use the `--no-integrity` flag:
+
+```bash
+./bin/importmap pin lodash --no-integrity
+Pinning "lodash" to vendor/javascript/lodash.js via download from https://ga.jspm.io/npm:lodash@4.17.21/lodash.js
+```
+
+This generates a pin without integrity:
+
+```ruby
+pin "lodash" # @4.17.21
+```
+
+### Adding integrity to existing pins
+
+If you have existing pins without integrity hashes, you can add them using the `integrity` command:
+
+```bash
+# Add integrity to specific packages
+./bin/importmap integrity lodash react
+
+# Add integrity to all pinned packages
+./bin/importmap integrity
+
+# Update your importmap.rb file with integrity hashes
+./bin/importmap integrity --update
+```
+
+### Automatic integrity for local assets
+
+For local assets served by the Rails asset pipeline (like those created with `pin` or `pin_all_from`), you can use `integrity: true` to automatically calculate integrity hashes from the compiled assets:
+
+```ruby
+# config/importmap.rb
+
+# Automatically calculate integrity from asset pipeline
+pin "application", integrity: true
+pin "admin", to: "admin.js", integrity: true
+
+# Works with pin_all_from too
+pin_all_from "app/javascript/controllers", under: "controllers", integrity: true
+pin_all_from "app/javascript/lib", under: "lib", integrity: true
+
+# Mixed usage
+pin "local_module", integrity: true              # Auto-calculated
+pin "cdn_package", integrity: "sha384-abc123..." # Pre-calculated
+pin "no_integrity_package"                       # No integrity (default)
+```
+
+This is particularly useful for:
+* **Local JavaScript files** managed by your Rails asset pipeline
+* **Bulk operations** with `pin_all_from` where calculating hashes manually would be tedious
+* **Development workflow** where asset contents change frequently
+
+The `integrity: true` option:
+* Uses the Rails asset pipeline's built-in integrity calculation
+* Works with both Sprockets and Propshaft
+* Automatically updates when assets are recompiled
+* Gracefully handles missing assets (returns `nil` for non-existent files)
+
+**Example output with `integrity: true`:**
+```json
+{
+  "imports": {
+    "application": "/assets/application-abc123.js",
+    "controllers/hello_controller": "/assets/controllers/hello_controller-def456.js"
+  },
+  "integrity": {
+    "/assets/application-abc123.js": "sha256-xyz789...",
+    "/assets/controllers/hello_controller-def456.js": "sha256-uvw012..."
+  }
+}
+```
+
+### How integrity works
+
+The integrity hashes are automatically included in your import map and module preload tags:
+
+**Import map JSON:**
+```json
+{
+  "imports": {
+    "lodash": "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js"
+  },
+  "integrity": {
+    "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js": "sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF"
+  }
+}
+```
+
+**Module preload tags:**
+```html
+<link rel="modulepreload" href="https://ga.jspm.io/npm:lodash@4.17.21/lodash.js" integrity="sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF">
+```
+
+Modern browsers will automatically validate these integrity hashes when loading the JavaScript modules, ensuring the files haven't been modified.
+
+### Redownloading packages with integrity
+
+The `pristine` command also includes integrity by default:
+
+```bash
+# Redownload all packages with integrity (default)
+./bin/importmap pristine
+
+# Redownload packages without integrity
+./bin/importmap pristine --no-integrity
 ```
 
 ## Preloading pinned modules
@@ -217,7 +353,7 @@ Pin your js file:
 pin "checkout", preload: false
 ```
 
-Import your module on the specific page. Note: you'll likely want to use a `content_for` block on the specifc page/partial, then yield it in your layout.
+Import your module on the specific page. Note: you'll likely want to use a `content_for` block on the specific page/partial, then yield it in your layout.
 
 ```erb
 <% content_for :head do %>

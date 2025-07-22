@@ -37,6 +37,7 @@ jobs:
 
     env:
       BUNDLE_GEMFILE: gemfiles/rails_${{ matrix.rails-version }}_${{ matrix.assets-pipeline }}.gemfile
+      ASSETS_PIPELINE: ${{ matrix.assets-pipeline }}
 
     steps:
       - uses: actions/checkout@v4

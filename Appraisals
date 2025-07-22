@@ -17,7 +17,6 @@ end
 
 appraise "rails_7.0_propshaft" do
   gem "rails", github: "rails/rails", branch: "7-0-stable"
-  gem "propshaft"
   gem "sqlite3", "~> 1.4"
 end
 
@@ -29,7 +28,6 @@ end
 
 appraise "rails_7.1_propshaft" do
   gem "rails", "~> 7.1.0"
-  gem "propshaft"
 end
 
 appraise "rails_7.2_sprockets" do
@@ -40,7 +38,6 @@ end
 
 appraise "rails_7.2_propshaft" do
   gem "rails", "~> 7.2.0"
-  gem "propshaft"
 end
 
 appraise "rails_8.0_sprockets" do
@@ -51,7 +48,6 @@ end
 
 appraise "rails_8.0_propshaft" do
   gem "rails", "~> 8.0.0"
-  gem "propshaft"
 end
 
 appraise "rails_main_sprockets" do
@@ -62,5 +58,4 @@ end
 
 appraise "rails_main_propshaft" do
   gem "rails", github: "rails/rails", branch: "main"
-  gem "propshaft"
 end

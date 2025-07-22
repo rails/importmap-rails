@@ -25,14 +25,14 @@ class Importmap::Map
     self
   end
 
-  def pin(name, to: nil, preload: true)
+  def pin(name, to: nil, preload: true, integrity: nil)
     clear_cache
-    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload)
+    @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload, integrity: integrity)
   end
 
-  def pin_all_from(dir, under: nil, to: nil, preload: true)
+  def pin_all_from(dir, under: nil, to: nil, preload: true, integrity: nil)
     clear_cache
-    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload)
+    @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload, integrity: integrity)
   end
 
   # Returns an array of all the resolved module paths of the pinned packages. The `resolver` must respond to
@@ -41,8 +41,72 @@ class Importmap::Map
   # resolve for different asset hosts, you can pass in a custom `cache_key` to vary the cache used by this method for
   # the different cases.
   def preloaded_module_paths(resolver:, entry_point: "application", cache_key: :preloaded_module_paths)
+    preloaded_module_packages(resolver: resolver, entry_point: entry_point, cache_key: cache_key).keys
+  end
+
+  # Returns a hash of resolved module paths to their corresponding package objects for all pinned packages
+  # that are marked for preloading. The hash keys are the resolved asset paths, and the values are the
+  # +MappedFile+ objects containing package metadata including name, path, preload setting, and integrity.
+  #
+  # The +resolver+ must respond to +path_to_asset+, such as +ActionController::Base.helpers+ or
+  # +ApplicationController.helpers+. You'll want to use the resolver that has been configured for the
+  # +asset_host+ you want these resolved paths to use.
+  #
+  # ==== Parameters
+  #
+  # [+resolver+]
+  #   An object that responds to +path_to_asset+ for resolving asset paths.
+  #
+  # [+entry_point+]
+  #   The entry point name or array of entry point names to determine which packages should be preloaded.
+  #   Defaults to +"application"+. Packages with +preload: true+ are always included regardless of entry point.
+  #   Packages with specific entry point names (e.g., +preload: "admin"+) are only included when that entry
+  #   point is specified.
+  #
+  # [+cache_key+]
+  #   A custom cache key to vary the cache used by this method for different cases, such as resolving
+  #   for different asset hosts. Defaults to +:preloaded_module_packages+.
+  #
+  # ==== Returns
+  #
+  # A hash where:
+  # * Keys are resolved asset paths (strings)
+  # * Values are +MappedFile+ objects with +name+, +path+, +preload+, and +integrity+ attributes
+  #
+  # Missing assets are gracefully handled and excluded from the returned hash.
+  #
+  # ==== Examples
+  #
+  #   # Get all preloaded packages for the default "application" entry point
+  #   packages = importmap.preloaded_module_packages(resolver: ApplicationController.helpers)
+  #   # => { "/assets/application-abc123.js" => #<struct name="application", path="application.js", preload=true, integrity=nil>,
+  #   #      "https://cdn.skypack.dev/react" => #<struct name="react", path="https://cdn.skypack.dev/react", preload=true, integrity="sha384-..."> }
+  #
+  #   # Get preloaded packages for a specific entry point
+  #   packages = importmap.preloaded_module_packages(resolver: helpers, entry_point: "admin")
+  #
+  #   # Get preloaded packages for multiple entry points
+  #   packages = importmap.preloaded_module_packages(resolver: helpers, entry_point: ["application", "admin"])
+  #
+  #   # Use a custom cache key for different asset hosts
+  #   packages = importmap.preloaded_module_packages(resolver: helpers, cache_key: "cdn_host")
+  def preloaded_module_packages(resolver:, entry_point: "application", cache_key: :preloaded_module_packages)
     cache_as(cache_key) do
-      resolve_asset_paths(expanded_preloading_packages_and_directories(entry_point:), resolver:).values
+      expanded_preloading_packages_and_directories(entry_point:).filter_map do |_, package|
+        resolved_path = resolve_asset_path(package.path, resolver: resolver)
+        next unless resolved_path
+
+        resolved_integrity = resolve_integrity_value(package.integrity, package.path, resolver: resolver)
+
+        package = MappedFile.new(
+          name: package.name,
+          path: package.path,
+          preload: package.preload,
+          integrity: resolved_integrity
+        )
+
+        [resolved_path, package]
+      end.to_h
     end
   end
 
@@ -53,7 +117,9 @@ class Importmap::Map
   # `cache_key` to vary the cache used by this method for the different cases.
   def to_json(resolver:, cache_key: :json)
     cache_as(cache_key) do
-      JSON.pretty_generate({ "imports" => resolve_asset_paths(expanded_packages_and_directories, resolver: resolver) })
+      packages = expanded_packages_and_directories
+      map = build_import_map(packages, resolver: resolver)
+      JSON.pretty_generate(map)
     end
   end
 
@@ -84,8 +150,8 @@ class Importmap::Map
   end
 
   private
-    MappedDir  = Struct.new(:dir, :path, :under, :preload, keyword_init: true)
-    MappedFile = Struct.new(:name, :path, :preload, keyword_init: true)
+    MappedDir  = Struct.new(:dir, :path, :under, :preload, :integrity, keyword_init: true)
+    MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
 
     def cache_as(name)
       if result = @cache[name.to_s]
@@ -105,17 +171,51 @@ class Importmap::Map
 
     def resolve_asset_paths(paths, resolver:)
       paths.transform_values do |mapping|
-        begin
-          resolver.path_to_asset(mapping.path)
-        rescue => e
-          if rescuable_asset_error?(e)
-            Rails.logger.warn "Importmap skipped missing path: #{mapping.path}"
-            nil
-          else
-            raise e
-          end
-        end
+        resolve_asset_path(mapping.path, resolver:)
       end.compact
+    end
+
+    def resolve_asset_path(path, resolver:)
+      begin
+        resolver.path_to_asset(path)
+      rescue => e
+        if rescuable_asset_error?(e)
+          Rails.logger.warn "Importmap skipped missing path: #{path}"
+          nil
+        else
+          raise e
+        end
+      end
+    end
+
+    def build_import_map(packages, resolver:)
+      map = { "imports" => resolve_asset_paths(packages, resolver: resolver) }
+      integrity = build_integrity_hash(packages, resolver: resolver)
+      map["integrity"] = integrity unless integrity.empty?
+      map
+    end
+
+    def build_integrity_hash(packages, resolver:)
+      packages.filter_map do |name, mapping|
+        next unless mapping.integrity
+
+        resolved_path = resolve_asset_path(mapping.path, resolver: resolver)
+        next unless resolved_path
+
+        integrity_value = resolve_integrity_value(mapping.integrity, mapping.path, resolver: resolver)
+        next unless integrity_value
+
+        [resolved_path, integrity_value]
+      end.to_h
+    end
+
+    def resolve_integrity_value(integrity, path, resolver:)
+      case integrity
+      when true
+        resolver.asset_integrity(path) if resolver.respond_to?(:asset_integrity)
+      when String
+        integrity
+      end
     end
 
     def expanded_preloading_packages_and_directories(entry_point:)
@@ -134,7 +234,12 @@ class Importmap::Map
             module_name     = module_name_from(module_filename, mapping)
             module_path     = module_path_from(module_filename, mapping)
 
-            paths[module_name] = MappedFile.new(name: module_name, path: module_path, preload: mapping.preload)
+            paths[module_name] = MappedFile.new(
+              name: module_name,
+              path: module_path,
+              preload: mapping.preload,
+              integrity: mapping.integrity
+            )
           end
         end
       end
