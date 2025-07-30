@@ -25,12 +25,12 @@ class Importmap::Map
     self
   end
 
-  def pin(name, to: nil, preload: true, integrity: nil)
+  def pin(name, to: nil, preload: true, integrity: true)
     clear_cache
     @packages[name] = MappedFile.new(name: name, path: to || "#{name}.js", preload: preload, integrity: integrity)
   end
 
-  def pin_all_from(dir, under: nil, to: nil, preload: true, integrity: nil)
+  def pin_all_from(dir, under: nil, to: nil, preload: true, integrity: true)
     clear_cache
     @directories[dir] = MappedDir.new(dir: dir, under: under, path: to, preload: preload, integrity: integrity)
   end

@@ -138,73 +138,24 @@ Unpinning and removing "react"
 
 ## Subresource Integrity (SRI)
 
-For enhanced security, importmap-rails automatically includes [Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hashes by default when pinning packages. This ensures that JavaScript files loaded from CDNs haven't been tampered with.
-
-### Default behavior with integrity
-
-When you pin a package, integrity hashes are automatically included:
-
-```bash
-./bin/importmap pin lodash
-Pinning "lodash" to vendor/javascript/lodash.js via download from https://ga.jspm.io/npm:lodash@4.17.21/lodash.js
-  Using integrity: sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF
-```
-
-This generates a pin in your `config/importmap.rb` with the integrity hash:
-
-```ruby
-pin "lodash", integrity: "sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF" # @4.17.21
-```
-
-### Opting out of integrity
-
-If you need to disable integrity checking (not recommended for security reasons), you can use the `--no-integrity` flag:
-
-```bash
-./bin/importmap pin lodash --no-integrity
-Pinning "lodash" to vendor/javascript/lodash.js via download from https://ga.jspm.io/npm:lodash@4.17.21/lodash.js
-```
-
-This generates a pin without integrity:
-
-```ruby
-pin "lodash" # @4.17.21
-```
-
-### Adding integrity to existing pins
-
-If you have existing pins without integrity hashes, you can add them using the `integrity` command:
-
-```bash
-# Add integrity to specific packages
-./bin/importmap integrity lodash react
-
-# Add integrity to all pinned packages
-./bin/importmap integrity
-
-# Update your importmap.rb file with integrity hashes
-./bin/importmap integrity --update
-```
+For enhanced security, importmap-rails supports [Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hashes for packages loaded from external CDNs.
 
 ### Automatic integrity for local assets
 
-For local assets served by the Rails asset pipeline (like those created with `pin` or `pin_all_from`), you can use `integrity: true` to automatically calculate integrity hashes from the compiled assets:
+Starting with importmap-rails, **`integrity: true` is the default** for all pins. This automatically calculates integrity hashes for local assets served by the Rails asset pipeline:
 
 ```ruby
 # config/importmap.rb
 
-# Automatically calculate integrity from asset pipeline
-pin "application", integrity: true
-pin "admin", to: "admin.js", integrity: true
+# These all use integrity: true by default
+pin "application"                                               # Auto-calculated integrity
+pin "admin", to: "admin.js"                                     # Auto-calculated integrity
+pin_all_from "app/javascript/controllers", under: "controllers" # Auto-calculated integrity
 
-# Works with pin_all_from too
-pin_all_from "app/javascript/controllers", under: "controllers", integrity: true
-pin_all_from "app/javascript/lib", under: "lib", integrity: true
-
-# Mixed usage
-pin "local_module", integrity: true              # Auto-calculated
-pin "cdn_package", integrity: "sha384-abc123..." # Pre-calculated
-pin "no_integrity_package"                       # No integrity (default)
+# Mixed usage - explicitly controlling integrity
+pin "cdn_package", integrity: "sha384-abc123..." # Pre-calculated hash
+pin "no_integrity_package", integrity: false     # Explicitly disable integrity
+pin "nil_integrity_package", integrity: nil      # Explicitly disable integrity
 ```
 
 This is particularly useful for:
@@ -212,11 +163,16 @@ This is particularly useful for:
 * **Bulk operations** with `pin_all_from` where calculating hashes manually would be tedious
 * **Development workflow** where asset contents change frequently
 
-The `integrity: true` option:
-* Uses the Rails asset pipeline's built-in integrity calculation
-* Works with both Sprockets and Propshaft
-* Automatically updates when assets are recompiled
-* Gracefully handles missing assets (returns `nil` for non-existent files)
+This behavior can be disabled by setting `integrity: false` or `integrity: nil`
+
+**Important for Propshaft users:** SRI support requires Propshaft 1.2+ and you must configure the integrity hash algorithm in your application:
+
+```ruby
+# config/application.rb or config/environments/*.rb
+config.assets.integrity_hash_algorithm = 'sha256'  # or 'sha384', 'sha512'
+```
+
+Without this configuration, integrity will be disabled by default when using Propshaft. Sprockets includes integrity support out of the box.
 
 **Example output with `integrity: true`:**
 ```json
@@ -240,10 +196,14 @@ The integrity hashes are automatically included in your import map and module pr
 ```json
 {
   "imports": {
-    "lodash": "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js"
+    "lodash": "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js",
+    "application": "/assets/application-abc123.js",
+    "controllers/hello_controller": "/assets/controllers/hello_controller-def456.js"
   },
   "integrity": {
     "https://ga.jspm.io/npm:lodash@4.17.21/lodash.js": "sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF"
+    "/assets/application-abc123.js": "sha256-xyz789...",
+    "/assets/controllers/hello_controller-def456.js": "sha256-uvw012..."
   }
 }
 ```
@@ -251,21 +211,11 @@ The integrity hashes are automatically included in your import map and module pr
 **Module preload tags:**
 ```html
 <link rel="modulepreload" href="https://ga.jspm.io/npm:lodash@4.17.21/lodash.js" integrity="sha384-PkIkha4kVPRlGtFantHjuv+Y9mRefUHpLFQbgOYUjzy247kvi16kLR7wWnsAmqZF">
+<link rel="modulepreload" href="/assets/application-abc123.js" integrity="sha256-xyz789...">
+<link rel="modulepreload" href="/assets/controllers/hello_controller-def456.js" integrity="sha256-uvw012...">
 ```
 
 Modern browsers will automatically validate these integrity hashes when loading the JavaScript modules, ensuring the files haven't been modified.
-
-### Redownloading packages with integrity
-
-The `pristine` command also includes integrity by default:
-
-```bash
-# Redownload all packages with integrity (default)
-./bin/importmap pristine
-
-# Redownload packages without integrity
-./bin/importmap pristine --no-integrity
-```
 
 ## Preloading pinned modules
 

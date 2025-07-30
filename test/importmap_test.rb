@@ -5,13 +5,13 @@ class ImportmapTest < ActiveSupport::TestCase
   def setup
     @importmap = Importmap::Map.new.tap do |map|
       map.draw do
-        pin "application", preload: false
+        pin "application", preload: false, integrity: false
         pin "editor", to: "rich_text.js", preload: false, integrity: "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
         pin "not_there", to: "nowhere.js", preload: false, integrity: "sha384-somefakehash"
-        pin "md5", to: "https://cdn.skypack.dev/md5", preload: true
-        pin "leaflet", to: "https://cdn.skypack.dev/leaflet", preload: 'application'
-        pin "chartkick", to: "https://cdn.skypack.dev/chartkick", preload: ['application', 'alternate']
-        pin "tinyMCE", to: "https://cdn.skypack.dev/tinymce", preload: 'alternate'
+        pin "md5", to: "https://cdn.skypack.dev/md5", preload: true, integrity: false
+        pin "leaflet", to: "https://cdn.skypack.dev/leaflet", preload: 'application', integrity: false
+        pin "chartkick", to: "https://cdn.skypack.dev/chartkick", preload: ['application', 'alternate'], integrity: false
+        pin "tinyMCE", to: "https://cdn.skypack.dev/tinymce", preload: 'alternate', integrity: false
 
         pin_all_from "app/javascript/controllers", under: "controllers", preload: true
         pin_all_from "app/javascript/spina/controllers", under: "controllers/spina", preload: true
@@ -39,12 +39,42 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_not_includes generate_importmap_json["integrity"].values, "sha384-somefakehash"
   end
 
-  test "integrity is not present if there is no integrity set in the map" do
+  test "integrity is default" do
     @importmap = Importmap::Map.new.tap do |map|
       map.pin "application", preload: false
     end
 
+    json = generate_importmap_json
+    assert json.key?("integrity")
+    application_path = json["imports"]["application"]
+    assert json["integrity"][application_path]
+  end
+
+  test "integrity: false explicitly disables integrity" do
+    @importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", preload: false, integrity: false
+    end
+
     assert_not generate_importmap_json.key?("integrity")
+  end
+
+  test "integrity: nil explicitly disables integrity" do
+    @importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", preload: false, integrity: nil
+    end
+
+    assert_not generate_importmap_json.key?("integrity")
+  end
+
+  test "integrity: 'custom-hash' uses the provided string" do
+    custom_hash = "sha384-customhash123"
+    @importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", preload: false, integrity: custom_hash
+    end
+
+    json = generate_importmap_json
+    application_path = json["imports"]["application"]
+    assert_equal custom_hash, json["integrity"][application_path]
   end
 
   test "local pin missing is removed from generated importmap" do

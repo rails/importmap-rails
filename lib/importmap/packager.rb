@@ -17,13 +17,12 @@ class Importmap::Packager
     @vendor_path    = Pathname.new(vendor_path)
   end
 
-  def import(*packages, env: "production", from: "jspm", integrity: false)
+  def import(*packages, env: "production", from: "jspm")
     response = post_json({
       "install"      => Array(packages),
       "flattenScope" => true,
       "env"          => [ "browser", "module", env ],
       "provider"     => normalize_provider(from),
-      "integrity"    => integrity
     })
 
     case response.code
@@ -36,20 +35,19 @@ class Importmap::Packager
     end
   end
 
-  def pin_for(package, url = nil, preloads: nil, integrity: nil)
+  def pin_for(package, url = nil, preloads: nil)
     to = url ? %(, to: "#{url}") : ""
     preload_param = preload(preloads)
-    integrity_param = integrity ? %(, integrity: "#{integrity}") : ""
 
-     %(pin "#{package}") + to + preload_param + integrity_param
+     %(pin "#{package}") + to + preload_param
   end
 
-  def vendored_pin_for(package, url, preloads = nil, integrity: nil)
+  def vendored_pin_for(package, url, preloads = nil)
     filename = package_filename(package)
     version  = extract_package_version_from(url)
     to = "#{package}.js" != filename ? filename : nil
 
-    pin_for(package, to, preloads: preloads, integrity: integrity) + %( # #{version})
+    pin_for(package, to, preloads: preloads) + %( # #{version})
   end
 
   def packaged?(package)
@@ -96,11 +94,9 @@ class Importmap::Packager
     def extract_parsed_response(response)
       parsed = JSON.parse(response.body)
       imports = parsed.dig("map", "imports")
-      integrity = parsed.dig("map", "integrity") || {}
 
       {
         imports: imports,
-        integrity: integrity
       }
     end
 
