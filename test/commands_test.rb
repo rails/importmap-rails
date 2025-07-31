@@ -50,7 +50,105 @@ class CommandsTest < ActiveSupport::TestCase
     assert_equal original, File.read("#{@tmpdir}/dummy/vendor/javascript/md5.js")
   end
 
+  test "update command preserves preload false option" do
+    importmap_config('pin "md5", to: "https://cdn.skypack.dev/md5@2.2.0", preload: false')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes updated_content, "preload: false"
+    assert_includes updated_content, "# @2.3.0"
+  end
+
+  test "update command preserves preload true option" do
+    importmap_config('pin "md5", to: "https://cdn.skypack.dev/md5@2.2.0", preload: true')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes updated_content, "preload: true"
+  end
+
+  test "update command preserves custom preload string option" do
+    importmap_config('pin "md5", to: "https://cdn.skypack.dev/md5@2.2.0", preload: "custom"')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes updated_content, 'preload: "custom"'
+  end
+
+  test "update command removes existing integrity" do
+    importmap_config('pin "md5", to: "https://cdn.skypack.dev/md5@2.2.0", integrity: "sha384-oldintegrity"')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_not_includes updated_content, "integrity:"
+  end
+
+  test "update command only keeps preload option" do
+    importmap_config('pin "md5", to: "https://cdn.skypack.dev/md5@2.2.0", preload: false, integrity: "sha384-oldintegrity"')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes updated_content, "preload: false"
+    assert_not_includes updated_content, "to:"
+    assert_not_includes updated_content, "integrity:"
+  end
+
+  test "update command handles packages with different quote styles" do
+    importmap_config("pin 'md5', to: 'https://cdn.skypack.dev/md5@2.2.0', preload: false")
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes updated_content, "preload: false"
+  end
+
+  test "update command preserves options with version comments" do
+    importmap_config('pin "md5", to: "https://cdn.skypack.dev/md5@2.2.0", preload: false # @2.2.0')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes updated_content, "preload: false"
+    assert_includes updated_content, "# @2.3.0"
+    assert_not_includes updated_content, "# @2.2.0"
+  end
+
+  test "update command handles whitespace variations in pin options" do
+    importmap_config('pin "md5",   to:  "https://cdn.skypack.dev/md5@2.2.0",  preload:  false   ')
+
+    out, _err = run_importmap_command("update")
+
+    assert_includes out, "Pinning"
+
+    updated_content = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_equal 4, updated_content.lines.size
+    assert_includes updated_content, "preload: false"
+  end
+
   private
+    def importmap_config(content)
+      File.write("#{@tmpdir}/dummy/config/importmap.rb", content)
+    end
+
     def run_importmap_command(command, *args)
       capture_subprocess_io { system("bin/importmap", command, *args, exception: true) }
     end
