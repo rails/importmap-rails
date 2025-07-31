@@ -147,7 +147,7 @@ class Importmap::Npm
     end
 
     def find_unversioned_vendored_package(line, versioned_packages)
-      regexp = line.include?("to:")? /#{PIN_REGEX}to: ["']([^["']]*)["'].*/ : PIN_REGEX
+      regexp = line.include?("to:")? /#{PIN_REGEX}to: ["']([^"']*)["'].*/ : PIN_REGEX
       match = line.match(regexp)
 
       return unless match
