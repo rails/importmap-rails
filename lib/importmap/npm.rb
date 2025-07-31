@@ -17,7 +17,7 @@ class Importmap::Npm
   end
 
   def outdated_packages
-    packages_with_versions.each.with_object([]) do |(package, current_version), outdated_packages|
+    packages_with_versions.each_with_object([]) do |(package, current_version), outdated_packages|
       outdated_package = OutdatedPackage.new(name: package, current_version: current_version)
 
       if !(response = get_package(package))
