@@ -6,6 +6,7 @@ class Importmap::Map
   class InvalidFile < StandardError; end
 
   def initialize
+    @integrity = false
     @packages, @directories = {}, {}
     @cache = {}
   end
@@ -23,6 +24,43 @@ class Importmap::Map
     end
 
     self
+  end
+
+  # Enables automatic integrity hash calculation for all pinned modules.
+  #
+  # When enabled, integrity values are included in the importmap JSON for all
+  # pinned modules. For local assets served by the Rails asset pipeline,
+  # integrity hashes are automatically calculated when +integrity: true+ is
+  # specified. For modules with explicit integrity values, those values are
+  # included as provided. This provides Subresource Integrity (SRI) protection
+  # to ensure JavaScript modules haven't been tampered with.
+  #
+  # Clears the importmap cache when called to ensure fresh integrity hashes
+  # are generated.
+  #
+  # ==== Examples
+  #
+  #   # config/importmap.rb
+  #   enable_integrity!
+  #
+  #   # These will now auto-calculate integrity hashes
+  #   pin "application"                   # integrity: true by default
+  #   pin "admin", to: "admin.js"         # integrity: true by default
+  #   pin_all_from "app/javascript/lib"   # integrity: true by default
+  #
+  #   # Manual control still works
+  #   pin "no_integrity", integrity: false
+  #   pin "custom_hash", integrity: "sha384-abc123..."
+  #
+  # ==== Notes
+  #
+  # * Integrity calculation is disabled by default and must be explicitly enabled
+  # * Requires asset pipeline support for integrity calculation (Sprockets or Propshaft 1.2+)
+  # * For Propshaft, you must configure +config.assets.integrity_hash_algorithm+
+  # * External CDN packages should provide their own integrity hashes
+  def enable_integrity!
+    clear_cache
+    @integrity = true
   end
 
   def pin(name, to: nil, preload: true, integrity: true)
@@ -210,6 +248,8 @@ class Importmap::Map
     end
 
     def resolve_integrity_value(integrity, path, resolver:)
+      return unless @integrity
+
       case integrity
       when true
         resolver.asset_integrity(path) if resolver.respond_to?(:asset_integrity)

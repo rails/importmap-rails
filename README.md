@@ -81,12 +81,13 @@ If you want to import local js module files from `app/javascript/src` or other s
 pin_all_from 'app/javascript/src', under: 'src', to: 'src'
 
 # With automatic integrity calculation for enhanced security
+enable_integrity!
 pin_all_from 'app/javascript/controllers', under: 'controllers', integrity: true
 ```
 
 The `:to` parameter is only required if you want to change the destination logical import name. If you drop the :to option, you must place the :under option directly after the first parameter.
 
-The `integrity: true` option automatically calculates integrity hashes for all files in the directory, providing security benefits without manual hash management.
+The `enable_integrity!` call enables integrity calculation globally, and `integrity: true` automatically calculates integrity hashes for all files in the directory, providing security benefits without manual hash management.
 
 Allows you to:
 
@@ -142,12 +143,15 @@ For enhanced security, importmap-rails supports [Subresource Integrity (SRI)](ht
 
 ### Automatic integrity for local assets
 
-Starting with importmap-rails, **`integrity: true` is the default** for all pins. This automatically calculates integrity hashes for local assets served by the Rails asset pipeline:
+To enable automatic integrity calculation for local assets served by the Rails asset pipeline, you must first call `enable_integrity!` in your importmap configuration:
 
 ```ruby
 # config/importmap.rb
 
-# These all use integrity: true by default
+# Enable integrity calculation globally
+enable_integrity!
+
+# With integrity enabled, these will auto-calculate integrity hashes
 pin "application"                                               # Auto-calculated integrity
 pin "admin", to: "admin.js"                                     # Auto-calculated integrity
 pin_all_from "app/javascript/controllers", under: "controllers" # Auto-calculated integrity
@@ -163,7 +167,7 @@ This is particularly useful for:
 * **Bulk operations** with `pin_all_from` where calculating hashes manually would be tedious
 * **Development workflow** where asset contents change frequently
 
-This behavior can be disabled by setting `integrity: false` or `integrity: nil`
+**Note:** Integrity calculation is opt-in and must be enabled with `enable_integrity!`. This behavior can be further controlled by setting `integrity: false` or `integrity: nil` on individual pins.
 
 **Important for Propshaft users:** SRI support requires Propshaft 1.2+ and you must configure the integrity hash algorithm in your application:
 
@@ -174,7 +178,7 @@ config.assets.integrity_hash_algorithm = 'sha256'  # or 'sha384', 'sha512'
 
 Without this configuration, integrity will be disabled by default when using Propshaft. Sprockets includes integrity support out of the box.
 
-**Example output with `integrity: true`:**
+**Example output with `enable_integrity!` and `integrity: true`:**
 ```json
 {
   "imports": {
