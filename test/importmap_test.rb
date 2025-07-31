@@ -134,6 +134,17 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_match %r|assets/my_lib-.*\.js|, generate_importmap_json["imports"]["my_lib"]
   end
 
+  test "pin_all_from handles filenames with js substring correctly" do
+    assert_includes generate_importmap_json["imports"].keys, "controllers/foo.jszip"
+    assert_includes generate_importmap_json["imports"].keys, "controllers/bar.jsmin"
+
+    refute_includes generate_importmap_json["imports"].keys, "controllers/foozip"
+    refute_includes generate_importmap_json["imports"].keys, "controllers/barmin"
+
+    assert_match %r|assets/controllers/foo\.jszip-.*\.js|, generate_importmap_json["imports"]["controllers/foo.jszip"]
+    assert_match %r|assets/controllers/bar\.jsmin-.*\.js|, generate_importmap_json["imports"]["controllers/bar.jsmin"]
+  end
+
   test "importmap json includes integrity hashes from integrity: true" do
     importmap = Importmap::Map.new.tap do |map|
       map.enable_integrity!
