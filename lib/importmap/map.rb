@@ -3,6 +3,12 @@ require "pathname"
 class Importmap::Map
   attr_reader :packages, :directories
 
+  PIN_REGEX = /^pin\s+["']([^"']+)["']/.freeze # :nodoc:
+
+  def self.pin_line_regexp_for(package) # :nodoc:
+    /^.*pin\s+["']#{Regexp.escape(package)}["'].*$/.freeze
+  end
+
   class InvalidFile < StandardError; end
 
   def initialize

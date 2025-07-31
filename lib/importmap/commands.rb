@@ -15,13 +15,7 @@ class Importmap::Commands < Thor
   option :preload, type: :string, repeatable: true, desc: "Can be used multiple times"
   def pin(*packages)
     for_each_import(packages, env: options[:env], from: options[:from]) do |package, url|
-      puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
-
-      packager.download(package, url)
-
-      pin = packager.vendored_pin_for(package, url, options[:preload])
-
-      update_importmap_with_pin(package, pin)
+      pin_package(package, url, options[:preload])
     end
   end
 
@@ -96,7 +90,14 @@ class Importmap::Commands < Thor
   desc "update", "Update outdated package pins"
   def update
     if (outdated_packages = npm.outdated_packages).any?
-      pin(*outdated_packages.map(&:name))
+      package_names = outdated_packages.map(&:name)
+      packages_with_options = packager.extract_existing_pin_options(package_names)
+
+      for_each_import(package_names, env: "production", from: "jspm") do |package, url|
+        options = packages_with_options[package] || {}
+
+        pin_package(package, url, options[:preload])
+      end
     else
       puts "No outdated packages found"
     end
@@ -116,11 +117,23 @@ class Importmap::Commands < Thor
       @npm ||= Importmap::Npm.new
     end
 
+    def pin_package(package, url, preload)
+      puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
+
+      packager.download(package, url)
+
+      pin = packager.vendored_pin_for(package, url, preload)
+
+      update_importmap_with_pin(package, pin)
+    end
+
     def update_importmap_with_pin(package, pin)
+      new_pin = "#{pin}\n"
+
       if packager.packaged?(package)
-        gsub_file("config/importmap.rb", /^pin "#{package}".*$/, pin, verbose: false)
+        gsub_file("config/importmap.rb", Importmap::Map.pin_line_regexp_for(package), new_pin, verbose: false)
       else
-        append_to_file("config/importmap.rb", "#{pin}\n", verbose: false)
+        append_to_file("config/importmap.rb", new_pin, verbose: false)
       end
     end
 

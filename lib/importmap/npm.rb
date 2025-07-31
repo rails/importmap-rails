@@ -3,7 +3,7 @@ require "uri"
 require "json"
 
 class Importmap::Npm
-  PIN_REGEX = /^pin ["']([^["']]*)["'].*/
+  PIN_REGEX = /#{Importmap::Map::PIN_REGEX}.*/.freeze # :nodoc:
 
   Error     = Class.new(StandardError)
   HTTPError = Class.new(Error)
@@ -17,7 +17,7 @@ class Importmap::Npm
   end
 
   def outdated_packages
-    packages_with_versions.each.with_object([]) do |(package, current_version), outdated_packages|
+    packages_with_versions.each_with_object([]) do |(package, current_version), outdated_packages|
       outdated_package = OutdatedPackage.new(name: package, current_version: current_version)
 
       if !(response = get_package(package))
@@ -51,7 +51,7 @@ class Importmap::Npm
   def packages_with_versions
     # We cannot use the name after "pin" because some dependencies are loaded from inside packages
     # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
-    with_versions = importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)(.*)(?=@\d+\.\d+\.\d+)@(\d+\.\d+\.\d+(?:[^\/\s["']]*)).*$/) |
+    with_versions = importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)([^@\/]+)@(\d+\.\d+\.\d+(?:[^\/\s"']*))/) |
       importmap.scan(/#{PIN_REGEX} #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
 
     vendored_packages_without_version(with_versions).each do |package, path|
@@ -147,7 +147,7 @@ class Importmap::Npm
     end
 
     def find_unversioned_vendored_package(line, versioned_packages)
-      regexp = line.include?("to:")? /#{PIN_REGEX}to: ["']([^["']]*)["'].*/ : PIN_REGEX
+      regexp = line.include?("to:")? /#{PIN_REGEX}to: ["']([^"']*)["'].*/ : PIN_REGEX
       match = line.match(regexp)
 
       return unless match

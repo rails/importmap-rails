@@ -79,4 +79,137 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
     assert_equal %(pin "react", preload: "foo" # @17.0.2), @packager.vendored_pin_for("react", "https://cdn/react@17.0.2", ["foo"])
     assert_equal %(pin "react", preload: ["foo", "bar"] # @17.0.2), @packager.vendored_pin_for("react", "https://cdn/react@17.0.2", ["foo", "bar"])
   end
+
+  test "extract_existing_pin_options with preload false" do
+    temp_importmap = create_temp_importmap('pin "package1", preload: false')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: false }, options)
+  end
+
+  test "extract_existing_pin_options with preload true" do
+    temp_importmap = create_temp_importmap('pin "package1", preload: true')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: true }, options)
+  end
+
+  test "extract_existing_pin_options with custom preload string" do
+    temp_importmap = create_temp_importmap('pin "package1", preload: "custom"')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: "custom" }, options)
+  end
+
+  test "extract_existing_pin_options with custom preload array" do
+    temp_importmap = create_temp_importmap('pin "package1", preload: ["custom1", "custom2"]')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: ["custom1", "custom2"] }, options)
+  end
+
+  test "extract_existing_pin_options with to option only" do
+    temp_importmap = create_temp_importmap('pin "package1", to: "custom_path.js"')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({}, options)
+  end
+
+  test "extract_existing_pin_options with integrity option only" do
+    temp_importmap = create_temp_importmap('pin "package1", integrity: "sha384-abcdef1234567890"')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({}, options)
+  end
+
+  test "extract_existing_pin_options with multiple options" do
+    temp_importmap = create_temp_importmap('pin "package1", to: "path.js", preload: false, integrity: "sha384-abcdef1234567890"')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: false }, options)
+  end
+
+  test "extract_existing_pin_options with version comment" do
+    temp_importmap = create_temp_importmap('pin "package1", preload: false # @2.0.0')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: false }, options)
+  end
+
+  test "extract_existing_pin_options with no options" do
+    temp_importmap = create_temp_importmap('pin "package1"')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({}, options)
+  end
+
+  test "extract_existing_pin_options with nonexistent package" do
+    temp_importmap = create_temp_importmap('pin "package1", preload: false')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "nonexistent")
+
+    assert_equal({}, options)
+  end
+
+  test "extract_existing_pin_options with nonexistent file" do
+    packager = Importmap::Packager.new("/nonexistent/path")
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_nil options
+  end
+
+  test "extract_existing_pin_options handles multiple packages in one call" do
+    temp_importmap = create_temp_importmap(<<~PINS)
+      pin "package1", preload: false
+      pin "package2", preload: true
+      pin "package3", preload: "custom"
+      pin "package4" # no options
+    PINS
+
+    packager = Importmap::Packager.new(temp_importmap)
+
+    result = packager.extract_existing_pin_options(["package1", "package2", "package3", "package4", "nonexistent"])
+
+    assert_equal({
+      "package1" => { preload: false },
+      "package2" => { preload: true },
+      "package3" => { preload: "custom" },
+      "package4" => {},
+      "nonexistent" => {}
+    }, result)
+  end
+
+  private
+
+  def create_temp_importmap(content)
+    temp_file = Tempfile.new(['importmap', '.rb'])
+    temp_file.write(content)
+    temp_file.close
+    temp_file.path
+  end
+
+  def extract_options_for_package(packager, package_name)
+    result = packager.extract_existing_pin_options(package_name)
+    result[package_name]
+  end
 end

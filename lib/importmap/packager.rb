@@ -3,6 +3,9 @@ require "uri"
 require "json"
 
 class Importmap::Packager
+  PIN_REGEX = /#{Importmap::Map::PIN_REGEX}(.*)/.freeze # :nodoc:
+  PRELOAD_OPTION_REGEXP = /preload:\s*(\[[^\]]+\]|true|false|["'][^"']*["'])/.freeze # :nodoc:
+
   Error        = Class.new(StandardError)
   HTTPError    = Class.new(Error)
   ServiceError = Error.new(Error)
@@ -51,7 +54,7 @@ class Importmap::Packager
   end
 
   def packaged?(package)
-    importmap.match(/^pin ["']#{package}["'].*$/)
+    importmap.match(Importmap::Map.pin_line_regexp_for(package))
   end
 
   def download(package, url)
@@ -65,14 +68,57 @@ class Importmap::Packager
     remove_package_from_importmap(package)
   end
 
+  def extract_existing_pin_options(packages)
+    return {} unless @importmap_path.exist?
+
+    packages = Array(packages)
+
+    all_package_options = build_package_options_lookup(importmap.lines)
+
+    packages.to_h do |package|
+      [package, all_package_options[package] || {}]
+    end
+  end
+
   private
+    def build_package_options_lookup(lines)
+      lines.each_with_object({}) do |line, package_options|
+        match = line.strip.match(PIN_REGEX)
+
+        if match
+          package_name = match[1]
+          options_part = match[2]
+
+          preload_match = options_part.match(PRELOAD_OPTION_REGEXP)
+
+          if preload_match
+            preload = preload_from_string(preload_match[1])
+            package_options[package_name] = { preload: preload }
+          end
+        end
+      end
+    end
+
+    def preload_from_string(value)
+      case value
+      when "true"
+        true
+      when "false"
+        false
+      when /^\[.*\]$/
+        JSON.parse(value)
+      else
+        value.gsub(/["']/, "")
+      end
+    end
+
     def preload(preloads)
       case Array(preloads)
       in []
         ""
-      in ["true"]
+      in ["true"] | [true]
         %(, preload: true)
-      in ["false"]
+      in ["false"] | [false]
         %(, preload: false)
       in [string]
         %(, preload: "#{string}")
@@ -129,7 +175,7 @@ class Importmap::Packager
 
     def remove_package_from_importmap(package)
       all_lines = File.readlines(@importmap_path)
-      with_lines_removed = all_lines.grep_v(/pin ["']#{package}["']/)
+      with_lines_removed = all_lines.grep_v(Importmap::Map.pin_line_regexp_for(package))
 
       File.open(@importmap_path, "w") do |file|
         with_lines_removed.each { |line| file.write(line) }
