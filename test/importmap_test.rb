@@ -5,6 +5,8 @@ class ImportmapTest < ActiveSupport::TestCase
   def setup
     @importmap = Importmap::Map.new.tap do |map|
       map.draw do
+        enable_integrity!
+
         pin "application", preload: false, integrity: false
         pin "editor", to: "rich_text.js", preload: false, integrity: "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
         pin "not_there", to: "nowhere.js", preload: false, integrity: "sha384-somefakehash"
@@ -39,8 +41,18 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_not_includes generate_importmap_json["integrity"].values, "sha384-somefakehash"
   end
 
-  test "integrity is default" do
+  test "integrity is not on by default" do
     @importmap = Importmap::Map.new.tap do |map|
+      map.pin "application", preload: false
+    end
+
+    json = generate_importmap_json
+    assert_not json.key?("integrity")
+  end
+
+    test "enable_integrity! change the map to generate integrity attribute" do
+    @importmap = Importmap::Map.new.tap do |map|
+      map.enable_integrity!
       map.pin "application", preload: false
     end
 
@@ -68,7 +80,9 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "integrity: 'custom-hash' uses the provided string" do
     custom_hash = "sha384-customhash123"
+
     @importmap = Importmap::Map.new.tap do |map|
+      map.enable_integrity!
       map.pin "application", preload: false, integrity: custom_hash
     end
 
@@ -122,6 +136,7 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "importmap json includes integrity hashes from integrity: true" do
     importmap = Importmap::Map.new.tap do |map|
+      map.enable_integrity!
       map.pin "application", integrity: true
     end
 
@@ -270,13 +285,11 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_equal "https://cdn.skypack.dev/tinymce", tinymce.path
     assert_equal 'alternate', tinymce.preload
 
-    # Should include packages for multiple entry points (chartkick preloads for both 'application' and 'alternate')
     chartkick = packages["https://cdn.skypack.dev/chartkick"]
     assert chartkick, "Should include chartkick package"
     assert_equal "chartkick", chartkick.name
     assert_equal ['application', 'alternate'], chartkick.preload
 
-    # Should include always-preloaded packages
     md5 = packages["https://cdn.skypack.dev/md5"]
     assert md5, "Should include md5 package (always preloaded)"
 
@@ -290,15 +303,12 @@ class ImportmapTest < ActiveSupport::TestCase
     leaflet = packages["https://cdn.skypack.dev/leaflet"]
     assert leaflet, "Should include leaflet package for application entry point"
 
-    # Should include packages for 'alternate' entry point
     tinymce = packages["https://cdn.skypack.dev/tinymce"]
     assert tinymce, "Should include tinymce package for alternate entry point"
 
-    # Should include packages for multiple entry points
     chartkick = packages["https://cdn.skypack.dev/chartkick"]
     assert chartkick, "Should include chartkick package for both entry points"
 
-    # Should include always-preloaded packages
     md5 = packages["https://cdn.skypack.dev/md5"]
     assert md5, "Should include md5 package (always preloaded)"
 
@@ -307,8 +317,8 @@ class ImportmapTest < ActiveSupport::TestCase
   end
 
   test "preloaded_module_packages includes package integrity when present" do
-    # Create a new importmap with a preloaded package that has integrity
     importmap = Importmap::Map.new.tap do |map|
+      map.enable_integrity!
       map.pin "editor", to: "rich_text.js", preload: true, integrity: "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
     end
 
@@ -322,6 +332,7 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "pin with integrity: true should calculate integrity dynamically" do
     importmap = Importmap::Map.new.tap do |map|
+      map.enable_integrity!
       map.pin "editor", to: "rich_text.js", preload: true, integrity: "sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
     end
 
@@ -370,6 +381,7 @@ class ImportmapTest < ActiveSupport::TestCase
 
   test "pin_all_from with integrity: true should calculate integrity dynamically" do
     importmap = Importmap::Map.new.tap do |map|
+      map.enable_integrity!
       map.pin_all_from "app/javascript/controllers", under: "controllers", integrity: true
     end
 
