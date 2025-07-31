@@ -6,7 +6,6 @@ ActiveRecord::Migrator.migrations_paths = [File.expand_path("../test/dummy/db/mi
 ActiveRecord::Migrator.migrations_paths << File.expand_path('../db/migrate', __dir__)
 require "rails/test_help"
 
-
 # Load fixtures from the engine
 # Remove this when support to Rails 7.0 is dropped.
 if ActiveSupport::TestCase.respond_to?(:fixture_path=)

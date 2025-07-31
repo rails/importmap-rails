@@ -131,7 +131,7 @@ class Importmap::Commands < Thor
       new_pin = "#{pin}\n"
 
       if packager.packaged?(package)
-        gsub_file("config/importmap.rb", Importmap::Map.pin_line_regexp_for(package), new_pin, verbose: false)
+        gsub_file("config/importmap.rb", Importmap::Map.pin_line_regexp_for(package), pin, verbose: false)
       else
         append_to_file("config/importmap.rb", new_pin, verbose: false)
       end

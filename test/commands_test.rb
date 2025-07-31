@@ -146,7 +146,7 @@ class CommandsTest < ActiveSupport::TestCase
 
   private
     def importmap_config(content)
-      File.write("#{@tmpdir}/dummy/config/importmap.rb", content)
+      File.write("#{@tmpdir}/dummy/config/importmap.rb", "#{content}\n")
     end
 
     def run_importmap_command(command, *args)
