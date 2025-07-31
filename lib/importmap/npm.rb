@@ -3,7 +3,7 @@ require "uri"
 require "json"
 
 class Importmap::Npm
-  PIN_REGEX = /^pin ["']([^["']]*)["'].*/
+  PIN_REGEX = /#{Importmap::Map::PIN_REGEX}.*/.freeze # :nodoc:
 
   Error     = Class.new(StandardError)
   HTTPError = Class.new(Error)

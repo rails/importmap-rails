@@ -3,6 +3,8 @@ require "uri"
 require "json"
 
 class Importmap::Packager
+  PIN_REGEX = /#{Importmap::Map::PIN_REGEX}(.*)/.freeze # :nodoc:
+
   Error        = Class.new(StandardError)
   HTTPError    = Class.new(Error)
   ServiceError = Error.new(Error)
@@ -51,7 +53,7 @@ class Importmap::Packager
   end
 
   def packaged?(package)
-    importmap.match(/^pin ["']#{package}["'].*$/)
+    importmap.match(Importmap::Map.pin_line_regexp_for(package))
   end
 
   def download(package, url)
@@ -129,7 +131,7 @@ class Importmap::Packager
 
     def remove_package_from_importmap(package)
       all_lines = File.readlines(@importmap_path)
-      with_lines_removed = all_lines.grep_v(/pin ["']#{package}["']/)
+      with_lines_removed = all_lines.grep_v(Importmap::Map.pin_line_regexp_for(package))
 
       File.open(@importmap_path, "w") do |file|
         with_lines_removed.each { |line| file.write(line) }
