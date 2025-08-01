@@ -302,7 +302,7 @@ class Importmap::Map
       # folder/index
       index_regex = /(?:\/|^)index$/
 
-      [ mapping.under, filename.to_s.remove(filename.extname).remove(index_regex).presence ].compact.join("/")
+      [ mapping.under, filename.to_s.chomp(filename.extname).remove(index_regex).presence ].compact.join("/")
     end
 
     def module_path_from(filename, mapping)
