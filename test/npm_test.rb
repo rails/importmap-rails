@@ -46,6 +46,56 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
+  test "extracts package name and version from nested package path" do
+    npm = Importmap::Npm.new(file_fixture("nested_package_path_import_map.rb"))
+    packages = npm.packages_with_versions
+
+    assert_equal(1, packages.size)
+    assert_equal('photoswipe', packages[0][0])
+    assert_equal('5.4.4', packages[0][1])
+  end
+
+  test "extracts only base package name from nested package path with version comment" do
+    npm = Importmap::Npm.new(file_fixture("nested_package_with_comment_import_map.rb"))
+    packages = npm.packages_with_versions
+
+    assert_equal(1, packages.size)
+    assert_equal('photoswipe', packages[0][0])
+    assert_equal('5.4.4', packages[0][1])
+  end
+
+  test "handles scoped package with nested path" do
+    npm = Importmap::Npm.new(file_fixture("scoped_package_with_nested_path_import_map.rb"))
+    packages = npm.packages_with_versions
+
+    assert_equal(1, packages.size)
+    assert_equal('@github/webauthn-json', packages[0][0])
+    assert_equal('2.1.1', packages[0][1])
+  end
+
+  test "handles regular scoped package without nested path" do
+    npm = Importmap::Npm.new(file_fixture("scoped_package_import_map.rb"))
+    packages = npm.packages_with_versions
+
+    assert_equal(1, packages.size)
+    assert_equal('@github/webauthn-json', packages[0][0])
+    assert_equal('2.1.1', packages[0][1])
+  end
+
+  test "successful outdated packages with nested package path using mock" do
+    npm = Importmap::Npm.new(file_fixture("nested_package_path_import_map.rb"))
+    response = { "dist-tags" => { "latest" => '5.5.0' } }.to_json
+
+    npm.stub(:get_json, response) do
+      outdated_packages = npm.outdated_packages
+
+      assert_equal(1, outdated_packages.size)
+      assert_equal('photoswipe', outdated_packages[0].name)
+      assert_equal('5.4.4', outdated_packages[0].current_version)
+      assert_equal('5.5.0', outdated_packages[0].latest_version)
+    end
+  end
+
   test "warns (and ignores) vendored packages without version" do
     Dir.mktmpdir do |vendor_path|
       foo_path = create_vendored_file(vendor_path, "foo.js")

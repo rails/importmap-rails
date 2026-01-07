@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: 'Generate clear, descriptive commit messages for importmap-rails changes'
 ---
 # Commit Message Generator
