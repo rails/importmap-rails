@@ -40,20 +40,12 @@ appraise "rails_7.2_propshaft" do
   gem "rails", "~> 7.2.0"
 end
 
-appraise "rails_8.0_sprockets" do
-  gem "rails", "~> 8.0.0"
-  remove_gem "propshaft"
-  gem "sprockets-rails"
-end
-
 appraise "rails_8.0_propshaft" do
   gem "rails", "~> 8.0.0"
 end
 
-appraise "rails_main_sprockets" do
-  gem "rails", github: "rails/rails", branch: "main"
-  remove_gem "propshaft"
-  gem "sprockets-rails"
+appraise "rails_8.1_propshaft" do
+  gem "rails", "~> 8.1.0"
 end
 
 appraise "rails_main_propshaft" do

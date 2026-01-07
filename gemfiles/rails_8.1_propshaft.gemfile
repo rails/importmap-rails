@@ -2,15 +2,16 @@
 
 source "https://rubygems.org"
 
-gem "rails", "~> 8.0.0"
+gem "rails", "~> 8.1.0"
+gem "propshaft", ">= 1.2.0"
 gem "sqlite3"
-gem "sprockets-rails"
 
 group :development do
   gem "appraisal"
 end
 
 group :test do
+  gem "minitest-mock"
   gem "turbo-rails"
   gem "stimulus-rails"
   gem "byebug"
