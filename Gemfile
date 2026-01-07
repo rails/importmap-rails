@@ -14,6 +14,7 @@ group :development do
 end
 
 group :test do
+  gem "minitest-mock"
   gem "turbo-rails"
   gem "stimulus-rails"
 
