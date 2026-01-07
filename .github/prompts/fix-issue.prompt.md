@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: 'Fix an issue in the importmap-rails gem by following a systematic process.'
 ---
 # GitHub Issue Fixer Prompt

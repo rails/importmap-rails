@@ -54,6 +54,10 @@ class Importmap::Npm
     with_versions = importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)([^@\/]+)@(\d+\.\d+\.\d+(?:[^\/\s"']*))/) |
       importmap.scan(/#{PIN_REGEX} #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
 
+    with_versions.map! do |package, version|
+      [extract_base_package_name(package), version]
+    end.uniq!
+
     vendored_packages_without_version(with_versions).each do |package, path|
       $stdout.puts "Ignoring #{package} (#{path}) since no version is specified in the importmap"
     end
@@ -136,6 +140,17 @@ class Importmap::Npm
       Net::HTTP.post(uri, body.to_json, "Content-Type" => "application/json")
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
+    end
+
+    def extract_base_package_name(package)
+      if package.start_with?("@")
+        # Scoped packages can have nested paths, e.g. @scope/package/subpath
+        parts = package.split("/", 3)
+        parts.size > 2 ? parts.first(2).join("/") : package
+      else
+        # Non-scoped packages - just take the first part
+        package.split("/").first
+      end
     end
 
     def vendored_packages_without_version(packages_with_versions)
