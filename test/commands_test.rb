@@ -20,6 +20,12 @@ class CommandsTest < ActiveSupport::TestCase
     assert_includes JSON.parse(out), "imports"
   end
 
+  test "pin command without arguments does not raise" do
+    out, _err = run_importmap_command("pin")
+
+    assert_includes out, "Couldn't find any packages"
+  end
+
   test "update command prints message of no outdated packages" do
     out, _err = run_importmap_command("update")
 
