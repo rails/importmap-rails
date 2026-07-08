@@ -13,9 +13,10 @@ class Importmap::Commands < Thor
   option :env, type: :string, aliases: :e, default: "production"
   option :from, type: :string, aliases: :f, default: "jspm"
   option :preload, type: :string, repeatable: true, desc: "Can be used multiple times"
+  option :remote, type: :boolean, default: false, desc: "Pin to the remote URL instead of vendoring a download"
   def pin(*packages)
     for_each_import(packages, env: options[:env], from: options[:from]) do |package, url|
-      pin_package(package, url, options[:preload])
+      pin_package(package, url, preload: options[:preload], remote: options[:remote], env: options[:env])
     end
   end
 
@@ -38,9 +39,13 @@ class Importmap::Commands < Thor
     packages = prepare_packages_with_versions
 
     for_each_import(packages, env: options[:env], from: options[:from]) do |package, url|
-      puts %(Downloading "#{package}" to #{packager.vendor_path}/#{package}.js from #{url})
+      if packager.remote_pin?(package)
+        puts %(Skipping "#{package}" (pinned to remote URL))
+      else
+        puts %(Downloading "#{package}" to #{packager.vendor_path}/#{package}.js from #{url})
 
-      packager.download(package, url)
+        packager.download(package, url)
+      end
     end
   end
 
@@ -90,13 +95,8 @@ class Importmap::Commands < Thor
   desc "update", "Update outdated package pins"
   def update
     if (outdated_packages = npm.outdated_packages).any?
-      package_names = outdated_packages.map(&:name)
-      packages_with_options = packager.extract_existing_pin_options(package_names)
-
-      for_each_import(package_names, env: "production", from: "jspm") do |package, url|
-        options = packages_with_options[package] || {}
-
-        pin_package(package, url, options[:preload])
+      for_each_import(outdated_packages.map(&:name), env: "production", from: "jspm") do |package, url|
+        pin_package(package, url)
       end
     else
       puts "No outdated packages found"
@@ -117,14 +117,58 @@ class Importmap::Commands < Thor
       @npm ||= Importmap::Npm.new
     end
 
-    def pin_package(package, url, preload)
+    def pin_package(package, url, preload: nil, remote: false, env: "production")
+      existing_options = packager.extract_existing_pin_options(package)[package] || {}
+      preload = existing_options[:preload] if preload.nil?
+      existing_url = existing_options[:to] if existing_options[:to].to_s.match?(Importmap::Packager::REMOTE_URL_REGEXP)
+
+      if existing_url
+        repin_remote_package(package, url, existing_url, preload, env: env)
+      elsif remote
+        pin_remote_package(package, url, preload)
+      else
+        pin_vendored_package(package, url, preload)
+      end
+    end
+
+    def pin_vendored_package(package, url, preload)
       puts %(Pinning "#{package}" to #{packager.vendor_path}/#{package}.js via download from #{url})
 
       packager.download(package, url)
 
-      pin = packager.vendored_pin_for(package, url, preload)
+      update_importmap_with_pin(package, packager.vendored_pin_for(package, url, preload))
+    end
 
-      update_importmap_with_pin(package, pin)
+    def pin_remote_package(package, url, preload)
+      puts %(Pinning "#{package}" to #{url})
+
+      packager.remove_existing_package_file(package)
+
+      update_importmap_with_pin(package, packager.pin_for(package, url, preloads: preload))
+    end
+
+    def repin_remote_package(package, url, existing_url, preload, env:)
+      provider = packager.provider_for_url(existing_url)
+
+      if provider.nil?
+        puts %(Skipping "#{package}" pinned to custom URL #{existing_url})
+      elsif provider == packager.provider_for_url(url)
+        pin_remote_package(package, url, preload)
+      elsif (provider_url = resolve_url_from_provider(package, url, provider, env: env))
+        pin_remote_package(package, provider_url, preload)
+      else
+        puts %(Keeping "#{package}" pinned to #{existing_url} (couldn't resolve it from #{provider}))
+      end
+    end
+
+    def resolve_url_from_provider(package, reference_url, provider, env:)
+      version  = packager.extract_package_version_from(reference_url)
+      response = packager.import("#{package}#{version}", env: env, from: provider)
+
+      response && response[:imports][package]
+    rescue Importmap::Packager::Error => error
+      puts %(Failed to resolve "#{package}" from #{provider}: #{error.message})
+      nil
     end
 
     def update_importmap_with_pin(package, pin)
