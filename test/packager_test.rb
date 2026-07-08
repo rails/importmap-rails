@@ -122,7 +122,7 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
 
     options = extract_options_for_package(packager, "package1")
 
-    assert_equal({}, options)
+    assert_equal({ to: "custom_path.js" }, options)
   end
 
   test "extract_existing_pin_options with integrity option only" do
@@ -140,7 +140,16 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
 
     options = extract_options_for_package(packager, "package1")
 
-    assert_equal({ preload: false }, options)
+    assert_equal({ preload: false, to: "path.js" }, options)
+  end
+
+  test "extract_existing_pin_options with remote to option" do
+    temp_importmap = create_temp_importmap('pin "package1", to: "https://ga.jspm.io/npm:package1@1.0.0/index.js", preload: false')
+    packager = Importmap::Packager.new(temp_importmap)
+
+    options = extract_options_for_package(packager, "package1")
+
+    assert_equal({ preload: false, to: "https://ga.jspm.io/npm:package1@1.0.0/index.js" }, options)
   end
 
   test "extract_existing_pin_options with version comment" do
@@ -197,6 +206,38 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
       "package4" => {},
       "nonexistent" => {}
     }, result)
+  end
+
+  test "remote_pin?" do
+    temp_importmap = create_temp_importmap(<<~PINS)
+      pin "remote", to: "https://ga.jspm.io/npm:remote@1.0.0/index.js"
+      pin 'single', to: 'https://cdn.jsdelivr.net/npm/single@1.0.0/index.js'
+      pin "local", to: "local.js"
+      pin "bare"
+    PINS
+    packager = Importmap::Packager.new(temp_importmap)
+
+    assert packager.remote_pin?("remote")
+    assert packager.remote_pin?("single")
+    assert_not packager.remote_pin?("local")
+    assert_not packager.remote_pin?("bare")
+    assert_not packager.remote_pin?("missing")
+  end
+
+  test "provider_for_url" do
+    assert_equal "jspm.io", @packager.provider_for_url("https://ga.jspm.io/npm:md5@2.3.0/md5.js")
+    assert_equal "unpkg", @packager.provider_for_url("https://unpkg.com/md5@2.3.0/md5.js")
+    assert_equal "jsdelivr", @packager.provider_for_url("https://cdn.jsdelivr.net/npm/md5@2.3.0/md5.js")
+    assert_equal "skypack", @packager.provider_for_url("https://cdn.skypack.dev/md5@2.3.0")
+    assert_equal "esm.sh", @packager.provider_for_url("https://esm.sh/*md5@2.3.0/md5.js")
+    assert_nil @packager.provider_for_url("https://cdn.example.com/md5.js")
+    assert_nil @packager.provider_for_url("not a url")
+  end
+
+  test "extract_package_version_from" do
+    assert_equal "@17.0.2", @packager.extract_package_version_from("https://cdn/react@17.0.2")
+    assert_equal "@2.0.0-beta.19", @packager.extract_package_version_from("https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js")
+    assert_nil @packager.extract_package_version_from("https://cdn/react")
   end
 
   private

@@ -5,6 +5,16 @@ require "json"
 class Importmap::Packager
   PIN_REGEX = /#{Importmap::Map::PIN_REGEX}(.*)/.freeze # :nodoc:
   PRELOAD_OPTION_REGEXP = /preload:\s*(\[[^\]]+\]|true|false|["'][^"']*["'])/.freeze # :nodoc:
+  TO_OPTION_REGEXP = /to:\s*["']([^"']*)["']/.freeze # :nodoc:
+  REMOTE_URL_REGEXP = %r{\Ahttps?://}.freeze # :nodoc:
+
+  PROVIDER_HOSTS = {
+    "ga.jspm.io"       => "jspm.io",
+    "unpkg.com"        => "unpkg",
+    "cdn.jsdelivr.net" => "jsdelivr",
+    "cdn.skypack.dev"  => "skypack",
+    "esm.sh"           => "esm.sh"
+  }.freeze # :nodoc:
 
   Error        = Class.new(StandardError)
   HTTPError    = Class.new(Error)
@@ -80,6 +90,25 @@ class Importmap::Packager
     end
   end
 
+  def remote_pin?(package)
+    options = extract_existing_pin_options(package)[package] || {}
+    options[:to].to_s.match?(REMOTE_URL_REGEXP)
+  end
+
+  def provider_for_url(url)
+    PROVIDER_HOSTS[URI(url.to_s).host]
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  def remove_existing_package_file(package)
+    FileUtils.rm_rf vendored_package_path(package)
+  end
+
+  def extract_package_version_from(url)
+    url.match(/@\d+\.\d+\.\d+[^\/\s"']*/)&.to_a&.first
+  end
+
   private
     def build_package_options_lookup(lines)
       lines.each_with_object({}) do |line, package_options|
@@ -89,12 +118,17 @@ class Importmap::Packager
           package_name = match[1]
           options_part = match[2]
 
-          preload_match = options_part.match(PRELOAD_OPTION_REGEXP)
+          options = {}
 
-          if preload_match
-            preload = preload_from_string(preload_match[1])
-            package_options[package_name] = { preload: preload }
+          if (preload_match = options_part.match(PRELOAD_OPTION_REGEXP))
+            options[:preload] = preload_from_string(preload_match[1])
           end
+
+          if (to_match = options_part.match(TO_OPTION_REGEXP))
+            options[:to] = to_match[1]
+          end
+
+          package_options[package_name] = options if options.any?
         end
       end
     end
@@ -169,10 +203,6 @@ class Importmap::Packager
       FileUtils.mkdir_p @vendor_path
     end
 
-    def remove_existing_package_file(package)
-      FileUtils.rm_rf vendored_package_path(package)
-    end
-
     def remove_package_from_importmap(package)
       all_lines = File.readlines(@importmap_path)
       with_lines_removed = all_lines.grep_v(Importmap::Map.pin_line_regexp_for(package))
@@ -210,9 +240,5 @@ class Importmap::Packager
 
     def package_filename(package)
       package.gsub("/", "--") + ".js"
-    end
-
-    def extract_package_version_from(url)
-      url.match(/@\d+\.\d+\.\d+/)&.to_a&.first
     end
 end
