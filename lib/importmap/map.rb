@@ -200,6 +200,8 @@ class Importmap::Map
     def cache_as(name)
       if result = @cache[name.to_s]
         result
+      elsif @cache.frozen?
+        yield
       else
         @cache[name.to_s] = yield
       end

@@ -245,6 +245,23 @@ class ImportmapTest < ActiveSupport::TestCase
     ActionController::Base.asset_host = nil
   end
 
+  test "deep-frozen importmap still resolves, without caching" do
+    importmap = Ractor.make_shareable(Importmap::Map.new.draw { pin "application", preload: true, integrity: false })
+
+    set_one = importmap.preloaded_module_paths(resolver: ApplicationController.helpers)
+    json_one = importmap.to_json(resolver: ApplicationController.helpers)
+
+    ActionController::Base.asset_host = "http://assets.example.com"
+
+    set_two = importmap.preloaded_module_paths(resolver: ActionController::Base.helpers)
+    json_two = importmap.to_json(resolver: ActionController::Base.helpers)
+
+    assert_not_equal set_one, set_two
+    assert_not_equal json_one, json_two
+  ensure
+    ActionController::Base.asset_host = nil
+  end
+
   test "all caches reset" do
     set_one = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "1").to_s
     set_two = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "2").to_s
