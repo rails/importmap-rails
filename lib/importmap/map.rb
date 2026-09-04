@@ -167,6 +167,18 @@ class Importmap::Map
     end
   end
 
+  # Precomputes the caches used by the view helpers: the JSON and, for each of the +entry_points+, the
+  # preloaded module packages under the cache key the helpers use. The results are then served from the
+  # cache even if the map is frozen afterwards, for example to share it between Ractors. By default,
+  # every entry point named in the map is warmed (see +known_entry_points+).
+  def warm_cache(resolver:, entry_points: known_entry_points)
+    entry_points.each do |entry_point|
+      preloaded_module_packages(resolver: resolver, entry_point: entry_point, cache_key: entry_point)
+    end
+    to_json(resolver: resolver)
+    self
+  end
+
   # Returns a SHA1 digest of the import map json that can be used as a part of a page etag to
   # ensure that a html cache is invalidated when the import map is changed.
   #
@@ -193,6 +205,15 @@ class Importmap::Map
     end
   end
 
+  # Returns the entry point names that produce distinct preload results: the default "application" plus
+  # every entry point named in a pin's +preload+ option. Other entry points all select only the pins
+  # preloaded everywhere.
+  def known_entry_points
+    ["application"] | (@packages.values + @directories.values).flat_map do |mapping|
+      mapping.preload.in?([true, false]) ? [] : Array(mapping.preload)
+    end
+  end
+
   private
     MappedDir  = Struct.new(:dir, :path, :under, :preload, :integrity, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
@@ -200,6 +221,8 @@ class Importmap::Map
     def cache_as(name)
       if result = @cache[name.to_s]
         result
+      elsif @cache.frozen?
+        yield
       else
         @cache[name.to_s] = yield
       end

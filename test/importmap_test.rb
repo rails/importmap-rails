@@ -245,6 +245,38 @@ class ImportmapTest < ActiveSupport::TestCase
     ActionController::Base.asset_host = nil
   end
 
+  test "known_entry_points collects the entry points named in preload options" do
+    assert_equal ["application", "alternate"], @importmap.known_entry_points
+  end
+
+  test "warm_cache precomputes the caches, serving a frozen importmap without resolving again" do
+    importmap = Importmap::Map.new.draw { pin "application", preload: true, integrity: false }
+    Ractor.make_shareable(importmap.warm_cache(resolver: ApplicationController.helpers))
+
+    json = importmap.to_json(resolver: nil)
+    paths = importmap.preloaded_module_paths(resolver: nil, cache_key: "application")
+
+    assert_match %r{assets/application-.*\.js}, json
+    assert_match %r{assets/application-.*\.js}, paths.to_s
+  end
+
+  test "deep-frozen importmap still resolves, without caching" do
+    importmap = Ractor.make_shareable(Importmap::Map.new.draw { pin "application", preload: true, integrity: false })
+
+    set_one = importmap.preloaded_module_paths(resolver: ApplicationController.helpers)
+    json_one = importmap.to_json(resolver: ApplicationController.helpers)
+
+    ActionController::Base.asset_host = "http://assets.example.com"
+
+    set_two = importmap.preloaded_module_paths(resolver: ActionController::Base.helpers)
+    json_two = importmap.to_json(resolver: ActionController::Base.helpers)
+
+    assert_not_equal set_one, set_two
+    assert_not_equal json_one, json_two
+  ensure
+    ActionController::Base.asset_host = nil
+  end
+
   test "all caches reset" do
     set_one = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "1").to_s
     set_two = @importmap.preloaded_module_paths(resolver: ApplicationController.helpers, cache_key: "2").to_s

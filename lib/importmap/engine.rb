@@ -41,6 +41,20 @@ module Importmap
       end
     end
 
+    initializer "importmap.warm_cache" do |app|
+      if app.config.eager_load
+        app.config.after_initialize do
+          if defined?(ActionController::Base)
+            begin
+              app.importmap.warm_cache(resolver: ActionController::Base.helpers)
+            rescue => error
+              Rails.logger.warn "Unable to warm the importmap caches: #{error.message}"
+            end
+          end
+        end
+      end
+    end
+
     initializer "importmap.assets" do |app|
       if app.config.respond_to?(:assets)
         app.config.assets.paths << Rails.root.join("app/javascript")
