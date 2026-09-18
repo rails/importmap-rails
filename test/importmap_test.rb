@@ -25,6 +25,17 @@ class ImportmapTest < ActiveSupport::TestCase
     end
   end
 
+  test "JSON cache is isolated between maps" do
+    first_map = Importmap::Map.new.tap { |map| map.pin "first", to: "https://example.com/first.js" }
+    second_map = Importmap::Map.new.tap { |map| map.pin "second", to: "https://example.com/second.js" }
+
+    first_json = JSON.parse(first_map.to_json(resolver: ApplicationController.helpers))
+    second_json = JSON.parse(second_map.to_json(resolver: ApplicationController.helpers))
+
+    assert_equal({ "first" => "https://example.com/first.js" }, first_json["imports"])
+    assert_equal({ "second" => "https://example.com/second.js" }, second_json["imports"])
+  end
+
   test "local pin with inferred to" do
     assert_match %r|assets/application-.*\.js|, generate_importmap_json["imports"]["application"]
   end
