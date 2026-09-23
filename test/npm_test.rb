@@ -114,6 +114,19 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
+  test "does not warn for vendored packages with subpath and version comment" do
+    Dir.mktmpdir do |vendor_path|
+      create_vendored_file(vendor_path, "pdfjs-dist--build--pdf.min.mjs.js")
+      npm = Importmap::Npm.new(file_fixture("vendored_subpath_with_version_comment_import_map.rb"), vendor_path: vendor_path)
+
+      packages = []
+      stdout, _stderr = capture_io { packages = npm.packages_with_versions }
+
+      assert_equal("", stdout)
+      assert_equal([["pdfjs-dist", "5.4.530"]], packages)
+    end
+  end
+
   test "failed outdated packages request with error response" do
     client = Minitest::Mock.new
     response = Class.new do
