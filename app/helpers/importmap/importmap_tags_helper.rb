@@ -1,6 +1,9 @@
 module Importmap::ImportmapTagsHelper
   # Setup all script tags needed to use an importmap-powered entrypoint (which defaults to application.js)
   def javascript_importmap_tags(entry_point = "application", importmap: Rails.application.importmap)
+    preloaded = importmap.preloaded_module_packages(resolver: self, entry_point:, cache_key: entry_point)
+    Importmap::EarlyHints.send_modulepreload_links(self, preloaded)
+
     safe_join [
       javascript_inline_importmap_tag(importmap.to_json(resolver: self)),
       javascript_importmap_module_preload_tags(importmap, entry_point:),
