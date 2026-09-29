@@ -1,4 +1,5 @@
 require "pathname"
+require "importmap/graph"
 
 class Importmap::Map
   attr_reader :packages, :directories
@@ -193,6 +194,12 @@ class Importmap::Map
     end
   end
 
+  # Yields every key the map defines and the mapping it resolves to, with the
+  # `pin_all_from` directories expanded. Returns an Enumerator without a block.
+  def each_expanded_package(&block) # :nodoc:
+    expanded_packages_and_directories.each(&block)
+  end
+
   private
     MappedDir  = Struct.new(:dir, :path, :under, :preload, :integrity, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
@@ -207,6 +214,7 @@ class Importmap::Map
 
     def clear_cache
       @cache.clear
+      @graph = nil
     end
 
     def rescuable_asset_error?(error)
@@ -265,7 +273,29 @@ class Importmap::Map
     end
 
     def expanded_preloading_packages_and_directories(entry_point:)
-      expanded_packages_and_directories.select { |name, mapping| mapping.preload.in?([true, false]) ? mapping.preload : (Array(mapping.preload) & Array(entry_point)).any? }
+      preloading = expanded_packages_and_directories.select { |name, mapping| mapping.preload.in?([true, false]) ? mapping.preload : (Array(mapping.preload) & Array(entry_point)).any? }
+      reachable_only(preloading, entry_point: entry_point)
+    end
+
+    # With config.importmap.preload_strategy = :reachable, a `preload: true` pin
+    # is preloaded only when the entry point's static imports reach it. A pin
+    # naming the entry point is the app overruling the graph, and
+    # `preload: false` is off either way.
+    def reachable_only(packages, entry_point:)
+      return packages unless Rails.application.config.importmap.preload_strategy == :reachable
+
+      reachable = graph.reachable_from(Array(entry_point))
+      packages.select { |name, mapping| mapping.preload != true || reachable.include?(name) }
+    end
+
+    # Kept out of #cache_as, whose keys include entry point names passed as
+    # cache_key by the preload helper.
+    def graph
+      @graph ||= Importmap::Graph.new(self, roots: asset_paths)
+    end
+
+    def asset_paths
+      (config = Rails.application.config).respond_to?(:assets) ? config.assets.paths : []
     end
 
     def expanded_packages_and_directories

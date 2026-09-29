@@ -257,6 +257,23 @@ pin "md5", preload: ['application', 'alternate']
 ...
 ```
 
+### Preloading only what the entry point reaches
+
+By default every `preload: true` pin is preloaded on every page, including large packages that are only ever loaded through a dynamic `import()`. Set the preload strategy to `:reachable` to preload a `preload: true` pin only when the entry point reaches it through static imports:
+
+```ruby
+# config/application.rb
+config.importmap.preload_strategy = :reachable
+```
+
+```js
+// app/javascript/application.js
+import "@hotwired/turbo-rails"    // preloaded, along with everything it imports
+import("chart").then(...)         // not preloaded, nor anything only it imports
+```
+
+The graph is read from the local files the asset pipeline serves and cached with the rest of the import map, so nothing is fetched at request time. Remote pins are preloaded when imported but not followed. A pin that names entry points (`preload: "application"`) is always preloaded for them, and `preload: false` is never preloaded.
+
 
 
 ## Composing import maps

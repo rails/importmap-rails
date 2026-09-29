@@ -408,8 +408,120 @@ class ImportmapTest < ActiveSupport::TestCase
     assert_not_includes packages.map { |_, v| v.integrity }, nil
   end
 
+  test "preload_strategy :reachable preloads only what the entry point imports" do
+    importmap = graph_importmap
+
+    with_preload_strategy(:reachable) do
+      paths = preloaded_paths(importmap)
+
+      assert_match(/graph\/a/, paths)
+      assert_match(/graph\/b/, paths)
+      assert_match(/scoped/, paths)
+      assert_no_match(/lazy_chart/, paths)
+      assert_no_match(/chart_dep/, paths)
+    end
+  end
+
+  test "preload_strategy :reachable keeps a pin that names the entry point" do
+    importmap = graph_importmap
+
+    with_preload_strategy(:reachable) do
+      paths = preloaded_paths(importmap)
+
+      assert_match(/cycle_b/, paths)
+      assert_no_match(/cycle_a/, paths)
+    end
+  end
+
+  test "preload_strategy :all preloads everything the entry point applies to" do
+    importmap = graph_importmap
+
+    with_preload_strategy(:all) do
+      paths = preloaded_paths(importmap)
+
+      assert_match(/lazy_chart/, paths)
+      assert_match(/chart_dep/, paths)
+      assert_no_match(/cycle_a/, paths)
+    end
+  end
+
+  test "preload_strategy :all is the unconfigured behaviour" do
+    importmap = graph_importmap
+
+    unconfigured = with_preload_strategy(nil) { preloaded_paths(importmap, cache_key: "unconfigured") }
+    explicit     = with_preload_strategy(:all) { preloaded_paths(importmap, cache_key: "all") }
+
+    assert_equal unconfigured, explicit
+  end
+
+  test "preload_strategy :reachable preloads only the files of a pin_all_from directory that are reached" do
+    importmap = Importmap::Map.new.draw do
+      pin_all_from "app/javascript/graph", under: "graph"
+    end
+
+    with_preload_strategy(:reachable) do
+      paths = importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: "graph/entry").to_s
+
+      assert_match(/graph\/entry/, paths)
+      assert_match(/graph\/a/, paths)
+      assert_match(/graph\/b/, paths)
+      assert_no_match(/lazy_chart/, paths)
+      assert_no_match(/chart_dep/, paths)
+      assert_no_match(/cycle/, paths)
+    end
+  end
+
+  test "an entry point named after the reachability graph doesn't collide with it" do
+    importmap = graph_importmap
+
+    with_preload_strategy(:reachable) do
+      preloaded_paths(importmap)
+
+      assert_equal [], importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: "graph", cache_key: "graph")
+    end
+  end
+
+  test "the reachability graph is dropped with the rest of the cache" do
+    importmap = graph_importmap
+
+    with_preload_strategy(:reachable) do
+      assert_no_match(/chart_dep/, preloaded_paths(importmap))
+
+      importmap.pin "application", to: "graph/lazy_chart.js", preload: true
+
+      assert_match(/chart_dep/, preloaded_paths(importmap))
+    end
+  end
+
   private
     def generate_importmap_json
       @generate_importmap_json ||= JSON.parse @importmap.to_json(resolver: ApplicationController.helpers)
+    end
+
+    # application.js imports graph/a statically and lazy_chart dynamically;
+    # graph/a imports graph/b and @scope/pkg/sub; lazy_chart imports chart_dep.
+    def graph_importmap
+      Importmap::Map.new.draw do
+        pin "application", to: "graph/entry.js", preload: true
+        pin "graph/a", to: "graph/a.js", preload: true
+        pin "graph/b", to: "graph/b.js", preload: true
+        pin "@scope/pkg/sub", to: "graph/scoped.js", preload: true
+        pin "lazy_chart", to: "graph/lazy_chart.js", preload: true
+        pin "chart_dep", to: "graph/chart_dep.js", preload: true
+        pin "never", to: "graph/cycle_a.js", preload: false
+        pin "named", to: "graph/cycle_b.js", preload: "application"
+      end
+    end
+
+    def preloaded_paths(importmap, cache_key: :preloaded_module_paths)
+      importmap.preloaded_module_paths(resolver: ApplicationController.helpers, entry_point: "application", cache_key: cache_key).to_s
+    end
+
+    def with_preload_strategy(strategy)
+      previous = Rails.application.config.importmap.preload_strategy
+      Rails.application.config.importmap.preload_strategy = strategy
+      yield
+    ensure
+      Rails.application.config.importmap.preload_strategy = previous
     end
 end
