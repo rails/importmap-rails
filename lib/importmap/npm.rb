@@ -4,6 +4,8 @@ require "json"
 
 class Importmap::Npm
   PIN_REGEX = /#{Importmap::Map::PIN_REGEX}.*/.freeze # :nodoc:
+  VERSION_FROM_URL_REGEX = /^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)([^@\/]+)@(\d+\.\d+\.\d+(?:[^\/\s"']*))/.freeze # :nodoc:
+  VERSION_FROM_COMMENT_REGEX = /#{PIN_REGEX} #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/.freeze # :nodoc:
 
   Error     = Class.new(StandardError)
   HTTPError = Class.new(Error)
@@ -51,8 +53,8 @@ class Importmap::Npm
   def packages_with_versions
     # We cannot use the name after "pin" because some dependencies are loaded from inside packages
     # Eg. pin "buffer", to: "https://ga.jspm.io/npm:@jspm/core@2.0.0-beta.19/nodelibs/browser/buffer.js"
-    with_versions = importmap.scan(/^pin .*(?<=npm:|npm\/|skypack\.dev\/|unpkg\.com\/)([^@\/]+)@(\d+\.\d+\.\d+(?:[^\/\s"']*))/) |
-      importmap.scan(/#{PIN_REGEX} #.*@(\d+\.\d+\.\d+(?:[^\s]*)).*$/)
+    with_versions = importmap.scan(VERSION_FROM_URL_REGEX) |
+      importmap.scan(VERSION_FROM_COMMENT_REGEX)
 
     with_versions.map! do |package, version|
       [extract_base_package_name(package), version]
@@ -171,8 +173,17 @@ class Importmap::Npm
       filename ||= "#{package}.js"
 
       return if versioned_packages.include?(package)
+      return if versioned_package_subpath?(line, package, versioned_packages)
 
       path = File.join(@vendor_path, filename)
       [package, path] if File.exist?(path)
+    end
+
+    # A subpath pin is covered when its own line names a version and the
+    # package that version belongs to is in the audited set: "@tiptap/pm/tables"
+    # with its own comment is checked as "@tiptap/pm" at that version.
+    def versioned_package_subpath?(line, package, versioned_packages)
+      (line.match?(VERSION_FROM_URL_REGEX) || line.match?(VERSION_FROM_COMMENT_REGEX)) &&
+        versioned_packages.include?(extract_base_package_name(package))
     end
 end

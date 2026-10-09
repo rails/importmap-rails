@@ -190,6 +190,25 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     end
   end
 
+  test "a vendored subpath pin with a version is not reported as unversioned" do
+    Dir.mktmpdir do |vendor_path|
+      %w[ lit-html.js lit-html--is-server.js @tiptap--pm.js @tiptap--pm--tables.js @floating-ui--utils--dom.js ].each { |name| create_vendored_file(vendor_path, name) }
+      repeat_path = create_vendored_file(vendor_path, "lit-html--directives--repeat.js")
+      foo_path = create_vendored_file(vendor_path, "foo.js")
+
+      npm = Importmap::Npm.new(file_fixture("subpath_vendored_import_map.rb"), vendor_path: vendor_path)
+
+      packages = nil
+      stdout, _stderr = capture_io { packages = npm.packages_with_versions }
+
+      assert_equal(<<~OUTPUT, stdout)
+        Ignoring lit-html/directives/repeat (#{repeat_path}) since no version is specified in the importmap
+        Ignoring foo (#{foo_path}) since no version is specified in the importmap
+      OUTPUT
+      assert_equal [ [ "lit-html", "3.2.1" ], [ "@tiptap/pm", "2.11.5" ], [ "@floating-ui/utils", "0.2.10" ] ], packages
+    end
+  end
+
   def create_vendored_file(dir, name)
     path = File.join(dir, name)
     File.write(path, "console.log(123)")
