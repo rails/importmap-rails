@@ -197,16 +197,25 @@ class Importmap::Map
     MappedDir  = Struct.new(:dir, :path, :under, :preload, :integrity, keyword_init: true)
     MappedFile = Struct.new(:name, :path, :preload, :integrity, keyword_init: true)
 
+    if defined?(Ractor)
+      def cache
+        ractor_cache = Ractor.current[:importmap_cache] ||= {}
+        ractor_cache[self] ||= {}
+      end
+    else
+      attr_reader :cache
+    end
+
     def cache_as(name)
-      if result = @cache[name.to_s]
+      if result = cache[name.to_s]
         result
       else
-        @cache[name.to_s] = yield
+        cache[name.to_s] = yield
       end
     end
 
     def clear_cache
-      @cache.clear
+      cache.clear
     end
 
     def rescuable_asset_error?(error)
