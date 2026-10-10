@@ -82,6 +82,18 @@ class Importmap::NpmTest < ActiveSupport::TestCase
     assert_equal('2.1.1', packages[0][1])
   end
 
+  test "extracts scoped package names and versions from CDN urls" do
+    npm = Importmap::Npm.new(file_fixture("scoped_package_cdn_import_map.rb"))
+    packages = npm.packages_with_versions
+
+    assert_equal([
+      ["@hotwired/stimulus", "3.2.2"],
+      ["@rails/request.js", "0.0.8"],
+      ["@github/webauthn-json", "2.1.1"],
+      ["@jspm/core", "2.0.0-beta.19"]
+    ], packages)
+  end
+
   test "successful outdated packages with nested package path using mock" do
     npm = Importmap::Npm.new(file_fixture("nested_package_path_import_map.rb"))
     response = { "dist-tags" => { "latest" => '5.5.0' } }.to_json
