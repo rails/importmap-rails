@@ -179,7 +179,7 @@ class Importmap::Commands < Thor
     def for_each_import(packages, **options, &block)
       response = packager.import(*packages, **options)
 
-      if response
+      if response && response[:imports].present?
         response[:imports].each(&block)
       else
         handle_package_not_found(packages, options[:from])
