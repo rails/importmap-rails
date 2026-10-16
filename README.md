@@ -137,6 +137,25 @@ If you later wish to remove a downloaded pin:
 Unpinning and removing "react"
 ```
 
+### Pinning to remote CDN URLs
+
+If you'd rather load a package straight from the CDN instead of vendoring a download, pass `--remote`:
+
+```bash
+./bin/importmap pin react --remote
+Pinning "react" to https://ga.jspm.io/npm:react@19.1.0/index.js
+```
+
+This will produce a pin in your `config/importmap.rb` like so:
+
+```ruby
+pin "react", to: "https://ga.jspm.io/npm:react@19.1.0/index.js"
+```
+
+Remote pins are respected from then on — no `--remote` flag needed. When a remote-pinned package is pinned again or picked up by `./bin/importmap update` (whether directly or as a dependency of another package), the pin stays remote: the URL is re-resolved from the same CDN provider it already points to (`ga.jspm.io`, `unpkg.com`, `cdn.jsdelivr.net`, `cdn.skypack.dev`, or `esm.sh`) instead of being replaced with a download. Pins pointing at any other host are left completely untouched and reported as skipped, and `./bin/importmap pristine` skips remote pins since there is nothing to redownload.
+
+Options on existing pins, like `preload: false`, are preserved when a pin is rewritten. An explicit `integrity:` value is dropped when the URL changes, since the old hash would no longer match — see the SRI section below for pinning fresh integrity hashes.
+
 ## Subresource Integrity (SRI)
 
 For enhanced security, importmap-rails supports [Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hashes for packages loaded from external CDNs.
