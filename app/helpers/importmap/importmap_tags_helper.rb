@@ -27,12 +27,17 @@ module Importmap::ImportmapTagsHelper
   def javascript_importmap_module_preload_tags(importmap = Rails.application.importmap, entry_point: "application")
     packages = importmap.preloaded_module_packages(resolver: self, entry_point:, cache_key: entry_point)
 
-    _generate_preload_tags(packages) { |path, package| [path, { integrity: package.integrity }] }
+    _generate_preload_tags(packages) do |(path, package), nonce|
+      integrity = package.integrity
+      tag.link rel: "modulepreload", href: path, nonce: nonce, integrity: integrity
+    end
   end
 
   # Link tag(s) for preloading the JavaScript module residing in `*paths`. Will return one link tag per path element.
   def javascript_module_preload_tag(*paths)
-    _generate_preload_tags(paths) { |path| [path, {}] }
+    _generate_preload_tags(paths) do |path, nonce|
+      tag.link rel: "modulepreload", href: path, nonce: nonce
+    end
   end
 
   private
@@ -40,8 +45,7 @@ module Importmap::ImportmapTagsHelper
       content_security_policy_nonce = request&.content_security_policy_nonce
 
       safe_join(Array(items).collect { |item|
-        path, options = yield(item)
-        tag.link rel: "modulepreload", href: path, nonce: content_security_policy_nonce, **options
+        yield(item, content_security_policy_nonce)
       }, "\n")
     end
 end
