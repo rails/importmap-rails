@@ -257,6 +257,16 @@ pin "md5", preload: ['application', 'alternate']
 ...
 ```
 
+### Early Hints
+
+`javascript_importmap_tags` also sends its modulepreload links as [103 Early Hints](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/103), so the browser can start fetching modules while the page is still rendering. This requires a server that supports Early Hints, such as Puma with `early_hints true`; on other servers nothing is sent. Responses that are already streaming are left alone.
+
+To turn it off:
+
+```ruby
+# config/application.rb
+config.importmap.early_hints = false
+```
 
 
 ## Composing import maps
