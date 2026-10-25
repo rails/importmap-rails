@@ -170,7 +170,7 @@ class Importmap::Npm
       package, filename = match.captures
       filename ||= "#{package}.js"
 
-      return if versioned_packages.include?(package)
+      return if versioned_packages.include?(extract_base_package_name(package))
 
       path = File.join(@vendor_path, filename)
       [package, path] if File.exist?(path)
