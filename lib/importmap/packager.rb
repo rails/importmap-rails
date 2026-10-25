@@ -5,6 +5,8 @@ require "json"
 class Importmap::Packager
   PIN_REGEX = /#{Importmap::Map::PIN_REGEX}(.*)/.freeze # :nodoc:
   PRELOAD_OPTION_REGEXP = /preload:\s*(\[[^\]]+\]|true|false|["'][^"']*["'])/.freeze # :nodoc:
+  MODULE_URL_REGEXP = %r{[:/](?<package>(?:@[^/@]+/)?[^/@:]+)@\d+\.\d+\.\d+[^/]*/(?<path>.+)\z}.freeze # :nodoc:
+  QUOTED_SPECIFIER_REGEXP = /(["'])([^"'\s]+)\1/.freeze # :nodoc:
 
   Error        = Class.new(StandardError)
   HTTPError    = Class.new(Error)
@@ -18,6 +20,8 @@ class Importmap::Packager
   def initialize(importmap_path = "config/importmap.rb", vendor_path: "vendor/javascript")
     @importmap_path = Pathname.new(importmap_path)
     @vendor_path    = Pathname.new(vendor_path)
+    @imports        = {}
+    @directories    = {}
   end
 
   def import(*packages, env: "production", from: "jspm")
@@ -139,11 +143,21 @@ class Importmap::Packager
 
     def extract_parsed_response(response)
       parsed = JSON.parse(response.body)
-      imports = parsed.dig("map", "imports")
+      @directories, imports = parsed.dig("map", "imports").partition { |specifier, _| specifier.end_with?("/") }.map(&:to_h)
+      modules = Array(parsed["staticDeps"]) + Array(parsed["dynamicDeps"]) - imports.values
+      @imports = imports.merge(modules.to_h { |url| [ module_specifier_for(url), url ] })
 
       {
-        imports: imports,
+        imports: @imports,
       }
+    end
+
+    def module_specifier_for(url)
+      if match = url.match(MODULE_URL_REGEXP)
+        "#{match[:package]}/#{match[:path]}"
+      else
+        raise Error, "Unexpected module URL without a package version (#{url})"
+      end
     end
 
     def handle_failure_response(response)
@@ -196,8 +210,38 @@ class Importmap::Packager
       File.open(vendored_package_path(package), "w+") do |vendored_package|
         vendored_package.write "// #{package}#{extract_package_version_from(url)} downloaded from #{url}\n\n"
 
-        vendored_package.write remove_sourcemap_comment_from(source).force_encoding("UTF-8")
+        vendored_package.write rewrite_imported_specifiers(remove_sourcemap_comment_from(source).force_encoding("UTF-8"), url)
       end
+    end
+
+    def rewrite_imported_specifiers(source, url)
+      source.gsub(QUOTED_SPECIFIER_REGEXP) do |quoted|
+        quote, specifier = $1, $2
+
+        if pinned_specifier = pinned_specifier_for(resolve_specifier(specifier, url))
+          "#{quote}#{pinned_specifier}#{quote}"
+        else
+          quoted
+        end
+      end
+    end
+
+    def resolve_specifier(specifier, referrer_url)
+      if specifier.start_with?("./", "../")
+        resolve_relative_specifier(specifier, referrer_url)
+      elsif directory = @directories.keys.select { |prefix| specifier.start_with?(prefix) }.max_by(&:length)
+        @directories[directory] + specifier.delete_prefix(directory)
+      end
+    end
+
+    def resolve_relative_specifier(specifier, referrer_url)
+      URI.join(referrer_url, specifier).to_s
+    rescue URI::InvalidURIError
+      nil
+    end
+
+    def pinned_specifier_for(url)
+      @imports.key(url) if url
     end
 
     def remove_sourcemap_comment_from(source)

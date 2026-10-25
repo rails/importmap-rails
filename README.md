@@ -130,6 +130,13 @@ Pinning "react" to vendor/javascript/react.js via download from https://cdn.jsde
 
 The packages are downloaded to `vendor/javascript`, which you can check into your source control, and they'll be available through your application's own asset pipeline serving.
 
+Some packages are built as several files that import each other by relative path, like `./internal.js` or `./_/DSJtP67n.js`. Those paths would not resolve once the asset pipeline digests the file names, so each such file is downloaded and pinned under the package name, and the import in the downloaded source is rewritten to that pin:
+
+```ruby
+pin "@fullcalendar/core", to: "@fullcalendar--core.js" # @6.1.21
+pin "@fullcalendar/core/_/DSJtP67n.js", to: "@fullcalendar--core--_--DSJtP67n.js.js" # @6.1.21
+```
+
 If you later wish to remove a downloaded pin:
 
 ```bash

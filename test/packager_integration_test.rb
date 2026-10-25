@@ -9,6 +9,11 @@ class Importmap::PackagerIntegrationTest < ActiveSupport::TestCase
     assert_equal "https://ga.jspm.io/npm:react@17.0.2/index.js", result[:imports]["react"]
   end
 
+  test "successful import of a package that loads a chunk by relative import against live service" do
+    result = @packager.import("@fullcalendar/core@6.1.21")
+    assert_equal "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/_/DSJtP67n.js", result[:imports]["@fullcalendar/core/_/DSJtP67n.js"]
+  end
+
   test "missing import against live service" do
     assert_nil @packager.import("react-is-not-this-package@17.0.2")
   end

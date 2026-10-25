@@ -34,6 +34,23 @@ class CommandsTest < ActiveSupport::TestCase
     assert_includes out, "Pinning"
   end
 
+  test "pin command pins the modules a package loads by relative or subpath import" do
+    run_importmap_command("pin", "@fullcalendar/core@6.1.21", "@fullcalendar/daygrid@6.1.21")
+
+    importmap = File.read("#{@tmpdir}/dummy/config/importmap.rb")
+    assert_includes importmap, %(pin "@fullcalendar/core/_/DSJtP67n.js", to: "@fullcalendar--core--_--DSJtP67n.js.js" # @6.1.21)
+    assert_includes importmap, %(pin "@fullcalendar/daygrid/internal.js", to: "@fullcalendar--daygrid--internal.js.js" # @6.1.21)
+    assert_not_includes importmap, %(pin "@fullcalendar/core/")
+
+    pins = Importmap::Map.new.draw("#{@tmpdir}/dummy/config/importmap.rb").packages.keys
+    specifiers = Dir["#{@tmpdir}/dummy/vendor/javascript/@fullcalendar--*"].flat_map do |file|
+      File.read(file).scan(/\b(?:from|import)\s*\(?\s*["']([^"']+)["']/).flatten
+    end
+
+    assert_includes specifiers, "@fullcalendar/core/_/DSJtP67n.js"
+    assert_empty specifiers.uniq - pins
+  end
+
   test "pristine command redownloads all pinned packages" do
     FileUtils.cp("#{__dir__}/fixtures/files/outdated_import_map.rb", "#{@tmpdir}/dummy/config/importmap.rb")
 

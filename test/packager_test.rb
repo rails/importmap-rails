@@ -27,6 +27,42 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
     end
   end
 
+  test "import adds the modules that packages load by relative or subpath import" do
+    @packager.stub(:post_json, fullcalendar_response) do
+      result = @packager.import("@fullcalendar/core@6.1.21", "@fullcalendar/daygrid@6.1.21")
+
+      assert_equal({
+        "@fullcalendar/core" => "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/index.js",
+        "@fullcalendar/daygrid" => "https://ga.jspm.io/npm:@fullcalendar/daygrid@6.1.21/index.js",
+        "preact" => "https://ga.jspm.io/npm:preact@10.12.1/dist/preact.module.js",
+        "@fullcalendar/core/_/DSJtP67n.js" => "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/_/DSJtP67n.js",
+        "@fullcalendar/core/internal.js" => "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/internal.js",
+        "@fullcalendar/daygrid/internal.js" => "https://ga.jspm.io/npm:@fullcalendar/daygrid@6.1.21/internal.js"
+      }, result[:imports])
+    end
+  end
+
+  test "download rewrites relative and subpath imports of imported modules to their pins" do
+    Dir.mktmpdir do |vendor_dir|
+      packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb"), vendor_path: vendor_dir)
+      source = 'import{createPlugin as e}from"@fullcalendar/core/index.js";import{DayGridView as n}from"./internal.js";' \
+        'import"@fullcalendar/core/internal.js";import"./missing.js";import"preact";var f="./%s.js";'
+      response = Struct.new(:code, :body).new("200", source)
+
+      packager.stub(:post_json, fullcalendar_response) do
+        packager.import("@fullcalendar/core@6.1.21", "@fullcalendar/daygrid@6.1.21")
+      end
+
+      Net::HTTP.stub(:get_response, response) do
+        packager.download("@fullcalendar/daygrid", "https://ga.jspm.io/npm:@fullcalendar/daygrid@6.1.21/index.js")
+      end
+
+      assert_includes File.read(File.join(vendor_dir, "@fullcalendar--daygrid.js")),
+        'import{createPlugin as e}from"@fullcalendar/core";import{DayGridView as n}from"@fullcalendar/daygrid/internal.js";' \
+        'import"@fullcalendar/core/internal.js";import"./missing.js";import"preact";var f="./%s.js";'
+    end
+  end
+
   test "missing import with mock" do
     response = Class.new { def code() "404" end }.new
 
@@ -200,6 +236,30 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   end
 
   private
+
+  def fullcalendar_response
+    body = {
+      "staticDeps" => [
+        "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/_/DSJtP67n.js",
+        "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/index.js",
+        "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/internal.js",
+        "https://ga.jspm.io/npm:@fullcalendar/daygrid@6.1.21/index.js",
+        "https://ga.jspm.io/npm:@fullcalendar/daygrid@6.1.21/internal.js",
+        "https://ga.jspm.io/npm:preact@10.12.1/dist/preact.module.js"
+      ],
+      "dynamicDeps" => [],
+      "map" => {
+        "imports" => {
+          "@fullcalendar/core" => "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/index.js",
+          "@fullcalendar/daygrid" => "https://ga.jspm.io/npm:@fullcalendar/daygrid@6.1.21/index.js",
+          "@fullcalendar/core/" => "https://ga.jspm.io/npm:@fullcalendar/core@6.1.21/",
+          "preact" => "https://ga.jspm.io/npm:preact@10.12.1/dist/preact.module.js"
+        }
+      }
+    }
+
+    Struct.new(:code, :body).new("200", body.to_json)
+  end
 
   def create_temp_importmap(content)
     temp_file = Tempfile.new(['importmap', '.rb'])
