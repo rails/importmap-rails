@@ -43,6 +43,18 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
     end
   end
 
+  test "download strips the source map comment that ends the file" do
+    assert_equal "run();\n", vendored_source_of("run();\n//# sourceMappingURL=index.js.map")
+    assert_no_match "sourceMappingURL", vendored_source_of("run();\n//# sourceMappingURL=index.js.map\n")
+  end
+
+  # es-module-shims 2.8.4 opens a line of a template literal with a source map comment, and stripping it truncated the file.
+  test "download keeps a source map comment inside a template literal" do
+    source = "const map = `\n//# sourceMappingURL=${url}`;\nrun(map);\n"
+
+    assert_equal source, vendored_source_of(source + "//# sourceMappingURL=index.js.map")
+  end
+
   test "packaged?" do
     assert @packager.packaged?("md5")
     assert_not @packager.packaged?("md5-extension")
@@ -200,6 +212,19 @@ class Importmap::PackagerTest < ActiveSupport::TestCase
   end
 
   private
+
+  def vendored_source_of(body)
+    response = Struct.new(:code, :body).new("200", body)
+
+    Dir.mktmpdir do |vendor_dir|
+      packager = Importmap::Packager.new(Rails.root.join("config/importmap.rb"), vendor_path: vendor_dir)
+      url = "https://ga.jspm.io/npm:foo@1.0.0/index.js"
+
+      Net::HTTP.stub(:get_response, response) { packager.download("foo", url) }
+
+      File.read(File.join(vendor_dir, "foo.js")).delete_prefix("// foo@1.0.0 downloaded from #{url}\n\n")
+    end
+  end
 
   def create_temp_importmap(content)
     temp_file = Tempfile.new(['importmap', '.rb'])
